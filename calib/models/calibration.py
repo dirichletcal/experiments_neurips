@@ -23,7 +23,8 @@ import sys
 '''
     While dirichlet isn't a package, we can import it using this relative path
 '''
-sys.path.insert(0,'../../dirichlet')
+from IPython import embed; embed()
+sys.path.insert(0,'dirichlet')
 from dirichlet import DirichletCalibrator
 
 
