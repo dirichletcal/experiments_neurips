@@ -1,0 +1,3 @@
+[submodule "dirichlet"]
+	path = dirichlet
+	url = git@bitbucket.org:dirichlet_cal/dirichlet.git
