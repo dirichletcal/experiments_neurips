@@ -12,7 +12,7 @@ from sklearn.calibration import _SigmoidCalibration as sk_sigmoid
 
 from betacal import BetaCalibration 
 
-from sk_calibration import _SigmoidCalibration as sk_sigmoid_notrick
+from .sk_calibration import _SigmoidCalibration as sk_sigmoid_notrick
 
 from calib.utils.functions import fit_beta_nll
 from calib.utils.functions import fit_beta_moments

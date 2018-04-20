@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     data = Data(dataset_names=dataset_names)
 
-    for name, dataset in data.datasets.iteritems():
+    for name, dataset in data.datasets.items():
         df = MyDataFrame(columns=columns)
         print(dataset)
 

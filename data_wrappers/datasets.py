@@ -13,7 +13,7 @@ __maintainer__ = "Miquel Perello Nieto"
 __email__ = "miquel@perellonieto.com"
 __status__ = "Development"
 
-import urllib2
+import urllib
 from os.path import isfile
 
 dataset_names_binary = ['credit-approval', 'diabetes',
@@ -112,7 +112,7 @@ class Dataset(object):
         return self._counts
 
     def print_summary(self):
-        print self
+        print(self)
 
     @property
     def n_classes(self):

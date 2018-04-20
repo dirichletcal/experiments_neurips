@@ -5,9 +5,9 @@ from sklearn.base import clone
 
 from calib.models.calibration import _DummyCalibration
 from calib.models.calibration import CalibratedModel
-from functions import cross_entropy
-from functions import brier_score
-from functions import beta_test
+from .functions import cross_entropy
+from .functions import brier_score
+from .functions import beta_test
 from betacal import BetaCalibration
 from calib.utils.functions import beta_test
 from calib.utils.functions import fit_beta_moments
