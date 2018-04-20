@@ -24,3 +24,23 @@ environment with
 ```
 source venv/bin/activate
 ```
+
+# Notebooks
+
+In order to run the notebooks it is necessary to install IPython and
+Jupyter-notebooks. But the setuptools and pip need to be upgraded.
+Follow the next instructions (with the loaded virtual environment):
+
+```
+pip install --upgrade setuptools pip
+pip install ipython
+pip install jupyter
+```
+
+Then start the Jupyter notebook with
+
+```
+jupyter notebook
+```
+
+And go to the notebook folder.
