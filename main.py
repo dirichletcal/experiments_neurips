@@ -34,9 +34,10 @@ from data_wrappers.datasets import datasets_li2014
 from data_wrappers.datasets import datasets_hempstalk2008
 from data_wrappers.datasets import datasets_others
 from data_wrappers.datasets import datasets_big
+from data_wrappers.datasets import datasets_small_example
 
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid']
-methods = ['beta', 'beta_test']
+methods = ['beta', 'beta_am', 'isotonic']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
@@ -102,8 +103,9 @@ def compute_all(args):
 
 
 if __name__ == '__main__':
-    dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
-                             datasets_others))
+    #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
+    #                         datasets_others))
+    dataset_names = list(set(datasets_small_example))
     # dataset_names = datasets_big
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
@@ -127,8 +129,9 @@ if __name__ == '__main__':
 
         df = df.concat(dfs)
 
-        table = df[df.dataset == name].pivot_table(values=['acc', 'loss', 'brier',
-            'time', 'c_probas'], index=['method'], aggfunc=[np.mean, np.std])
+        table = df[df.dataset == name].pivot_table(
+                    values=['acc', 'loss', 'brier', 'c_probas'],
+                    index=['method'], aggfunc=[np.mean, np.std])
 
         print(table)
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')

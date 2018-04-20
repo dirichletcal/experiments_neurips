@@ -49,6 +49,8 @@ datasets_big = ['abalone', 'car', 'flare', 'german', 'landsat-satellite',
                 'pendigits', 'scene-classification', 'segment', 'shuttle',
                 'spambase', 'waveform-5000', 'yeast']
 
+datasets_small_example = ['iris', 'autos', 'yeast', 'spambase']
+
 class Dataset(object):
     def __init__(self, name, data, target):
         self.name = name
