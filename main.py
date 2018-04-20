@@ -153,14 +153,14 @@ if __name__ == '__main__':
     for rem in remove_list:
         df_rem = df_all[np.logical_not(np.in1d(df_all.method, rem))]
         methods_rem = [method for method in methods if method not in rem]
-        print methods_rem
+        print(methods_rem)
         print('-#-#-#-#-#-#-#-#-#-#-#-#-ACC-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
         table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                    values=['acc'], aggfunc=[np.mean, np.std])
         table_to_latex(dataset_names, methods_rem, table, max_is_better=True)
         accs = table.as_matrix()[:, :len(methods_rem)]
         # print friedmanchisquare(*[accs[:, x] for x in np.arange(accs.shape[1])])
-        print p_value(accs)
+        print(p_value(accs))
         table.to_csv(os.path.join(results_path, 'main_acc' + str(methods_rem) + '.csv'))
 
         print('-#-#-#-#-#-#-#-#-#-#-#-LOSS-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
@@ -169,7 +169,7 @@ if __name__ == '__main__':
         table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
         losses = table.as_matrix()[:, :len(methods_rem)]
         # print friedmanchisquare(*[losses[:, x] for x in np.arange(losses.shape[1])])
-        print p_value(losses)
+        print(p_value(losses))
         table.to_csv(os.path.join(results_path, 'main_loss' + str(methods_rem) + '.csv'))
 
         print('-#-#-#-#-#-#-#-#-#-#-#-BRIER-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
         briers = table.as_matrix()[:, :len(methods_rem)]
         # print friedmanchisquare(*[briers[:, x] for x in np.arange(briers.shape[1])])
-        print p_value(briers)
+        print(p_value(briers))
         table.to_csv(os.path.join(results_path, 'main_brier' + str(methods_rem) + '.csv'))
 
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')

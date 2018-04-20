@@ -46,8 +46,8 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
     stds = table.as_matrix()[:, len(methods):]
     if max_is_better:
         stds *= 100.0
-    print '\\begin{table}[!t]'
-    print '\\centering'
+    print('\\begin{table}[!t]')
+    print('\\centering')
     str_columns = 'l'
     str_header = 'dataset'
     methods.sort()
@@ -58,10 +58,10 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
         else:
             str_header += ' & ' + method
     str_header += '\\\\'
-    print '\\begin{tabular}{'+str_columns+'}'
-    print '\\toprule'
-    print str_header
-    print '\\midrule'
+    print('\\begin{tabular}{'+str_columns+'}')
+    print('\\toprule')
+    print(str_header)
+    print('\\midrule')
     for i, name in enumerate(datasets):
         nam = name[:7] if len(name) > 7 else name
         str_row_means = nam
@@ -83,18 +83,18 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
                     idx_s = '{}'.format(int(idx))
                 str_row_means += ' & ${0:.3f}'.format(v[j])+'_{' + idx_s + '}$'
                 str_row_stds += ' & ({0:.3f}'.format(v_std[j])+")"
-        print str_row_means + '\\\\'
-        print str_row_stds + '\\\\'
-    print '\\midrule'
+        print(str_row_means + '\\\\')
+        print(str_row_stds + '\\\\')
+    print('\\midrule')
     str_avg = 'rank'
     for i in np.arange(len(methods)):
         str_avg += ' & {0:.2f}'.format(avg_ranks[i])
-    print str_avg + '\\\\'
-    print "\\bottomrule"
-    print "\\end{tabular}"
-    print "\\caption{\\small{"+caption+"}}"
-    print "\\label{table:table}"
-    print "\\end{table}"
+    print(str_avg + '\\\\')
+    print("\\bottomrule")
+    print("\\end{tabular}")
+    print("\\caption{\\small{"+caption+"}}")
+    print("\\label{table:table}")
+    print("\\end{table}")
 
 
 # TODO: MPN need to join *to_latex functions
