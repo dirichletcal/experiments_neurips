@@ -25,6 +25,32 @@ environment with
 source venv/bin/activate
 ```
 
+# Run experiments
+
+Experiments can be run calling __python main.py__. To see the different options
+pass the argument __--help__
+
+```
+$ python main.py --help
+usage: main.py [-h] [-c CLASSIFIER_NAME] [-s SEED_NUM] [-i MC_ITERATIONS]
+               [-f N_FOLDS] [-o RESULTS_PATH]
+
+Runs all the experiments with the given arguments
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CLASSIFIER_NAME, --classifier CLASSIFIER_NAME
+                        Classifier to use for evaluation (default: nbayes)
+  -s SEED_NUM, --seed SEED_NUM
+                        Seed for the random number generator (default: 42)
+  -i MC_ITERATIONS, --iterations MC_ITERATIONS
+                        Number of Markov Chain iterations (default: 10)
+  -f N_FOLDS, --folds N_FOLDS
+                        Folds to create for cross-validation (default: 5)
+  -o RESULTS_PATH, --output_path RESULTS_PATH
+                        Path to store all the results (default: results_test)
+```
+
 # Notebooks
 
 In order to run the notebooks it is necessary to install IPython and

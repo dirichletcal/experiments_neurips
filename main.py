@@ -6,6 +6,7 @@
 #   python main.py
 
 from __future__ import division
+import argparse
 import os
 import numpy as np
 from sklearn.cross_validation import StratifiedKFold
@@ -38,7 +39,7 @@ from data_wrappers.datasets import datasets_big
 from data_wrappers.datasets import datasets_small_example
 
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid']
-methods = ['beta', 'beta_am', 'isotonic']
+methods = ['beta', 'beta_am', 'isotonic', 'sigmoid']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
@@ -58,16 +59,30 @@ score_types = {
                   'svm': 'sigmoid'
 }
 
-seed_num = 42
-mc_iterations = 10
-n_folds = 5
-classifier_name = 'nbayes'
-results_path = 'results_test/' + classifier_name
-classifier = classifiers[classifier_name]
-score_type = score_types[classifier_name]
-
 columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
            'c_probas']
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='''Runs all the experiments
+                                     with the given arguments''',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-c', '--classifier', dest='classifier_name', type=str,
+                        default='nbayes',
+                        help='''Classifier to use for evaluation''')
+    parser.add_argument('-s', '--seed', dest='seed_num', type=int,
+                        default=42,
+                        help='Seed for the random number generator')
+    parser.add_argument('-i', '--iterations', dest='mc_iterations', type=int,
+                        default=10,
+                        help='Number of Markov Chain iterations')
+    parser.add_argument('-f', '--folds', dest='n_folds', type=int,
+                        default=5,
+                        help='Folds to create for cross-validation')
+    parser.add_argument('-o', '--output_path', dest='results_path', type=str,
+                        default='results_test',
+                        help='''Path to store all the results''')
+    return parser.parse_args()
 
 
 def df_to_heatmap(df, filename, title=None, figsize=(6,4), annotate=True):
@@ -95,7 +110,9 @@ def df_to_heatmap(df, filename, title=None, figsize=(6,4), annotate=True):
 
 
 def compute_all(args):
-    (name, dataset, n_folds, mc) = args
+    (name, dataset, n_folds, mc, classifier_name) = args
+    classifier = classifiers[classifier_name]
+    score_type = score_types[classifier_name]
     np.random.seed(mc)
     skf = StratifiedKFold(dataset.target, n_folds=n_folds,
                           shuffle=True)
@@ -127,7 +144,10 @@ def compute_all(args):
     return df
 
 
-if __name__ == '__main__':
+def main(seed_num, mc_iterations, n_folds, classifier_name, results_path):
+    print(locals())
+    results_path += '/' + classifier_name
+
     #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
     #                         datasets_others))
     dataset_names = list(set(datasets_small_example))
@@ -143,7 +163,7 @@ if __name__ == '__main__':
 
         mcs = np.arange(mc_iterations)
         # All the arguments as a list of lists
-        args = [[name], [dataset], [n_folds], mcs]
+        args = [[name], [dataset], [n_folds], mcs, [classifier_name]]
         args = list(itertools.product(*args))
 
         # if called with -m scoop
@@ -199,3 +219,8 @@ if __name__ == '__main__':
                          title=measure)
 
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+
+
+if __name__ == '__main__':
+    args = parse_arguments()
+    main(**vars(args))
