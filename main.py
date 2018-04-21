@@ -16,6 +16,7 @@ import sklearn.ensemble as their
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+import matplotlib.pyplot as plt
 
 # Parallelization
 import itertools
@@ -67,6 +68,22 @@ score_type = score_types[classifier_name]
 
 columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
            'c_probas']
+
+
+def df_to_heatmap(df, filename, title=None):
+    fig = plt.figure(figsize=(6,4))
+    ax = fig.add_subplot(111)
+    if title is not None:
+        ax.set_title(title)
+    cax = ax.pcolor(df)
+    fig.colorbar(cax)
+    ax.set_yticks(np.arange(0.5, len(df.index), 1))
+    ax.set_yticklabels([' '.join(row).strip() for row in df.index.values])
+    ax.set_xticks(np.arange(0.5, len(df.columns), 1))
+    ax.set_xticklabels([' '.join(col).strip() for col in df.columns.values],
+                       rotation = 45, ha="right")
+    fig.tight_layout()
+    fig.savefig(filename)
 
 
 def compute_all(args):
@@ -145,6 +162,7 @@ if __name__ == '__main__':
 
     table.to_csv(os.path.join(results_path, 'main_results.csv'))
     table.to_latex(os.path.join(results_path, 'main_results.tex'))
+    df_to_heatmap(table, os.path.join(results_path, 'main_results.svg'))
 
     # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
     #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
@@ -155,6 +173,7 @@ if __name__ == '__main__':
         methods_rem = [method for method in methods if method not in rem]
         print(methods_rem)
         print('-#-#-#-#-#-#-#-#-#-#-#-#-ACC-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+        measure = 'acc'
         table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                    values=['acc'], aggfunc=[np.mean, np.std])
         table_to_latex(dataset_names, methods_rem, table, max_is_better=True)
@@ -162,8 +181,13 @@ if __name__ == '__main__':
         # print friedmanchisquare(*[accs[:, x] for x in np.arange(accs.shape[1])])
         print(p_value(accs))
         table.to_csv(os.path.join(results_path, 'main_acc' + str(methods_rem) + '.csv'))
+        df_to_heatmap(table['mean'][measure],
+                      os.path.join(results_path,
+                                   '{}_dataset_vs_method.svg'.format(measure)),
+                     title=measure)
 
         print('-#-#-#-#-#-#-#-#-#-#-#-LOSS-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+        measure = 'loss'
         table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                    values=['loss'], aggfunc=[np.mean, np.std])
         table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
@@ -171,8 +195,13 @@ if __name__ == '__main__':
         # print friedmanchisquare(*[losses[:, x] for x in np.arange(losses.shape[1])])
         print(p_value(losses))
         table.to_csv(os.path.join(results_path, 'main_loss' + str(methods_rem) + '.csv'))
+        df_to_heatmap(table['mean'][measure],
+                      os.path.join(results_path,
+                                   '{}_dataset_vs_method.svg'.format(measure)),
+                     title=measure)
 
         print('-#-#-#-#-#-#-#-#-#-#-#-BRIER-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+        measure = 'brier'
         table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                    values=['brier'], aggfunc=[np.mean, np.std])
         table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
@@ -180,5 +209,9 @@ if __name__ == '__main__':
         # print friedmanchisquare(*[briers[:, x] for x in np.arange(briers.shape[1])])
         print(p_value(briers))
         table.to_csv(os.path.join(results_path, 'main_brier' + str(methods_rem) + '.csv'))
+        df_to_heatmap(table['mean'][measure],
+                      os.path.join(results_path,
+                                   '{}_dataset_vs_method.svg'.format(measure)),
+                     title=measure)
 
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
