@@ -172,46 +172,22 @@ if __name__ == '__main__':
         df_rem = df_all[np.logical_not(np.in1d(df_all.method, rem))]
         methods_rem = [method for method in methods if method not in rem]
         print(methods_rem)
-        print('-#-#-#-#-#-#-#-#-#-#-#-#-ACC-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
-        measure = 'acc'
-        table = df_rem.pivot_table(index=['dataset'], columns=['method'],
-                                   values=['acc'], aggfunc=[np.mean, np.std])
-        table_to_latex(dataset_names, methods_rem, table, max_is_better=True)
-        accs = table.as_matrix()[:, :len(methods_rem)]
-        # print friedmanchisquare(*[accs[:, x] for x in np.arange(accs.shape[1])])
-        print(p_value(accs))
-        table.to_csv(os.path.join(results_path, 'main_acc' + str(methods_rem) + '.csv'))
-        df_to_heatmap(table['mean'][measure],
-                      os.path.join(results_path,
-                                   '{}_dataset_vs_method.svg'.format(measure)),
-                     title=measure)
 
-        print('-#-#-#-#-#-#-#-#-#-#-#-LOSS-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
-        measure = 'loss'
-        table = df_rem.pivot_table(index=['dataset'], columns=['method'],
-                                   values=['loss'], aggfunc=[np.mean, np.std])
-        table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
-        losses = table.as_matrix()[:, :len(methods_rem)]
-        # print friedmanchisquare(*[losses[:, x] for x in np.arange(losses.shape[1])])
-        print(p_value(losses))
-        table.to_csv(os.path.join(results_path, 'main_loss' + str(methods_rem) + '.csv'))
-        df_to_heatmap(table['mean'][measure],
-                      os.path.join(results_path,
-                                   '{}_dataset_vs_method.svg'.format(measure)),
-                     title=measure)
-
-        print('-#-#-#-#-#-#-#-#-#-#-#-BRIER-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
-        measure = 'brier'
-        table = df_rem.pivot_table(index=['dataset'], columns=['method'],
-                                   values=['brier'], aggfunc=[np.mean, np.std])
-        table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
-        briers = table.as_matrix()[:, :len(methods_rem)]
-        # print friedmanchisquare(*[briers[:, x] for x in np.arange(briers.shape[1])])
-        print(p_value(briers))
-        table.to_csv(os.path.join(results_path, 'main_brier' + str(methods_rem) + '.csv'))
-        df_to_heatmap(table['mean'][measure],
-                      os.path.join(results_path,
-                                   '{}_dataset_vs_method.svg'.format(measure)),
-                     title=measure)
+        measures = (('acc', True), ('loss', False), ('brier', False))
+        for measure, max_is_better in measures:
+            print('-#-#-#-#-#-#-#-#-' + measure + '-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+            table = df_rem.pivot_table(index=['dataset'], columns=['method'],
+                                       values=[measure], aggfunc=[np.mean, np.std])
+            table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
+            values = table.as_matrix()[:, :len(methods_rem)]
+            #print(friedmanchisquare(*[values[:, x] for x in
+            #                          np.arange(values.shape[1])]))
+            print(p_value(values))
+            table.to_csv(os.path.join(results_path,
+                                      'main_{}{}.csv'.format(measure, methods_rem)))
+            df_to_heatmap(table['mean'][measure],
+                          os.path.join(results_path,
+                                       '{}_dataset_vs_method.svg'.format(measure)),
+                         title=measure)
 
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
