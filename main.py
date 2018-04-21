@@ -70,8 +70,8 @@ columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
            'c_probas']
 
 
-def df_to_heatmap(df, filename, title=None):
-    fig = plt.figure(figsize=(6,4))
+def df_to_heatmap(df, filename, title=None, figsize=(6,4), annotate=True):
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     if title is not None:
         ax.set_title(title)
@@ -82,6 +82,14 @@ def df_to_heatmap(df, filename, title=None):
     ax.set_xticks(np.arange(0.5, len(df.columns), 1))
     ax.set_xticklabels([' '.join(col).strip() for col in df.columns.values],
                        rotation = 45, ha="right")
+
+    if annotate:
+        for y in range(df.shape[0]):
+            for x in range(df.shape[1]):
+                plt.text(x + 0.5, y + 0.5, '%.2f' % df.values[y, x],
+                         horizontalalignment='center',
+                         verticalalignment='center',
+                         )
     fig.tight_layout()
     fig.savefig(filename)
 
@@ -162,7 +170,7 @@ if __name__ == '__main__':
 
     table.to_csv(os.path.join(results_path, 'main_results.csv'))
     table.to_latex(os.path.join(results_path, 'main_results.tex'))
-    df_to_heatmap(table, os.path.join(results_path, 'main_results.svg'))
+    df_to_heatmap(table['mean'], os.path.join(results_path, 'main_results.svg'))
 
     # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
     #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
