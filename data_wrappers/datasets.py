@@ -488,7 +488,7 @@ class Data(object):
             (array-like, shape = [n_samples, n_features]): floats.
         """
         first_column = True
-        for key, submatrix in mldata.iteritems():
+        for key, submatrix in mldata.items():
             if key not in exclude and type(submatrix) == np.ndarray:
                 new_submatrix = np.copy(submatrix)
 
@@ -567,7 +567,7 @@ class Data(object):
             dataset = self.datasets[name]
             dataset.print_summary()
         else:
-            for name, dataset in self.datasets.iteritems():
+            for name, dataset in self.datasets.items():
                 dataset.print_summary()
 
 def test_datasets(dataset_names):
@@ -585,7 +585,7 @@ def test_datasets(dataset_names):
 
     n_folds = 2
     accuracies = {}
-    for name, dataset in data.datasets.iteritems():
+    for name, dataset in data.datasets.items():
         dataset.print_summary()
         skf = StratifiedKFold(dataset.target, n_folds=n_folds, shuffle=True)
         test_folds = skf.test_folds
