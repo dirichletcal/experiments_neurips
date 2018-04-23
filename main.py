@@ -38,8 +38,8 @@ from data_wrappers.datasets import datasets_others
 from data_wrappers.datasets import datasets_big
 from data_wrappers.datasets import datasets_small_example
 
-#methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid']
-methods = ['beta', 'beta_am', 'isotonic', 'sigmoid']
+#methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
+methods = ['beta', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
@@ -82,6 +82,9 @@ def parse_arguments():
     parser.add_argument('-o', '--output_path', dest='results_path', type=str,
                         default='results_test',
                         help='''Path to store all the results''')
+    parser.add_argument('-v', '--verbose', dest='verbose',
+                        action='store_true', default=False,
+                        help='''Show additional messages''')
     return parser.parse_args()
 
 
@@ -110,7 +113,7 @@ def df_to_heatmap(df, filename, title=None, figsize=(6,4), annotate=True):
 
 
 def compute_all(args):
-    (name, dataset, n_folds, mc, classifier_name) = args
+    (name, dataset, n_folds, mc, classifier_name, verbose) = args
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
     np.random.seed(mc)
@@ -119,6 +122,7 @@ def compute_all(args):
     df = MyDataFrame(columns=columns)
     test_folds = skf.test_folds
     class_counts = np.bincount(dataset.target)
+    # FIXME Change the binarization of the target to some other approach
     if np.alen(class_counts) > 2:
         majority = np.argmax(class_counts)
         t = np.zeros_like(dataset.target)
@@ -134,7 +138,8 @@ def compute_all(args):
                                                                x_test, y_test,
                                                                cv=3,
                                                                score_type=score_type,
-                                                               model_type='full-stack')
+                                                               model_type='full-stack',
+                                                               verbose=verbose)
 
         for method in methods:
             m_text = 'None' if method is None else method
@@ -144,7 +149,8 @@ def compute_all(args):
     return df
 
 
-def main(seed_num, mc_iterations, n_folds, classifier_name, results_path):
+def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
+		 verbose):
     print(locals())
     results_path += '/' + classifier_name
 
@@ -163,7 +169,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path):
 
         mcs = np.arange(mc_iterations)
         # All the arguments as a list of lists
-        args = [[name], [dataset], [n_folds], mcs, [classifier_name]]
+        args = [[name], [dataset], [n_folds], mcs, [classifier_name], [verbose]]
         args = list(itertools.product(*args))
 
         # if called with -m scoop
