@@ -38,8 +38,10 @@ from data_wrappers.datasets import datasets_others
 from data_wrappers.datasets import datasets_big
 from data_wrappers.datasets import datasets_small_example
 
+from utils.visualisations import df_to_heatmap
+
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
-methods = ['beta', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
+methods = [None, 'beta', 'isotonic', 'sigmoid']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
@@ -88,30 +90,6 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def df_to_heatmap(df, filename, title=None, figsize=(6,4), annotate=True):
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(111)
-    if title is not None:
-        ax.set_title(title)
-    cax = ax.pcolor(df)
-    fig.colorbar(cax)
-    ax.set_yticks(np.arange(0.5, len(df.index), 1))
-    ax.set_yticklabels([' '.join(row).strip() for row in df.index.values])
-    ax.set_xticks(np.arange(0.5, len(df.columns), 1))
-    ax.set_xticklabels([' '.join(col).strip() for col in df.columns.values],
-                       rotation = 45, ha="right")
-
-    if annotate:
-        for y in range(df.shape[0]):
-            for x in range(df.shape[1]):
-                plt.text(x + 0.5, y + 0.5, '%.2f' % df.values[y, x],
-                         horizontalalignment='center',
-                         verticalalignment='center',
-                         )
-    fig.tight_layout()
-    fig.savefig(filename)
-
-
 def compute_all(args):
     (name, dataset, n_folds, mc, classifier_name, verbose) = args
     classifier = classifiers[classifier_name]
@@ -151,6 +129,7 @@ def compute_all(args):
 
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 		 verbose):
+    global methods
     print(locals())
     results_path += '/' + classifier_name
 
@@ -187,8 +166,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         print(table)
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
         df_all = df_all.append(df)
-    table = df_all.pivot_table(values=['acc', 'loss'], index=['dataset', 'method'],
-                           aggfunc=[np.mean, np.std])
+    table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
+                               index=['dataset', 'method'],
+                               aggfunc=[np.mean, np.std])
     if not os.path.exists(results_path):
         os.makedirs(results_path)
 
@@ -201,6 +181,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
     #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
     #                [None, 'None', 'isotonic', 'sigmoid']]
+    # Change None for 'None'
+    methods = ['None' if method is None else method for method in methods]
     remove_list = [[]]
     for rem in remove_list:
         df_rem = df_all[np.logical_not(np.in1d(df_all.method, rem))]
