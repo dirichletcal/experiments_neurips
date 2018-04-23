@@ -201,8 +201,23 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
 
         df = self._preproc(X)
 
-        proba[:, 1] = self.calibrator.predict(df)
-        proba[:, 0] = 1. - proba[:, 1]
+        # FIXME Should this be predict or predict_proba?
+        if hasattr(self.calibrator, "predict_proba"):
+            prediction = self.calibrator.predict_proba(df)
+        elif hasattr(self.calibrator, "predict"):
+            prediction = self.calibrator.predict(df)
+        else:
+	        raise RuntimeError('classifier has no predict_proba or ' +
+	                           'predict method.')
+
+        if len(prediction.shape) == 1:
+            proba[:, 1] = prediction
+            proba[:, 0] = 1. - proba[:, 1]
+        elif len(prediction.shape) == 2:
+            proba = prediction
+        else:
+            raise RuntimeError('The prediction is expected to be binary ' +
+                               'but multiple classes returned from calibrator')
 
         # Deal with cases where the predicted probability minimally exceeds 1.0
         proba[(1.0 < proba) & (proba <= 1.0 + 1e-5)] = 1.0
