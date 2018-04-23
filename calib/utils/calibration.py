@@ -52,8 +52,8 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             classifier.fit(x_t, y_t)
             for method in methods:
                 if verbose:
-                    print("Calibrating with " + 'none' if method is None else
-                          method)
+                    print("Calibrating with {}".format(
+                              'none' if method is None else method))
                 ccv = calibrate(classifier, x_c, y_c, method=method,
                                 score_type=score_type)
                 if method in ["beta_test_strict", "beta_test_relaxed"]:
