@@ -28,6 +28,7 @@ from calib.utils.calibration import cv_calibration
 from calib.utils.dataframe import MyDataFrame
 from calib.utils.functions import get_sets
 from calib.utils.functions import table_to_latex
+from calib.utils.functions import to_latex
 from calib.utils.functions import p_value
 
 # Our datasets module
@@ -192,13 +193,15 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         for measure, max_is_better in measures:
             print('-#-#-#-#-#-#-#-#-' + measure + '-#-#-#-#-#-#-#-#-#-#-#-#-#-')
             file_basename = os.path.join(results_path,
-                                         'dataset_vs_method' + measure)
+                                         'dataset_vs_method_' + measure)
             table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                        values=[measure], aggfunc=[np.mean, np.std])
-            str_table = table_to_latex(dataset_names, methods_rem, table,
+            table_to_latex(dataset_names, methods_rem, table,
                                        max_is_better=max_is_better)
-            #with open(file_basename + '.tex', "w") as text_file:
-            #    text_file.write(str_table)
+            str_table = to_latex(dataset_names, table,
+                                       max_is_better=max_is_better)
+            with open(file_basename + '.tex', "w") as text_file:
+                text_file.write(str_table)
             values = table.as_matrix()[:, :len(methods_rem)]
             #print(friedmanchisquare(*[values[:, x] for x in
             #                          np.arange(values.shape[1])]))

@@ -99,35 +99,35 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
 
 # TODO: MPN need to join *to_latex functions
 def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
-             table_size="\\normalsize", caption=''):
+             table_size="\\normalsize", caption=""):
     column_names = table.columns.levels[2]
     n_columns = len(column_names)
     row_names = table.index
     n_rows = len(row_names)
 
-    means = table.as_matrix()[:, :n_columns]*scale
+    means = table.as_matrix()[:, :n_columns].copy()*scale
     avg_ranks = np.zeros(n_columns)
     stds = table.as_matrix()[:, n_columns:]*scale
-    str_table = ('\\begin{table}[!t]\n' +
-                 table_size + '\n' +
-                 '\\centering\n')
-    str_columns = 'l'
-    str_header = ''
+    str_table = ("\\begin{table}[!t]\n" +
+                 table_size + "\n" +
+                 "\\centering\n")
+    str_columns = "l"
+    str_header = ""
 
     for c_name in column_names:
-        str_columns += 'c'
-        str_header += ' & ' + c_name
-    str_header += '\\\\\n'
+        str_columns += "c"
+        str_header += " & " + c_name
+    str_header += "\\\\\n"
 
-    str_table += ('\\begin{tabular}{'+str_columns+'}\n' +
-                  '\\toprule\n' +
+    str_table += ("\\begin{tabular}{"+str_columns+"}\n" +
+                  "\\toprule\n" +
                   str_header +
-                  '\\midrule\n')
+                  "\\midrule\n")
     for i, name in enumerate(row_names):
         name = name[:10] if len(name) > 10 else name
-        name = name.replace('_', r'\_')
+        name = name.replace("_", r"\_")
         str_row_means = name
-        str_row_stds = ''
+        str_row_stds = ""
         v = means[i]
         v_std = stds[i]
         indices = rankdata(v)
@@ -137,34 +137,34 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
             idx = indices[j]
             avg_ranks[j] += idx / n_rows
             if idx == 1:
-                #str_row_means += (' & $\\textbf{{{0:.{1}f}}}_1$'.format(v[j],
+                #str_row_means += (" & $\\textbf{{{0:.{1}f}}}_1$".format(v[j],
                 #                  precision))
-                #str_row_stds += (' & (\\textbf{{\\tiny{{{0:.{1}f}}}}})'.format(v_std[j],
+                #str_row_stds += (" & (\\textbf{{\\tiny{{{0:.{1}f}}}}})".format(v_std[j],
                 #                 precision))
-                str_row_means += (' & $\\mathbf{{{0:.{2}f}\\pm{1:.{2}f}_{{{3}}}}}$'.format(
+                str_row_means += (" & $\\mathbf{{{0:.{2}f}\\pm{1:.{2}f}_{{{3}}}}}$".format(
                                     v[j], v_std[j], precision, 1))
             else:
-                idx_s = '{}'.format(idx)
-                if '.0' in idx_s:
-                    idx_s = '{}'.format(int(idx))
-                str_row_means += (' & ${0:.{2}f}\\pm{1:.{2}f}_{{{3}}}$'.format(
+                idx_s = "{}".format(idx)
+                if ".0" in idx_s:
+                    idx_s = "{}".format(int(idx))
+                str_row_means += (" & ${0:.{2}f}\\pm{1:.{2}f}_{{{3}}}$".format(
                                     v[j], v_std[j], precision, idx_s))
                 # two lines format
-                #str_row_stds += (' & \\tiny{{$({0:.{1}f})$}}'.format(v_std[j],
+                #str_row_stds += (" & \\tiny{{$({0:.{1}f})$}}".format(v_std[j],
                 #                 precision))
-        str_table += str_row_means + '\\\\\n'
-        #str_table += str_row_stds + '\\\\\n'
-    str_table += '\\midrule\n'
-    str_avg = 'average rank'
+        str_table += str_row_means + "\\\\\n"
+        #str_table += str_row_stds + "\\\\\n"
+    str_table += "\\midrule\n"
+    str_avg = "average rank"
     for i in np.arange(n_columns):
-        str_avg += ' & {0:.2f}'.format(avg_ranks[i])
+        str_avg += " & {0:.2f}".format(avg_ranks[i])
 
-    str_table += (str_avg + '\\\\\n' +
-                  '\\bottomrule\n' +
-                  '\\end{tabular}\n' +
-                  '\\caption{\\small{'+caption+'}}\n' +
-                  '\\label{table:table}\n' +
-                  '\\end{table}\n')
+    str_table += (str_avg + "\\\\\n" +
+                  "\\bottomrule\n" +
+                  "\\end{tabular}\n" +
+                  "\\caption{\\small{"+caption+"}}\n" +
+                  "\\label{table:table}\n" +
+                  "\\end{table}\n")
     return str_table
 
 
