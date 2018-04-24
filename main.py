@@ -41,7 +41,7 @@ from data_wrappers.datasets import datasets_small_example
 from utils.visualisations import df_to_heatmap
 
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
-methods = [None, 'beta', 'isotonic', 'sigmoid']
+methods = [None, 'beta', 'dirichlet_full', 'isotonic', 'sigmoid']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
@@ -133,9 +133,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     print(locals())
     results_path += '/' + classifier_name
 
-    #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
-    #                         datasets_others))
-    dataset_names = list(set(datasets_small_example))
+    dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
+                             datasets_others))
+    #dataset_names = list(set(datasets_small_example))
     # dataset_names = datasets_big
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
@@ -176,7 +176,6 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     table.to_csv(os.path.join(results_path, 'main_results.csv'))
     table.to_latex(os.path.join(results_path, 'main_results.tex'))
-    df_to_heatmap(table['mean'], os.path.join(results_path, 'main_results.svg'))
 
     # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
     #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
@@ -192,19 +191,21 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         measures = (('acc', True), ('loss', False), ('brier', False))
         for measure, max_is_better in measures:
             print('-#-#-#-#-#-#-#-#-' + measure + '-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+            file_basename = os.path.join(results_path,
+                                         'dataset_vs_method' + measure)
             table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                        values=[measure], aggfunc=[np.mean, np.std])
-            table_to_latex(dataset_names, methods_rem, table, max_is_better=False)
+            str_table = table_to_latex(dataset_names, methods_rem, table,
+                                       max_is_better=max_is_better)
+            #with open(file_basename + '.tex', "w") as text_file:
+            #    text_file.write(str_table)
             values = table.as_matrix()[:, :len(methods_rem)]
             #print(friedmanchisquare(*[values[:, x] for x in
             #                          np.arange(values.shape[1])]))
-            print(p_value(values))
-            table.to_csv(os.path.join(results_path,
-                                      'main_{}{}.csv'.format(measure, methods_rem)))
-            df_to_heatmap(table['mean'][measure],
-                          os.path.join(results_path,
-                                       '{}_dataset_vs_method.svg'.format(measure)),
-                         title=measure)
+            print('P-value = {}'.format(p_value(values)))
+            table.to_csv(file_basename + '.csv')
+            df_to_heatmap(table['mean'][measure], file_basename + '.svg',
+                          title=measure)
 
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
 
