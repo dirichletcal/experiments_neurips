@@ -19,11 +19,6 @@ from calib.utils.functions import fit_beta_moments
 from calib.utils.functions import fit_beta_midpoint
 from calib.utils.functions import beta_test
 
-import sys
-'''
-    While dirichlet isn't a package, we can import it using this relative path
-'''
-sys.path.insert(0,'dirichlet')
 from dirichlet import DirichletCalibrator
 
 
