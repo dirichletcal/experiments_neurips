@@ -32,12 +32,12 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True):
         n_rows = df.shape[0]
         font_size_pt = plt.rcParams['font.size']
         xlabel_space_pt = max([len(xlabel) for xlabel in xticklabels])
-        fig_height_in = (xlabel_space_pt + (n_rows * (font_size_pt + 3))) / point_inch_ratio
+        fig_height_in = ((xlabel_space_pt + n_rows) * (font_size_pt + 3)) / point_inch_ratio
 
         n_cols = df.shape[1]
         fig_width_in = df.shape[1]+4
         ylabel_space_pt = max([len(ylabel) for ylabel in yticklabels])
-        fig_width_in = (ylabel_space_pt + (n_cols * (font_size_pt * 6))) / point_inch_ratio
+        fig_width_in = ((ylabel_space_pt + n_cols + 5) * (font_size_pt + 3)) / point_inch_ratio
         fig = plt.figure(figsize=(fig_width_in, fig_height_in))
     ax = fig.add_subplot(111)
     if title is not None:
