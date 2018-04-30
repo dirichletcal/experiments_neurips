@@ -16,7 +16,6 @@ import sklearn.ensemble as their
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-import matplotlib.pyplot as plt
 
 # Parallelization
 import itertools
@@ -96,17 +95,11 @@ def compute_all(args):
     score_type = score_types[classifier_name]
     np.random.seed(mc)
     skf = StratifiedKFold(dataset.target, n_folds=n_folds,
-                          shuffle=True)
+                          shuffle=True, random_state=mc)
     df = MyDataFrame(columns=columns)
     test_folds = skf.test_folds
     class_counts = np.bincount(dataset.target)
-    # FIXME Change the binarization of the target to some other approach
-    if np.alen(class_counts) > 2:
-        majority = np.argmax(class_counts)
-        t = np.zeros_like(dataset.target)
-        t[dataset.target == majority] = 1
-    else:
-        t = dataset.target
+    t = dataset.target
     for test_fold in np.arange(n_folds):
         x_train, y_train, x_test, y_test = get_sets(dataset.data, t, test_fold,
                                                     test_folds)
@@ -127,45 +120,64 @@ def compute_all(args):
     return df
 
 
+# FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 		 verbose):
     global methods
     print(locals())
     results_path = os.path.join(results_path, classifier_name)
 
-    dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
-                             datasets_others))
-    #dataset_names = list(set(datasets_small_example))
+    #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
+    #                         datasets_others))
+    dataset_names = list(set(datasets_small_example))
     #dataset_names = datasets_big
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
+    columns_hist = ['method', 'dataset'] + ['{}-{}'.format(i/10, (i+1)/10) for
+                                            i in range(0,10)]
+    df_all_hist = MyDataFrame(columns=columns_hist)
 
     data = Data(dataset_names=dataset_names)
 
     for name, dataset in data.datasets.items():
         df = MyDataFrame(columns=columns)
         print(dataset)
+        if np.any(dataset.counts < n_folds):
+            print(("At least one of the classes does not have enough samples "
+                   "for {} folds").format(n_folds))
+            # TODO Remove problematic class instead
+            print("Removing dataset from experiments and skipping")
+            dataset_names = [aux for aux in dataset_names if aux != name]
+            continue
 
         mcs = np.arange(mc_iterations)
         # All the arguments as a list of lists
         args = [[name], [dataset], [n_folds], mcs, [classifier_name], [verbose]]
         args = list(itertools.product(*args))
 
-        # if called with -m scoop
-        if '__loader__' in globals():
-            dfs = futures.map(compute_all, args)
-        else:
-            dfs = map(compute_all, args)
+        dfs = futures.map(compute_all, args)
 
         df = df.concat(dfs)
 
         table = df[df.dataset == name].pivot_table(
-                    values=['acc', 'loss', 'brier', 'c_probas'],
+                    values=['acc', 'loss', 'brier'],
                     index=['method'], aggfunc=[np.mean, np.std])
 
         print(table)
-        print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+        print('Histogram of all the scores')
+        hist_rows = []
+        for method in methods:
+            m_text = 'None' if method is None else method
+            hist = np.histogram(
+                            np.concatenate(
+                                df[df.dataset == name][df.method ==
+                                                       m_text]['c_probas'].values),
+                                range=(0.0, 1.0))
+            hist_rows.append([m_text, name] + list(hist[0]))
         df_all = df_all.append(df)
+        df_all_hist = df_all_hist.append_rows(hist_rows)
+        print(df_all_hist[df_all_hist['dataset'] == name])
+        print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
     table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
@@ -173,6 +185,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         os.makedirs(results_path)
 
     df_all.to_csv(os.path.join(results_path, 'main_results_data_frame.csv'))
+    df_all_hist = df_all_hist.set_index(['method', 'dataset'])
+    df_all_hist.to_csv(os.path.join(results_path, 'score_histograms.csv'))
+    df_all_hist.to_latex(os.path.join(results_path, 'score_histograms.tex'))
 
     table.to_csv(os.path.join(results_path, 'main_results.csv'))
     table.to_latex(os.path.join(results_path, 'main_results.tex'))

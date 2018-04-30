@@ -1,7 +1,9 @@
 from __future__ import division
 import numpy as np
 from sklearn.cross_validation import StratifiedKFold
+from sklearn.preprocessing import LabelBinarizer
 from sklearn.base import clone
+from numpy.testing import assert_array_equal
 
 from calib.models.calibration import _DummyCalibration
 from calib.models.calibration import CalibratedModel
@@ -36,7 +38,15 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                    y_test, cv=3, score_type=None,
                    model_type='map-only', verbose=False):
     folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
-    mean_probas = {method: np.zeros(np.alen(y_test)) for method in methods}
+    binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
+    # Ensure the same classes in train and test partitions
+    assert_array_equal(np.unique(y_train), np.unique(y_test))
+    binarizer.fit(y_train)
+    y_test_bin = binarizer.transform(y_test)
+    if y_test_bin.shape[1] == 1:
+        y_test_bin = np.hstack((y_test_bin -1, y_test_bin))
+    mean_probas = {method: np.zeros((y_test_bin.shape))
+                   for method in methods}
     classifiers = {method: [] for method in methods}
     main_classifier = clone(base_classifier)
     rejected_count = 0
@@ -48,6 +58,8 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             y_t = y_train[train]
             x_c = x_train[cali]
             y_c = y_train[cali]
+            # Ensure the same classes in train and test partitions
+            assert_array_equal(np.unique(y_t), np.unique(y_c))
             classifier = clone(base_classifier)
             classifier.fit(x_t, y_t)
             for method in methods:
@@ -56,31 +68,21 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                               'none' if method is None else method))
                 ccv = calibrate(classifier, x_c, y_c, method=method,
                                 score_type=score_type)
-                if method in ["beta_test_strict", "beta_test_relaxed"]:
-                    test = beta_test(ccv.calibrator.calibrator_.map_,
-                                     test_type="adev", scores=ccv._preproc(x_c))
-                    if test["p-value"] < 0.05:
-                        rejected_count += 1
                 if model_type == 'map-only':
                     ccv.set_base_estimator(main_classifier,
                                            score_type=score_type)
-                mean_probas[method] += ccv.predict_proba(x_test)[:, 1] / cv
+                predicted_proba = ccv.predict_proba(x_test)
+                if predicted_proba.shape[1] == 1:
+                    predicted_proba = np.hstack((predicted_proba - 1,
+                                                predicted_proba))
+                mean_probas[method] += predicted_proba / cv
                 classifiers[method].append(ccv)
-    if "beta_test_strict" in methods and rejected_count < cv:
-        mean_probas["beta_test_strict"] = 0
-        for classifier in classifiers["beta_test_strict"]:
-            classifier.calibrator = _DummyCalibration()
-            mean_probas["beta_test_strict"] += classifier.predict_proba(x_test)[:, 1] / cv
-    if "beta_test_relaxed" in methods and rejected_count == 0:
-        mean_probas["beta_test_relaxed"] = 0
-        for classifier in classifiers["beta_test_relaxed"]:
-            classifier.calibrator = _DummyCalibration()
-            mean_probas["beta_test_relaxed"] += classifier.predict_proba(x_test)[:, 1] / cv
-    losses = {method: cross_entropy(mean_probas[method], y_test) for method
+
+    losses = {method: cross_entropy(mean_probas[method], y_test_bin) for method
               in methods}
-    accs = {method: np.mean((mean_probas[method] >= 0.5) == y_test) for method
+    accs = {method: np.mean((mean_probas[method].argmax(axis=1)) == y_test) for method
             in methods}
-    briers = {method: brier_score(mean_probas[method], y_test) for method
+    briers = {method: brier_score(mean_probas[method], y_test_bin) for method
               in methods}
     return accs, losses, briers, mean_probas, classifiers
 
