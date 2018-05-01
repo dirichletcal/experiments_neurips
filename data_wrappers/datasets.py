@@ -123,9 +123,10 @@ class Dataset(object):
                "Data shape = {}\n"
                "Target shape = {}\n"
                "Target classes = {}\n"
-               "Target labels = {}").format(self.name, self.data.shape,
+               "Target labels = {}\n"
+               "Target counts = {}").format(self.name, self.data.shape,
                                             self.target.shape, self.classes,
-                                            self.names)
+                                            self.names, self.counts)
 
 
 class Data(object):
