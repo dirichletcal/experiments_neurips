@@ -6,21 +6,28 @@ from scipy.special import expit
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.utils import check_X_y, indexable, column_or_1d
 from sklearn.utils.validation import check_is_fitted
-from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LogisticRegression
-from sklearn.calibration import _SigmoidCalibration as sk_sigmoid
+from sklearn.isotonic import IsotonicRegression
+from sklearn.calibration import _SigmoidCalibration
 
-from betacal import BetaCalibration 
-
-from .sk_calibration import _SigmoidCalibration as sk_sigmoid_notrick
+from betacal import BetaCalibration
 
 from calib.utils.functions import fit_beta_nll
 from calib.utils.functions import fit_beta_moments
 from calib.utils.functions import fit_beta_midpoint
 from calib.utils.functions import beta_test
 
+from calib.utils.multiclass import OneVsRestCalibrator
+
 from dirichlet import DirichletCalibrator
 
+class IsotonicCalibration(IsotonicRegression):
+    def predict_proba(self, *args, **kwargs):
+        return super(IsotonicCalibration, self).predict(*args, **kwargs)
+
+class SigmoidCalibration(_SigmoidCalibration):
+    def predict_proba(self, *args, **kwargs):
+        return super(SigmoidCalibration, self).predict(*args, **kwargs)
 
 class CalibratedModel(BaseEstimator, ClassifierMixin):
     def __init__(self, base_estimator=None, method=None, score_type=None):
@@ -105,6 +112,16 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
 
         if self.method is None:
             self.calibrator = _DummyCalibration()
+        elif self.method == 'isotonic':
+            self.calibrator = OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip'))
+        elif self.method == 'sigmoid':
+            self.calibrator = OneVsRestCalibrator(SigmoidCalibration())
+        elif self.method == 'beta':
+            self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="abm"))
+        elif self.method == 'beta_am':
+            self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="am"))
+        elif self.method == 'beta_ab':
+            self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="ab"))
         elif self.method == 'multinomial':
             self.calibrator = _MultinomialCalibrator()
         elif self.method == 'dirichlet_full':
