@@ -125,7 +125,11 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         elif self.method == 'multinomial':
             self.calibrator = _MultinomialCalibrator()
         elif self.method == 'dirichlet_full':
-            self.calibrator = DirichletCalibrator()
+            self.calibrator = DirichletCalibrator(matrix_type='full')
+        elif self.method == 'dirichlet_diag':
+            self.calibrator = DirichletCalibrator(matrix_type='diagonal')
+        elif self.method == 'dirichlet_fix_diag':
+            self.calibrator = DirichletCalibrator(matrix_type='fixed_diagonal')
         else:
             raise ValueError('method should be None, "multinomial", '
                              'or "dirichlet_full". '

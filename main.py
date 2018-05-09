@@ -40,7 +40,8 @@ from data_wrappers.datasets import datasets_small_example
 from utils.visualisations import df_to_heatmap
 
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
-methods = [None, 'multinomial', 'dirichlet_full', 'isotonic', 'sigmoid',
+methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
+           'dirichlet_fix_diag', 'isotonic', 'sigmoid',
            'beta', 'beta_ab', 'beta_am']
 classifiers = {
                   'nbayes': GaussianNB(),
@@ -130,9 +131,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
     #                         datasets_others))
-    dataset_names = list(set(datasets_li2014))
+    #dataset_names = list(set(datasets_li2014))
     #dataset_names = list(set(datasets_others))
-    #dataset_names = list(set(datasets_small_example))
+    dataset_names = list(set(datasets_small_example))
     #dataset_names = datasets_big
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
