@@ -49,7 +49,7 @@ classifiers = {
                   'adas': their.AdaBoostClassifier(n_estimators=200),
                   'forest': RandomForestClassifier(n_estimators=200),
                   'mlp': MLPClassifier(),
-                  'svm': SVC()
+                  'svm': SVC(probability=True)
 }
 score_types = {
                   'nbayes': 'predict_proba',
@@ -130,7 +130,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
     #                         datasets_others))
-    dataset_names = list(set(datasets_others))
+    dataset_names = list(set(datasets_li2014))
+    #dataset_names = list(set(datasets_others))
     #dataset_names = list(set(datasets_small_example))
     #dataset_names = datasets_big
     dataset_names.sort()
@@ -186,13 +187,13 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     if not os.path.exists(results_path):
         os.makedirs(results_path)
 
-    df_all.to_csv(os.path.join(results_path, 'main_results_data_frame.csv'))
+    df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
     df_all_hist = df_all_hist.set_index(['method', 'dataset'])
-    df_all_hist.to_csv(os.path.join(results_path, 'score_histograms.csv'))
-    df_all_hist.to_latex(os.path.join(results_path, 'score_histograms.tex'))
+    df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
+    df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
 
-    table.to_csv(os.path.join(results_path, 'main_results.csv'))
-    table.to_latex(os.path.join(results_path, 'main_results.tex'))
+    table.to_csv(os.path.join(results_path, classifier_name + '_main_results.csv'))
+    table.to_latex(os.path.join(results_path, classifier_name + '_main_results.tex'))
 
     # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
     #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
@@ -208,14 +209,22 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         measures = (('acc', True), ('loss', False), ('brier', False))
         for measure, max_is_better in measures:
             print('-#-#-#-#-#-#-#-#-' + measure + '-#-#-#-#-#-#-#-#-#-#-#-#-#-')
-            file_basename = os.path.join(results_path,
-                                         'dataset_vs_method_' + measure)
+            file_basename = os.path.join(results_path, classifier_name +
+                                         '_dataset_vs_method_' + measure)
             table = df_rem.pivot_table(index=['dataset'], columns=['method'],
                                        values=[measure], aggfunc=[np.mean, np.std])
             table_to_latex(dataset_names, methods_rem, table,
                                        max_is_better=max_is_better)
-            str_table = to_latex(dataset_names, table,
-                                       max_is_better=max_is_better)
+            str_table = to_latex(dataset_names, table, precision=2,
+                                 table_size='tiny', max_is_better=max_is_better,
+                                 caption=('Ranking of calibration methods' +
+                                          ' applied on the classifier method' +
+                                          ' {} with the measure={}'
+                                         ).format(classifier_name, measure),
+                                 label='table:{}:{}'.format(classifier_name,
+                                                            measure)
+                                )
+
             with open(file_basename + '.tex', "w") as text_file:
                 text_file.write(str_table)
             values = table.as_matrix()[:, :len(methods_rem)]

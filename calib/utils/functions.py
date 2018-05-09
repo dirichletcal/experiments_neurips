@@ -97,9 +97,13 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
     print("\\end{table}")
 
 
-# TODO: MPN need to join *to_latex functions
+# TODO MPN is currently using this one to generate the exported files,
+# we need to see the difference between this one and the function
+# table_to_latex that outputs on the stout
+# TODO should we make the replacements of underscores out of this function for
+# the column and row names?
 def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
-             table_size="\\normalsize", caption=""):
+             table_size="\\normalsize", caption="", label='table'):
     column_names = table.columns.levels[2]
     n_columns = len(column_names)
     row_names = table.index
@@ -116,7 +120,7 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
 
     for c_name in column_names:
         str_columns += "c"
-        str_header += " & " + c_name
+        str_header += " & " + c_name.replace('_', r'\_')
     str_header += "\\\\\n"
 
     str_table += ("\\begin{tabular}{"+str_columns+"}\n" +
@@ -162,8 +166,8 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     str_table += (str_avg + "\\\\\n" +
                   "\\bottomrule\n" +
                   "\\end{tabular}\n" +
-                  "\\caption{\\small{"+caption+"}}\n" +
-                  "\\label{table:table}\n" +
+                  "\\caption{"+caption+"}\n" +
+                  "\\label{"+label+"}\n" +
                   "\\end{table}\n")
     return str_table
 
