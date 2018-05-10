@@ -20,6 +20,7 @@ from calib.utils.functions import beta_test
 from calib.utils.multiclass import OneVsRestCalibrator
 
 from dirichlet import DirichletCalibrator
+from dirichlet.calib.multinomial import MultinomialRegression
 
 class IsotonicCalibration(IsotonicRegression):
     def predict_proba(self, *args, **kwargs):
@@ -123,7 +124,7 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         elif self.method == 'beta_ab':
             self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="ab"))
         elif self.method == 'multinomial':
-            self.calibrator = _MultinomialCalibrator()
+            self.calibrator = MultinomialRegression()
         elif self.method == 'dirichlet_full':
             self.calibrator = DirichletCalibrator(matrix_type='full')
         elif self.method == 'dirichlet_diag':
@@ -195,59 +196,6 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         """
         check_is_fitted(self, ["calibrator"])
         return np.argmax(self.predict_proba(X), axis=1)
-
-
-class _MultinomialCalibrator(BaseEstimator, RegressorMixin):
-    """Sigmoid regression model.
-
-    Attributes
-    ----------
-    a_ : float
-        The slope.
-
-    b_ : float
-        The intercept.
-    """
-    def fit(self, X, y, sample_weight=None):
-        """Fit the model using X, y as training data.
-
-        Parameters
-        ----------
-        X : array-like, shape (n_samples,)
-            Training data.
-
-        y : array-like, shape (n_samples,)
-            Training target.
-
-        sample_weight : array-like, shape = [n_samples] or None
-            Sample weights. If None, then samples are equally weighted.
-
-        Returns
-        -------
-        self : object
-            Returns an instance of self.
-        """
-        X, y = indexable(X, y)
-        self.lr = LogisticRegression(
-            C=99999999999,
-            multi_class='multinomial', solver='saga'
-            ).fit(X, y, sample_weight)
-        return self
-
-    def predict_proba(self, T):
-        """Predict new data.
-
-        Parameters
-        ----------
-        T : array-like, shape (n_samples,)
-            Data to predict from.
-
-        Returns
-        -------
-        T_ : array, shape (n_samples, n_classes)
-            The predicted data.
-        """
-        return self.lr.predict_proba(T)
 
 
 class _DummyCalibration(BaseEstimator, RegressorMixin):
