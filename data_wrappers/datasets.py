@@ -16,7 +16,7 @@ __status__ = "Development"
 import urllib
 from os.path import isfile
 
-dataset_names_binary = ['credit-approval', 'diabetes',
+datasets_binary = ['credit-approval', 'diabetes',
             'german', 'heart-statlog', 'hepatitis',
             'horse', 'ionosphere', 'lung-cancer',
             'mushroom', 'scene-classification',
@@ -50,6 +50,11 @@ datasets_big = ['abalone', 'car', 'flare', 'german', 'landsat-satellite',
                 'spambase', 'waveform-5000', 'yeast']
 
 datasets_small_example = ['iris', 'autos', 'yeast', 'spambase']
+
+datasets_all = list(set(datasets_li2014 + datasets_hempstalk2008 +
+                        datasets_others + datasets_binary))
+
+datasets_non_binary = [d for d in datasets_all if d not in datasets_binary]
 
 class Dataset(object):
     def __init__(self, name, data, target):

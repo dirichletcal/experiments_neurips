@@ -39,6 +39,8 @@ from data_wrappers.datasets import datasets_hempstalk2008
 from data_wrappers.datasets import datasets_others
 from data_wrappers.datasets import datasets_big
 from data_wrappers.datasets import datasets_small_example
+from data_wrappers.datasets import datasets_binary
+from data_wrappers.datasets import datasets_non_binary
 
 
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
@@ -90,6 +92,10 @@ def parse_arguments():
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='store_true', default=False,
                         help='''Show additional messages''')
+    parser.add_argument('-d', '--datasets', dest='datasets', type=str,
+                        default='iris,autos',
+                        help='''Comma separated dataset names or one of the
+                        defined groups in the datasets package''')
     return parser.parse_args()
 
 
@@ -126,17 +132,15 @@ def compute_all(args):
 
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
-		 verbose):
+		 verbose, datasets='datasets_small_example'):
     global methods
     print(locals())
     results_path = os.path.join(results_path, classifier_name)
 
-    #dataset_names = list(set(datasets_li2014 + datasets_hempstalk2008 +
-    #                         datasets_others))
-    #dataset_names = list(set(datasets_li2014))
-    #dataset_names = list(set(datasets_others))
-    dataset_names = list(set(datasets_small_example))
-    #dataset_names = datasets_big
+    if datasets in globals():
+        dataset_names = globals()[datasets]
+    else:
+        dataset_names = datasets.split(',')
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
     columns_hist = ['method', 'dataset'] + ['{}-{}'.format(i/10, (i+1)/10) for
