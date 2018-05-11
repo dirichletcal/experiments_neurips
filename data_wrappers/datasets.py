@@ -408,7 +408,10 @@ class Data(object):
 
             # TODO this dataset is divided in two files, see more elegant way
             # to add it
-            mldata = fetch_mldata('uci-20070111 solar-flare_1')
+            try:
+                mldata = fetch_mldata('uci-20070111 solar-flare_1')
+            except Exception:
+                return None
 
             target = np.hstack((target, mldata.target))
             data = np.vstack((data, mldata['int0'].T))
