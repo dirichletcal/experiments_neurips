@@ -43,7 +43,8 @@ from data_wrappers.datasets import datasets_binary
 from data_wrappers.datasets import datasets_non_binary
 
 
-#methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
+#methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid',
+#           'dirichlet_full']
 methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
            'dirichlet_fix_diag', 'isotonic', 'sigmoid',
            'beta', 'beta_ab', 'beta_am']
@@ -68,6 +69,8 @@ score_types = {
 
 columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
            'c_probas']
+
+save_columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier']
 
 
 def parse_arguments():
@@ -169,6 +172,12 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
         df = df.concat(dfs)
 
+        if not os.path.exists(results_path):
+            os.makedirs(results_path)
+
+        df[save_columns].to_csv(os.path.join(results_path, classifier_name +
+                                             '_' + name + '_raw_results.csv'))
+
         table = df[df.dataset == name].pivot_table(
                     values=['acc', 'loss', 'brier'],
                     index=['method'], aggfunc=[np.mean, np.std])
@@ -191,8 +200,6 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
-    if not os.path.exists(results_path):
-        os.makedirs(results_path)
 
     df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
     df_all_hist = df_all_hist.set_index(['method', 'dataset'])
