@@ -29,6 +29,9 @@ from calib.utils.functions import table_to_latex
 from calib.utils.functions import to_latex
 from calib.utils.functions import p_value
 
+# Visualisations
+from calib.utils.plots import df_to_heatmap
+
 # Our datasets module
 from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_li2014
@@ -37,7 +40,6 @@ from data_wrappers.datasets import datasets_others
 from data_wrappers.datasets import datasets_big
 from data_wrappers.datasets import datasets_small_example
 
-from utils.visualisations import df_to_heatmap
 
 #methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
 methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
