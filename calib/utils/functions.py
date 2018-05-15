@@ -103,7 +103,8 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
 # TODO should we make the replacements of underscores out of this function for
 # the column and row names?
 def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
-             table_size="\\normalsize", caption="", label='table'):
+             table_size="\\normalsize", caption="", label='table',
+             add_std=True):
     column_names = table.columns.levels[2]
     n_columns = len(column_names)
     row_names = table.index
@@ -131,7 +132,6 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
         name = name[:10] if len(name) > 10 else name
         name = name.replace("_", r"\_")
         str_row_means = name
-        str_row_stds = ""
         v = means[i]
         v_std = stds[i]
         indices = rankdata(v)
@@ -141,27 +141,31 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
             idx = indices[j]
             avg_ranks[j] += idx / n_rows
             if idx == 1:
-                #str_row_means += (" & $\\textbf{{{0:.{1}f}}}_1$".format(v[j],
-                #                  precision))
-                #str_row_stds += (" & (\\textbf{{\\tiny{{{0:.{1}f}}}}})".format(v_std[j],
-                #                 precision))
-                str_row_means += (" & $\\mathbf{{{0:.{2}f}\\pm{1:.{2}f}_{{{3}}}}}$".format(
-                                    v[j], v_std[j], precision, 1))
+                str_row_means += (" & $\\mathbf{{{0:.{1}f}".format(
+                                    v[j], precision))
+                if add_std:
+                    str_row_means += ("\\pm{0:.{1}f}".format( v_std[j],
+                                                             precision))
+                str_row_means += ("_{{{0}}}}}$".format(1))
+
             else:
                 idx_s = "{}".format(idx)
                 if ".0" in idx_s:
                     idx_s = "{}".format(int(idx))
-                str_row_means += (" & ${0:.{2}f}\\pm{1:.{2}f}_{{{3}}}$".format(
-                                    v[j], v_std[j], precision, idx_s))
-                # two lines format
-                #str_row_stds += (" & \\tiny{{$({0:.{1}f})$}}".format(v_std[j],
-                #                 precision))
+                str_row_means += (" & ${0:.{1}f}".format( v[j], precision))
+                if add_std:
+                    str_row_means += ("\\pm{0:.{1}f}".format( v_std[j],
+                                                             precision))
+
+                str_row_means += ("_{{{0}}}$".format(idx_s))
         str_table += str_row_means + "\\\\\n"
-        #str_table += str_row_stds + "\\\\\n"
     str_table += "\\midrule\n"
     str_avg = "average rank"
     for i in np.arange(n_columns):
-        str_avg += " & {0:.2f}".format(avg_ranks[i])
+        if avg_ranks[i] == min(avg_ranks):
+            str_avg += " & \\bf{{{0:.2f}}}".format(avg_ranks[i])
+        else:
+            str_avg += " & {0:.2f}".format(avg_ranks[i])
 
     str_table += (str_avg + "\\\\\n" +
                   "\\bottomrule\n" +
