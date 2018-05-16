@@ -3,12 +3,15 @@ import re
 import pandas as pd
 import numpy as np
 
+from functools import partial
+
 from calib.utils.functions import to_latex
 
 # Visualisations
 from calib.utils.plots import df_to_heatmap
 
 from scipy.stats import ranksums
+from scipy.stats import mannwhitneyu
 
 
 def load_all_csv(results_path, expression=".*.csv"):
@@ -42,6 +45,14 @@ def create_summary_path(summary_path, results_path='./'):
 
 
 def compute_ranksums(table):
+    return paired_test(table, stats_func=ranksums)
+
+
+def compute_mannwhitneyu(table):
+    return paired_test(table, stats_func=partial(mannwhitneyu,
+                                                 alternative='less'))
+
+def paired_test(table, stats_func=ranksums):
     measure = table.columns.levels[0].values[0]
     pvalues = np.zeros((table.columns.shape[0], table.columns.shape[0]))
     statistics = np.zeros_like(pvalues)
@@ -49,7 +60,7 @@ def compute_ranksums(table):
         for j, method_j in enumerate(table.columns.levels[1]):
             sample_i = table[measure, method_i]
             sample_j = table[measure, method_j]
-            statistic, pvalue = ranksums(sample_i, sample_j)
+            statistic, pvalue = stats_func(sample_i, sample_j)
             pvalues[i, j] = pvalue
             statistics[i, j] = statistic
     index = pd.MultiIndex.from_product([table.columns.levels[1],
@@ -65,28 +76,29 @@ def compute_ranksums(table):
     return df_statistics.join(df_pvalues)
 
 
-def export_ranksums_to_latex(df_ranksums, filename, threshold=0.005,
-                            caption='', label='', fontsize='\\tiny'):
+def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
+                            caption='', label='', fontsize='\\tiny',
+                            str_format='%.1f'):
     def pvalue_to_tex(s, p, threshold):
-        s = '%.1f' % s
+        s = str_format % s
         if p < threshold:
             s = '\\bf{' + s + '}'
         return s
 
-    statistics = df_ranksums.xs('statistic', axis=1, level=1, drop_level=False)
-    pvalues = df_ranksums.xs('pvalue', axis=1, level=1, drop_level=False)
+    statistics = df_statistic.xs('statistic', axis=1, level=1, drop_level=False)
+    pvalues = df_statistic.xs('pvalue', axis=1, level=1, drop_level=False)
 
-    table = np.empty((df_ranksums.index.shape[0],
-                          df_ranksums.columns.levels[0].shape[0]),
+    table = np.empty((df_statistic.index.shape[0],
+                          df_statistic.columns.levels[0].shape[0]),
                     dtype=np.object_)
-    for i, method_i in enumerate(df_ranksums.index):
-        for j, method_j in enumerate(df_ranksums.index):
+    for i, method_i in enumerate(df_statistic.index):
+        for j, method_j in enumerate(df_statistic.index):
             table[i, j] = pvalue_to_tex(statistics.iloc[i, j],
                                         pvalues.iloc[i, j],
                                         threshold)
 
-    index = [x.replace('_', '\_') for x in df_ranksums.index]
-    columns = [x.replace('_', '\_') for x in df_ranksums.columns.levels[0]]
+    index = [x.replace('_', '\_') for x in df_statistic.index]
+    columns = [x.replace('_', '\_') for x in df_statistic.columns.levels[0]]
     df = pd.DataFrame(table, index=index, columns=columns)
 
     tex_table = df.to_latex(escape=False)
@@ -144,18 +156,35 @@ def generate_summaries(df, summary_path):
 
         np.isfinite(table.values).mean(axis=0)
 
+        # Wilcoxon rank-sum test two-tailed
         df_ranksums = compute_ranksums(table)
 
         filename = os.path.join(summary_path,
                                 'ranksum_pvalues_{}.tex'.format(measure))
         threshold = 0.005
-        export_ranksums_to_latex(df_ranksums, filename, threshold=threshold,
+        export_statistic_to_latex(df_ranksums, filename, threshold=threshold,
                                  caption=('Wilcoxon rank-sum test statistic '
                                           'for every paired method for the '
                                           'measure of {}. Statistic is bold '
                                           'when p-value is smaller than '
                                           '{}').format(measure, threshold),
                                  label='tab:ranksum:{}'.format(measure)
+                                )
+
+        # Mann-Whitney rank test one-sided alternative is first is smaller than
+        df_mannwhitneyu = compute_mannwhitneyu(table)
+
+        filename = os.path.join(summary_path,
+                                'mannwhitneyu_pvalues_{}.tex'.format(measure))
+        export_statistic_to_latex(df_mannwhitneyu, filename, threshold=threshold,
+                                  caption=('Mann Whitney rank test statistic '
+                                           'one sided with alternative less '
+                                           'for every paired method for the '
+                                           'measure of {}. Statistic is bold '
+                                           'when p-value is smaller than '
+                                           '{}').format(measure, threshold),
+                                  label='tab:mannwhitney:{}'.format(measure),
+                                  str_format='%1.1e'
                                 )
 
         for classifier_name in classifiers:
