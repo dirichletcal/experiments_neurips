@@ -1,13 +1,14 @@
 from __future__ import division
 import numpy as np
-import matplotlib                                                                                                                                                               
-matplotlib.use('Agg')  
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LinearRegression
 from scipy.stats import beta
 
 from calib.utils.functions import fit_beta_moments
+from calib.utils.functions import df_normalise
 
 
 def reliability_diagram(prob, Y, marker='--', label='', alpha=1, linewidth=1,
@@ -264,7 +265,8 @@ def plot_score_distributions(scores_pos, scores_neg, calibrator):
 #
 #     plt.show()
 
-def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True):
+def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
+                 normalise_columns=False, normalise_rows=False):
     ''' Exports a heatmap of the given pandas DataFrame
 
     Parameters
@@ -285,6 +287,10 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True):
     annotate:   bool
         If true, adds numbers inside each box
     '''
+    if normalise_columns:
+        df = df_normalise(df, columns=True)
+    if normalise_rows:
+        df = df_normalise(df, columns=False)
 
     yticklabels = [''.join(row).strip() for row in df.index.values]
     xticklabels = [''.join(col).strip() for col in df.columns.values]
@@ -313,7 +319,6 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True):
     ax.set_xticklabels(xticklabels, rotation = 45, ha="right")
 
     middle_value = (df.values.max() + df.values.min())/2.0
-    print(middle_value)
     if annotate:
         for y in range(df.shape[0]):
             for x in range(df.shape[1]):
@@ -329,3 +334,4 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True):
         print(e)
         print('Canceling tight_layout for figure {}'.format(filename))
     fig.savefig(filename)
+    plt.close(fig)

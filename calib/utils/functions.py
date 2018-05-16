@@ -413,3 +413,13 @@ def beta_test(calibration_map, test_type="adev", scores=None, n_curves=100,
     else:
         raise ValueError("Unknown test type. Expected 'adev' or 'madac'. Got "
                          "{}".format(test_type))
+
+
+def df_normalise(df, columns=True):
+    '''
+    rows: bool
+        Normalize each column to sum to one, or each row to sum to one
+    '''
+    if columns:
+        return df/df.sum(axis=0)
+    return (df.T/df.sum(axis=1)).T

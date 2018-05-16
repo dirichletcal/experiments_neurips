@@ -29,6 +29,9 @@ from calib.utils.functions import table_to_latex
 from calib.utils.functions import to_latex
 from calib.utils.functions import p_value
 
+from calib.utils.summaries import create_summary_path
+from calib.utils.summaries import generate_summaries
+
 # Visualisations
 from calib.utils.plots import df_to_heatmap
 
@@ -197,6 +200,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         df_all_hist = df_all_hist.append_rows(hist_rows)
         print(df_all_hist[df_all_hist['dataset'] == name])
         print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+
     table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
@@ -208,6 +212,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     table.to_csv(os.path.join(results_path, classifier_name + '_main_results.csv'))
     table.to_latex(os.path.join(results_path, classifier_name + '_main_results.tex'))
+
 
     # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
     #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
