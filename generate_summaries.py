@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import sys
 import os
 import re
 from argparse import ArgumentParser
@@ -62,18 +61,41 @@ def compute_ranksums(table):
             sample_i = table[measure, method_i]
             sample_j = table[measure, method_j]
             statistic, pvalue = ranksums(sample_i, sample_j)
-            pvalues[i,j] = pvalue
+            pvalues[i, j] = pvalue
     df_ranksums = pd.DataFrame(pvalues, index=table.columns.levels[1],
-                              columns=table.columns.levels[1])
+                               columns=table.columns.levels[1])
     return df_ranksums
 
 
-def main(results_path, summary_path):
-    df = load_all_csv(results_path, ".*raw_results.csv")
-    summary_path = create_summary_path(summary_path, results_path)
+def export_ranksums_to_latex(df_ranksums, filename):
+    def pvalue_to_tex(x):
+        string = '%.1e' % x
+        if x < 0.04:
+            string = '\\bf{' + string + '}'
+        return string
 
+    df_ranksums = df_ranksums.applymap(pvalue_to_tex)
+    df_ranksums.index = [x.replace('_', '\_') for x in df_ranksums.index]
+    df_ranksums.columns = [x.replace('_', '\_') for x in
+                           df_ranksums.columns]
+    df_ranksums.to_latex(filename, escape=False)
+
+
+def generate_summaries(df, summary_path):
+    '''
+    df:     pandas.DataFrame
+        The dataframe needs at least the following columns
+        - 'dataset': name of the dataset
+        - 'method': calibration method (or method to compare)
+        - 'mc': Monte Carlo iteration
+        - 'test_fold': Number of the test fold
+        - 'acc': Accuracy
+        - 'loss': A loss
+        - 'brier': Brier score
+        - 'classifier': Original classifier used to train
+
+    '''
     dataset_names = df['dataset'].unique()
-    methods = df['method'].unique()
     classifiers = df['classifier'].unique()
     measures = (('acc', True), ('loss', False), ('brier', False))
     for measure, max_is_better in measures:
@@ -81,56 +103,48 @@ def main(results_path, summary_path):
                                values=[measure], aggfunc=[np.mean, np.std])
 
         str_table = to_latex(classifiers, table, precision=2,
-                                 table_size='tiny', max_is_better=max_is_better,
-                                 caption=('Ranking of calibration methods' +
-                                          ' applied on different classifiers' +
-                                          ' with the mean measure={}'
-                                         ).format(measure),
-                                 label='table:mean:{}'.format(measure)
-                                )
-
-        print(table)
+                             table_size='tiny', max_is_better=max_is_better,
+                             caption=('Ranking of calibration methods ' +
+                                      'applied on different classifiers ' +
+                                      'with the mean measure={}'
+                                      ).format(measure),
+                             label='table:mean:{}'.format(measure))
 
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
-                                      'classifier'],
-                       columns=['method'], values=[measure], aggfunc=[len])
+                                      'classifier'], columns=['method'],
+                               values=[measure], aggfunc=[len])
 
-        assert(np.alltrue(table.values == 1))
+        try:
+            assert(np.alltrue(table.values == 1))
+        except AssertionError as e:
+            print(e)
 
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
-                                      'classifier'],
-                       columns=['method'], values=[measure])
+                                      'classifier'], columns=['method'],
+                               values=[measure])
 
         np.isfinite(table.values).mean(axis=0)
 
         df_ranksums = compute_ranksums(table)
 
-        def pvalue_to_tex(x):
-            string = '%.1e' % x
-            if x < 0.04:
-                string = '\\bf{' + string + '}'
-            return string
-
-        df_ranksums = df_ranksums.applymap(pvalue_to_tex)
-        df_ranksums.index = [x.replace('_', '\_') for x in df_ranksums.index]
-        df_ranksums.columns = [x.replace('_', '\_') for x in
-                               df_ranksums.columns]
-        print(df_ranksums)
-        df_ranksums.to_latex(os.path.join(summary_path,
-                                         'ranksum_pvalues_' + measure +
-                                          '.tex'),
-                            escape=False)
+        filename = os.path.join(summary_path,
+                                'ranksum_pvalues_{}.tex'.format(measure))
+        export_ranksums_to_latex(df_ranksums, filename)
 
         for classifier_name in classifiers:
-            table = df[df['classifier'] == classifier_name].pivot_table(index=['dataset'], columns=['method'],
-                                       values=[measure], aggfunc=[np.mean, np.std])
+            class_mask = df['classifier'] == classifier_name
+            table = df[class_mask].pivot_table(index=['dataset'],
+                                               columns=['method'],
+                                               values=[measure],
+                                               aggfunc=[np.mean, np.std])
 
             str_table = to_latex(dataset_names, table, precision=2,
-                                 table_size='\\tiny', max_is_better=max_is_better,
-                                 caption=('Ranking of calibration methods' +
-                                          ' applied on the classifier' +
-                                          ' {} with the measure={}'
-                                         ).format(classifier_name, measure),
+                                 table_size='\\tiny',
+                                 max_is_better=max_is_better,
+                                 caption=('Ranking of calibration methods ' +
+                                          'applied on the classifier' +
+                                          '{} with the measure={}'
+                                          ).format(classifier_name, measure),
                                  label='table:{}:{}'.format(classifier_name,
                                                             measure),
                                  add_std=False)
@@ -138,6 +152,13 @@ def main(results_path, summary_path):
                                          '_dataset_vs_method_' + measure)
             with open(file_basename + '.tex', "w") as text_file:
                 text_file.write(str_table)
+
+
+def main(results_path, summary_path):
+    df = load_all_csv(results_path, ".*raw_results.csv")
+    summary_path = create_summary_path(summary_path, results_path)
+    generate_summaries(df, summary_path)
+
 
 if __name__ == '__main__':
     # __test_1()
