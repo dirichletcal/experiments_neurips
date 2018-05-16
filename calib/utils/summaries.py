@@ -169,7 +169,7 @@ def generate_summaries(df, summary_path):
                                  table_size='\\tiny',
                                  max_is_better=max_is_better,
                                  caption=('Ranking of calibration methods ' +
-                                          'applied on the classifier' +
+                                          'applied on the classifier ' +
                                           '{} with the measure={}'
                                           ).format(classifier_name, measure),
                                  label='table:{}:{}'.format(classifier_name,
