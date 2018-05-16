@@ -177,11 +177,13 @@ def generate_summaries(df, summary_path):
         filename = os.path.join(summary_path,
                                 'mannwhitneyu_pvalues_{}.tex'.format(measure))
         export_statistic_to_latex(df_mannwhitneyu, filename, threshold=threshold,
-                                  caption=('Mann Whitney rank test statistic '
-                                           'one sided with alternative less '
-                                           'for every paired method for the '
+                                  caption=('Mann-Whitney U test statistic '
+                                           'one sided with alternative '
+                                           'hypothesis the method in row i '
+                                           'is less than the method in column j '
+                                           'for every pair of methods for the '
                                            'measure of {}. Statistic is bold '
-                                           'when p-value is smaller than '
+                                           'when the p-value is smaller than '
                                            '{}').format(measure, threshold),
                                   label='tab:mannwhitney:{}'.format(measure),
                                   str_format='%1.1e'
