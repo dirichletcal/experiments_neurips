@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LinearRegression
@@ -9,6 +9,8 @@ from scipy.stats import beta
 
 from calib.utils.functions import fit_beta_moments
 from calib.utils.functions import df_normalise
+
+import pandas as pd
 
 
 def reliability_diagram(prob, Y, marker='--', label='', alpha=1, linewidth=1,
@@ -265,6 +267,12 @@ def plot_score_distributions(scores_pos, scores_neg, calibrator):
 #
 #     plt.show()
 
+def multiindex_to_strings(index):
+    if isinstance(index, pd.MultiIndex):
+        return [' '.join(col).strip() for col in index.values]
+    return [''.join(col).strip() for col in index.values]
+
+
 def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
                  normalise_columns=False, normalise_rows=False):
     ''' Exports a heatmap of the given pandas DataFrame
@@ -292,8 +300,8 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
     if normalise_rows:
         df = df_normalise(df, columns=False)
 
-    yticklabels = [''.join(row).strip() for row in df.index.values]
-    xticklabels = [''.join(col).strip() for col in df.columns.values]
+    yticklabels = multiindex_to_strings(df.index)
+    xticklabels = multiindex_to_strings(df.columns)
     if figsize is not None:
         fig = plt.figure(figsize=figsize)
     else:
@@ -308,6 +316,7 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
         ylabel_space_pt = max([len(ylabel) for ylabel in yticklabels])
         fig_width_in = ((ylabel_space_pt + (n_cols * 3) + 5) * (font_size_pt + 3)) / point_inch_ratio
         fig = plt.figure(figsize=(fig_width_in, fig_height_in))
+
     ax = fig.add_subplot(111)
     if title is not None:
         ax.set_title(title)
