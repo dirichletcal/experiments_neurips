@@ -31,6 +31,7 @@ from calib.utils.functions import p_value
 
 from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
+from calib.utils.summaries import generate_summary_hist
 
 # Our datasets module
 from data_wrappers.datasets import Data
@@ -108,7 +109,6 @@ def compute_all(args):
     (name, dataset, n_folds, inner_folds, mc, classifier_name, verbose) = args
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
-    np.random.seed(mc)
     skf = StratifiedKFold(dataset.target, n_folds=n_folds,
                           shuffle=True, random_state=mc)
     df = MyDataFrame(columns=columns)
@@ -221,6 +221,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     df_all['classifier'] = classifier_name
     generate_summaries(df_all, results_path)
+
+    generate_summary_hist(df_all_hist.astype(float), results_path)
 
 
 if __name__ == '__main__':
