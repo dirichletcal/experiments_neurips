@@ -36,8 +36,9 @@ def calibrate(classifier, x_cali, y_cali, method=None, score_type=None):
 
 def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                    y_test, cv=3, score_type=None,
-                   model_type='map-only', verbose=False):
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
+                   model_type='map-only', verbose=False, seed=None):
+    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True,
+                            random_state=seed)
     binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
     # Ensure the same classes in train and test partitions
     assert_array_equal(np.unique(y_train), np.unique(y_test))
