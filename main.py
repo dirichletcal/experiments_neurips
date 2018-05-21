@@ -46,11 +46,10 @@ from data_wrappers.datasets import datasets_binary
 from data_wrappers.datasets import datasets_non_binary
 
 
-#methods = [None, 'beta', 'beta_ab', 'beta_am', 'isotonic', 'sigmoid',
-#           'dirichlet_full']
-methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
-           'dirichlet_fix_diag', 'isotonic', 'sigmoid',
-           'beta', 'beta_ab', 'beta_am']
+methods = [None, 'beta', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
+#methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
+#           'dirichlet_fix_diag', 'isotonic', 'sigmoid',
+#           'beta', 'beta_ab', 'beta_am']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
@@ -92,7 +91,10 @@ def parse_arguments():
     parser.add_argument('-f', '--folds', dest='n_folds', type=int,
                         default=5,
                         help='Folds to create for cross-validation')
-    parser.add_argument('-o', '--output_path', dest='results_path', type=str,
+    parser.add_argument('--inner-folds', dest='inner_folds', type=int,
+                        default=3,
+                        help='Folds to create for cross-validation')
+    parser.add_argument('-o', '--output-path', dest='results_path', type=str,
                         default='results_test',
                         help='''Path to store all the results''')
     parser.add_argument('-v', '--verbose', dest='verbose',
@@ -106,7 +108,7 @@ def parse_arguments():
 
 
 def compute_all(args):
-    (name, dataset, n_folds, mc, classifier_name, verbose) = args
+    (name, dataset, n_folds, inner_folds, mc, classifier_name, verbose) = args
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
     np.random.seed(mc)
@@ -123,10 +125,11 @@ def compute_all(args):
                                                                methods,
                                                                x_train, y_train,
                                                                x_test, y_test,
-                                                               cv=3,
+                                                               cv=inner_folds,
                                                                score_type=score_type,
                                                                model_type='full-stack',
-                                                               verbose=verbose)
+                                                               verbose=verbose,
+                                                               seed=mc)
 
         for method in methods:
             m_text = 'None' if method is None else method
@@ -138,7 +141,7 @@ def compute_all(args):
 
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
-		 verbose, datasets='datasets_small_example'):
+		 verbose, datasets, inner_folds):
     global methods
     print(locals())
     results_path = os.path.join(results_path, classifier_name)
@@ -158,9 +161,14 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     for name, dataset in data.datasets.items():
         df = MyDataFrame(columns=columns)
         print(dataset)
-        if np.any(dataset.counts < n_folds):
+        # Assert that every class has enough samples to perform the two
+        # cross-validataion steps (classifier + calibrator)
+        smaller_count = min(dataset.counts)
+        if (smaller_count < n_folds) or \
+           ((smaller_count*(n_folds-1)/n_folds) < inner_folds):
             print(("At least one of the classes does not have enough samples "
-                   "for {} folds").format(n_folds))
+                   "for outer {} folds and inner {} folds").format(n_folds,
+                                                             inner_folds))
             # TODO Remove problematic class instead
             print("Removing dataset from experiments and skipping")
             dataset_names = [aux for aux in dataset_names if aux != name]
@@ -168,7 +176,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
         mcs = np.arange(mc_iterations)
         # All the arguments as a list of lists
-        args = [[name], [dataset], [n_folds], mcs, [classifier_name], [verbose]]
+        args = [[name], [dataset], [n_folds], [inner_folds], mcs,
+                [classifier_name], [verbose]]
         args = list(itertools.product(*args))
 
         dfs = futures.map(compute_all, args)
