@@ -54,30 +54,28 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     if model_type == 'map-only':
         main_classifier.fit(x_train, y_train)
     for i, (train, cali) in enumerate(folds):
-        if i < cv:
-            x_t = x_train[train]
-            y_t = y_train[train]
-            x_c = x_train[cali]
-            y_c = y_train[cali]
-            # Ensure the same classes in train and test partitions
-            assert_array_equal(np.unique(y_t), np.unique(y_c))
-            classifier = clone(base_classifier)
-            classifier.fit(x_t, y_t)
-            for method in methods:
-                if verbose:
-                    print("Calibrating with {}".format(
-                              'none' if method is None else method))
-                ccv = calibrate(classifier, x_c, y_c, method=method,
-                                score_type=score_type)
-                if model_type == 'map-only':
-                    ccv.set_base_estimator(main_classifier,
-                                           score_type=score_type)
-                predicted_proba = ccv.predict_proba(x_test)
-                if predicted_proba.shape[1] == 1:
-                    predicted_proba = np.hstack((predicted_proba - 1,
-                                                predicted_proba))
-                mean_probas[method] += predicted_proba / cv
-                classifiers[method].append(ccv)
+        x_t = x_train[train]
+        y_t = y_train[train]
+        x_c = x_train[cali]
+        y_c = y_train[cali]
+        # Ensure the same classes in train and test partitions
+        assert_array_equal(np.unique(y_t), np.unique(y_c))
+        classifier = clone(base_classifier)
+        classifier.fit(x_t, y_t)
+        for method in methods:
+            if verbose:
+                print("Calibrating with {}".format( 'none' if method is None
+                                                   else method))
+            ccv = calibrate(classifier, x_c, y_c, method=method,
+                            score_type=score_type)
+            if model_type == 'map-only':
+                ccv.set_base_estimator(main_classifier, score_type=score_type)
+            predicted_proba = ccv.predict_proba(x_test)
+            if predicted_proba.shape[1] == 1:
+                predicted_proba = np.hstack((predicted_proba - 1,
+                                             predicted_proba))
+            mean_probas[method] += predicted_proba / cv
+            classifiers[method].append(ccv)
 
     losses = {method: cross_entropy(mean_probas[method], y_test_bin) for method
               in methods}
