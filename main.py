@@ -32,9 +32,6 @@ from calib.utils.functions import p_value
 from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
 
-# Visualisations
-from calib.utils.plots import df_to_heatmap
-
 # Our datasets module
 from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_li2014
@@ -222,48 +219,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     table.to_csv(os.path.join(results_path, classifier_name + '_main_results.csv'))
     table.to_latex(os.path.join(results_path, classifier_name + '_main_results.tex'))
 
-
-    # remove_list = [[], ['isotonic'], ['beta_am'], ['beta_ab'],
-    #                ['beta', 'beta_ab'], ['beta_am', 'beta_ab'],
-    #                [None, 'None', 'isotonic', 'sigmoid']]
-    # Change None for 'None'
-    methods = ['None' if method is None else method for method in methods]
-    remove_list = [[]]
-    for rem in remove_list:
-        df_rem = df_all[np.logical_not(np.in1d(df_all.method, rem))]
-        methods_rem = [method for method in methods if method not in rem]
-        print(methods_rem)
-
-        measures = (('acc', True), ('loss', False), ('brier', False))
-        for measure, max_is_better in measures:
-            print('-#-#-#-#-#-#-#-#-' + measure + '-#-#-#-#-#-#-#-#-#-#-#-#-#-')
-            file_basename = os.path.join(results_path, classifier_name +
-                                         '_dataset_vs_method_' + measure)
-            table = df_rem.pivot_table(index=['dataset'], columns=['method'],
-                                       values=[measure], aggfunc=[np.mean, np.std])
-            table_to_latex(dataset_names, methods_rem, table,
-                                       max_is_better=max_is_better)
-            str_table = to_latex(dataset_names, table, precision=2,
-                                 table_size='tiny', max_is_better=max_is_better,
-                                 caption=('Ranking of calibration methods' +
-                                          ' applied on the classifier method' +
-                                          ' {} with the measure={}'
-                                         ).format(classifier_name, measure),
-                                 label='table:{}:{}'.format(classifier_name,
-                                                            measure)
-                                )
-
-            with open(file_basename + '.tex', "w") as text_file:
-                text_file.write(str_table)
-            values = table.as_matrix()[:, :len(methods_rem)]
-            #print(friedmanchisquare(*[values[:, x] for x in
-            #                          np.arange(values.shape[1])]))
-            print('P-value = {}'.format(p_value(values)))
-            table.to_csv(file_basename + '.csv')
-            df_to_heatmap(table['mean'][measure], file_basename + '.svg',
-                          title=measure)
-
-        print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+    df_all['classifier'] = classifier_name
+    generate_summaries(df_all, results_path)
 
 
 if __name__ == '__main__':
