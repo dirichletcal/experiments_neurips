@@ -29,6 +29,7 @@ class AdaBoostClassifier(BaseEstimator):
             incorrect = (predictions != y).astype(float)
             error = (sample_weights * incorrect).sum()
             if error > 0:
+                # FIXME Consider multiclass
                 self.alphas[iboost] = 0.5 * np.log((1-error) / error)
                 a = self.alphas[iboost]
                 modifier = np.exp(-y_changed * a * predictions)
@@ -42,10 +43,10 @@ class AdaBoostClassifier(BaseEstimator):
         return self
 
     def predict_proba(self, X):
-        predictions = np.zeros(np.alen(X))
+        predictions = np.zeros((np.alen(X), self.estimators[0].n_classes_))
         for iboost in np.arange(self.n_estimators):
             a = self.alphas[iboost]
-            predictions += a * self.estimators[iboost].predict(X)
-        probas = 1.0 / (1.0 + np.exp(-2*predictions)).reshape(-1, 1)
-        probas = np.hstack((1.0 - probas, probas))
+            predictions += a * self.estimators[iboost].predict_proba(X)
+        # FIXME consider multiclass
+        probas = 1.0 / (1.0 + np.exp(-2*predictions))
         return probas
