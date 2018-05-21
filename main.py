@@ -50,7 +50,7 @@ methods = [None, 'beta', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
 classifiers = {
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
-                  'adao': our.AdaBoostClassifier(n_estimators=200),
+                  #'adao': our.AdaBoostClassifier(n_estimators=200),
                   'adas': their.AdaBoostClassifier(n_estimators=200),
                   'forest': RandomForestClassifier(n_estimators=200),
                   'mlp': MLPClassifier(),
@@ -59,7 +59,7 @@ classifiers = {
 score_types = {
                   'nbayes': 'predict_proba',
                   'logistic': 'predict_proba',
-                  'adao': 'predict_proba',
+                  #'adao': 'predict_proba',
                   'adas': 'predict_proba',
                   'forest': 'predict_proba',
                   'mlp': 'predict_proba',

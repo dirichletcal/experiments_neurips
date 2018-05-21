@@ -17,9 +17,10 @@ class AdaBoostClassifier(BaseEstimator):
         self.estimators = []
 
     def fit(self, X, y):
+        # TODO needs to be adapted to multiclass scenario
         sample_weights = np.ones(np.alen(X)) * (1.0 / np.alen(X))
-        y_changed = y
-        y_changed[y == 0] = -1
+        y_changed = y.copy()
+        #y_changed[y == 0] = -1
         for iboost in np.arange(self.n_estimators):
             estimator = clone(self.base_estimator)
             estimator.fit(X, y_changed, sample_weights)
