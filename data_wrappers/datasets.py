@@ -49,7 +49,7 @@ datasets_big = ['abalone', 'car', 'flare', 'german', 'landsat-satellite',
                 'pendigits', 'scene-classification', 'segment', 'shuttle',
                 'spambase', 'waveform-5000', 'yeast']
 
-datasets_small_example = ['iris', 'autos', 'yeast', 'spambase']
+datasets_small_example = ['iris', 'spambase', 'autos']
 
 datasets_all = list(set(datasets_li2014 + datasets_hempstalk2008 +
                         datasets_others + datasets_binary))
