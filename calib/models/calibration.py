@@ -22,6 +22,8 @@ from calib.utils.multiclass import OneVsRestCalibrator
 from dirichlet import DirichletCalibrator
 from dirichlet.calib.multinomial import MultinomialRegression
 
+from mixture_of_dirichlet import MixDir
+
 class IsotonicCalibration(IsotonicRegression):
     def predict_proba(self, *args, **kwargs):
         return super(IsotonicCalibration, self).predict(*args, **kwargs)
@@ -131,6 +133,8 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
             self.calibrator = DirichletCalibrator(matrix_type='diagonal')
         elif self.method == 'dirichlet_fix_diag':
             self.calibrator = DirichletCalibrator(matrix_type='fixed_diagonal')
+        elif self.method == 'dirichlet_mixture':
+            self.calibrator = MixDir()
         else:
             raise ValueError('method should be None, "multinomial", '
                              'or "dirichlet_full". '
