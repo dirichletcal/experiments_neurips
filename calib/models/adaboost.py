@@ -15,6 +15,7 @@ class AdaBoostClassifier(BaseEstimator):
         self.n_estimators = n_estimators
         self.alphas = np.zeros(n_estimators)
         self.estimators = []
+        self.n_classes_ = None
 
     def fit(self, X, y):
         # TODO needs to be adapted to multiclass scenario
@@ -40,6 +41,7 @@ class AdaBoostClassifier(BaseEstimator):
                 self.alphas = self.alphas[:(iboost + 1)]
                 self.n_estimators = len(self.estimators)
                 break
+        self.n_classes_ = self.estimators[0].n_classes_
         return self
 
     def predict_proba(self, X):
