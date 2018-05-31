@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.isotonic import IsotonicRegression
 from sklearn.linear_model import LinearRegression
