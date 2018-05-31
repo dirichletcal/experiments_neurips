@@ -12,6 +12,7 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB
 import calib.models.adaboost as our
+from calib.models.classifiers import MockClassifier
 import sklearn.ensemble as their
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -49,6 +50,7 @@ methods = [None, 'beta', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
 #           'dirichlet_fix_diag', 'isotonic', 'sigmoid',
 #           'beta', 'beta_ab', 'beta_am']
 classifiers = {
+                  'mock': MockClassifier(),
                   'nbayes': GaussianNB(),
                   'logistic': LogisticRegression(),
                   'adao': our.AdaBoostClassifier(n_estimators=200),
@@ -58,6 +60,7 @@ classifiers = {
                   'svm': SVC(probability=True)
 }
 score_types = {
+                  'mock': 'predict_proba',
                   'nbayes': 'predict_proba',
                   'logistic': 'predict_proba',
                   'adao': 'predict_proba',
