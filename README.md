@@ -27,8 +27,18 @@ source venv/bin/activate
 
 # Run experiments
 
-Experiments can be run calling __python main.py__. To see the different options
-pass the argument __--help__
+Experiments can be run calling __python main.py__ and the arguments, or in
+parallel using scoop.
+
+Here is an example with Scoop.
+
+```
+python -m scoop main.py --classifier nbayes --seed 42 --iterations 2 \
+                       --folds 3 --datasets iris,autos \
+                       --output-path results_test
+```
+
+To see all the available options pass the argument __--help__
 
 ```
 $ python main.py --help
