@@ -1,6 +1,6 @@
 [submodule "dirichlet"]
 	path = dirichlet
-	url = git@bitbucket.org:dirichlet_cal/dirichlet.git
+	url = https://bitbucket.org/dirichlet_cal/dirichlet.git
 [submodule "python"]
 	path = python_betacal
 	url = https://github.com/betacal/python
