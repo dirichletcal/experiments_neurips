@@ -94,7 +94,8 @@ def parse_arguments():
                         help='Folds to create for cross-validation')
     parser.add_argument('--inner-folds', dest='inner_folds', type=int,
                         default=3,
-                        help='Folds to create for cross-validation')
+                        help='''Folds to perform in any given training fold to
+                                train the different calibration methods''')
     parser.add_argument('-o', '--output-path', dest='results_path', type=str,
                         default='results_test',
                         help='''Path to store all the results''')
