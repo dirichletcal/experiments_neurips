@@ -5,7 +5,7 @@ versions (it may take 30 minutes or more to install all packages).
 
 ```
 # Clone the repository
-git clone https://miquel_perello_nieto@bitbucket.org/dirichlet_cal/experiments.git
+git clone https://miquel_perello_nieto@bitbucket.org/dirichlet_cal/experiments.git dirichlet_cal_experiments
 # Go into the folder
 cd dirichlet_cal_experiments
 # Clone the submodules
