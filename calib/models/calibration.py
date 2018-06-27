@@ -24,13 +24,16 @@ from dirichlet.calib.multinomial import MultinomialRegression
 
 from mixture_of_dirichlet import MixDir
 
+
 class IsotonicCalibration(IsotonicRegression):
     def predict_proba(self, *args, **kwargs):
         return super(IsotonicCalibration, self).predict(*args, **kwargs)
 
+
 class SigmoidCalibration(_SigmoidCalibration):
     def predict_proba(self, *args, **kwargs):
         return super(SigmoidCalibration, self).predict(*args, **kwargs)
+
 
 class CalibratedModel(BaseEstimator, ClassifierMixin):
     def __init__(self, base_estimator=None, method=None, score_type=None):
