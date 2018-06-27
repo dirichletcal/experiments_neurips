@@ -10,7 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from sklearn.calibration import _SigmoidCalibration
 
-from betacal import BetaCalibration
+from python_betacal.betacal import BetaCalibration
 
 from calib.utils.functions import fit_beta_nll
 from calib.utils.functions import fit_beta_moments
