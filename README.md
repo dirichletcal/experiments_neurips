@@ -70,3 +70,10 @@ jupyter notebook
 ```
 
 And go to the notebook folder.
+
+
+
+pyvenv-3.4 --without-pip venv
+source venv/bin/activate
+curl https://bootstrap.pypa.io/get-pip.py | python
+
