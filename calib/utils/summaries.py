@@ -103,9 +103,10 @@ def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
 
     tex_table = df.to_latex(escape=False)
 
-    tex_table = ('\\begin{table}\n' + fontsize + '\n' + tex_table +
-                '\\caption{{{}}}\n\\label{{{}}}\n'.format(caption, label) +
-                '\\end{table}')
+    tex_table = ('\\begin{table}\n' + fontsize + '\n'
+                 '\\centering\n' + tex_table +
+                 '\\caption{{{}}}\n\\label{{{}}}\n'.format(caption, label) +
+                 '\\end{table}')
     with open(filename, 'w') as f:
         f.write(tex_table)
 
