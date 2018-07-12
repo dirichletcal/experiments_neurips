@@ -38,7 +38,8 @@ def get_sets(x, y, test_fold_id, test_folds):
 
 
 # TODO: MPN need to join *to_latex functions
-def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
+def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
+                   position='!H'):
     means = table.as_matrix()[:, :len(methods)]
     avg_ranks = np.zeros(len(methods))
     if max_is_better:
@@ -46,7 +47,7 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
     stds = table.as_matrix()[:, len(methods):]
     if max_is_better:
         stds *= 100.0
-    print('\\begin{table}[!t]')
+    print('\\begin{table}[' + position + ']')
     print('\\centering')
     str_columns = 'l'
     str_header = 'dataset'
@@ -104,7 +105,7 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption=''):
 # the column and row names?
 def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
              table_size="\\normalsize", caption="", label='table',
-             add_std=True):
+             add_std=True, position='!H'):
     column_names = table.columns.levels[2]
     n_columns = len(column_names)
     row_names = table.index
@@ -113,7 +114,7 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     means = table.as_matrix()[:, :n_columns].copy()*scale
     avg_ranks = np.zeros(n_columns)
     stds = table.as_matrix()[:, n_columns:]*scale
-    str_table = ("\\begin{table}[!t]\n" +
+    str_table = ("\\begin{table}[" + position + "]\n" +
                  table_size + "\n" +
                  "\\centering\n")
     str_columns = "l"
