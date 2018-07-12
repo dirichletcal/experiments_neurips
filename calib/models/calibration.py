@@ -238,7 +238,7 @@ class _DummyCalibration(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        T : array-like, shape (n_samples,)
+        T : array-like, shape (n_samples, n_classes)
             Data to predict from.
 
         Returns
