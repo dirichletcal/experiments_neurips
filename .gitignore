@@ -3,4 +3,7 @@
 venv
 .vscode
 .idea/
-results_test/
+# Results folders
+results_*/
+# Slurm output files
+*.out
