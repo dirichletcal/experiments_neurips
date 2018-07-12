@@ -99,8 +99,8 @@ def paired_test(table, stats_func=ranksums):
 
 
 def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
-                            caption='', label='', fontsize='\\tiny',
-                            str_format='%.1f', position='!H'):
+                              caption='', label='', fontsize='\\small',
+                              str_format='%.1f', position='!H'):
     def pvalue_to_tex(s, p, threshold):
         s = str_format % s
         if p < threshold:
@@ -125,10 +125,10 @@ def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
 
     tex_table = df.to_latex(escape=False)
 
-    tex_table = ('\\begin{table}[' + position + ']\n' + fontsize + '\n' +
-                 tex_table + '\\caption{{{}}}\n' +
-                 '\\label{{{}}}\n'.format(caption, label) +
-                '\\end{table}')
+    tex_table = ('\\begin{table}[' + position + ']\n\\centering\n' +
+                 fontsize + '\n' + tex_table + ('\\caption{{{}}}\n' +
+                 '\\label{{{}}}\n').format(caption, label) +
+                 '\\end{table}')
     with open(filename, 'w') as f:
         f.write(tex_table)
 
@@ -158,7 +158,7 @@ def generate_summaries(df, summary_path):
                                values=[measure], aggfunc=[np.mean, np.std])
 
         str_table = to_latex(classifiers, table, precision=2,
-                             table_size='tiny', max_is_better=max_is_better,
+                             table_size='small', max_is_better=max_is_better,
                              caption=('Ranking of calibration methods ' +
                                       'applied on different classifiers ' +
                                       'with the mean measure={}'
@@ -226,7 +226,7 @@ def generate_summaries(df, summary_path):
             print(ftest)
 
             str_table = to_latex(dataset_names, table, precision=2,
-                                 table_size='\\tiny',
+                                 table_size='\\small',
                                  max_is_better=max_is_better,
                                  caption=('Ranking of calibration methods ' +
                                           'applied on the classifier ' +
