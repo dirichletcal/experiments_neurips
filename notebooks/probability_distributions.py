@@ -1,6 +1,7 @@
 from math import gamma
 from operator import mul
 import numpy as np
+from functools import reduce
 
 class Dirichlet(object):
     def __init__(self, alpha):

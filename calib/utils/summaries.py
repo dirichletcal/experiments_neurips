@@ -12,6 +12,7 @@ from calib.utils.plots import df_to_heatmap
 
 from scipy.stats import ranksums
 from scipy.stats import mannwhitneyu
+from scipy.stats import friedmanchisquare
 
 
 def load_all_csv(results_path, expression=".*.csv"):
@@ -52,6 +53,27 @@ def compute_mannwhitneyu(table):
     return paired_test(table, stats_func=partial(mannwhitneyu,
                                                  alternative='less'))
 
+
+def compute_friedmanchisquare(table):
+    '''
+    Example:
+        - n wine judges each rate k different wines. Are any of the k wines
+        ranked consistently higher or lower than the others?
+    Our Calibration case:
+        - n datasets each rate k different calibration methods. Are any of the
+        k calibration methods ranked consistently higher or lower than the
+        others?
+    This will output a statistic and a p-value
+    SciPy does the following:
+        - k: is the number of parameters passed to the function
+        - n: is the lenght of each array passed to the function
+    The two options for the given table are:
+        - k is the datasets: table['mean'].values).tolist()
+        - k is the calibration methods: table['mean'].T.values).tolist()
+    '''
+    return friedmanchisquare(*(table['mean'].T.values).tolist())
+
+
 def paired_test(table, stats_func=ranksums):
     measure = table.columns.levels[0].values[0]
     pvalues = np.zeros((table.columns.shape[0], table.columns.shape[0]))
@@ -77,8 +99,8 @@ def paired_test(table, stats_func=ranksums):
 
 
 def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
-                            caption='', label='', fontsize='\\tiny',
-                            str_format='%.1f'):
+                              caption='', label='', fontsize='\\small',
+                              str_format='%.1f', position='!H'):
     def pvalue_to_tex(s, p, threshold):
         s = str_format % s
         if p < threshold:
@@ -103,9 +125,10 @@ def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
 
     tex_table = df.to_latex(escape=False)
 
-    tex_table = ('\\begin{table}\n' + fontsize + '\n' + tex_table +
-                '\\caption{{{}}}\n\\label{{{}}}\n'.format(caption, label) +
-                '\\end{table}')
+    tex_table = ('\\begin{table}[' + position + ']\n\\centering\n' +
+                 fontsize + '\n' + tex_table + ('\\caption{{{}}}\n' +
+                 '\\label{{{}}}\n').format(caption, label) +
+                 '\\end{table}')
     with open(filename, 'w') as f:
         f.write(tex_table)
 
@@ -130,11 +153,12 @@ def generate_summaries(df, summary_path):
     classifiers = df['classifier'].unique()
     measures = (('acc', True), ('loss', False), ('brier', False))
     for measure, max_is_better in measures:
+        print('# Measure = {}'.format(measure))
         table = df.pivot_table(index=['classifier'], columns=['method'],
                                values=[measure], aggfunc=[np.mean, np.std])
 
         str_table = to_latex(classifiers, table, precision=2,
-                             table_size='tiny', max_is_better=max_is_better,
+                             table_size='small', max_is_better=max_is_better,
                              caption=('Ranking of calibration methods ' +
                                       'applied on different classifiers ' +
                                       'with the mean measure={}'
@@ -190,19 +214,27 @@ def generate_summaries(df, summary_path):
                                 )
 
         for classifier_name in classifiers:
+            print('- Classifier name = {}'.format(classifier_name))
             class_mask = df['classifier'] == classifier_name
             table = df[class_mask].pivot_table(index=['dataset'],
                                                columns=['method'],
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
 
+            # Perform a Friedman Chi-square statistic test
+            ftest = compute_friedmanchisquare(table)
+            print(ftest)
+
             str_table = to_latex(dataset_names, table, precision=2,
-                                 table_size='\\tiny',
+                                 table_size='\\small',
                                  max_is_better=max_is_better,
                                  caption=('Ranking of calibration methods ' +
                                           'applied on the classifier ' +
-                                          '{} with the measure={}'
-                                          ).format(classifier_name, measure),
+                                          '{} with the measure={}' +
+                                          '(Friedman Chi-square statistic test ' +
+                                          '= {:.2E}, p-value = {:.2E})'
+                                          ).format(classifier_name, measure,
+                                                  ftest.statistic, ftest.pvalue),
                                  label='table:{}:{}'.format(classifier_name,
                                                             measure),
                                  add_std=False)
@@ -215,8 +247,6 @@ def generate_summaries(df, summary_path):
             df_to_heatmap(table['mean'][measure], file_basename + '_rows.svg',
                           title='Normalised rows for ' + measure,
                           normalise_rows=True)
-
-
 
 
 def generate_summary_hist(df, summary_path):

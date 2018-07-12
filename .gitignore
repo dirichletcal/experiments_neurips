@@ -2,3 +2,5 @@
 *.sw*
 venv
 .vscode
+.idea/
+results_test/

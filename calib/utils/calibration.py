@@ -10,7 +10,7 @@ from calib.models.calibration import CalibratedModel
 from .functions import cross_entropy
 from .functions import brier_score
 from .functions import beta_test
-from betacal import BetaCalibration
+from python_betacal.betacal import BetaCalibration
 from calib.utils.functions import beta_test
 from calib.utils.functions import fit_beta_moments
 from calib.utils.functions import fit_beta_midpoint
@@ -36,7 +36,7 @@ def calibrate(classifier, x_cali, y_cali, method=None, score_type=None):
 
 def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                    y_test, cv=3, score_type=None,
-                   model_type='map-only', verbose=False, seed=None):
+                   model_type='map-only', verbose=NameError, seed=None):
     folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True,
                             random_state=seed)
     binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
