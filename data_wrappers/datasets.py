@@ -1,7 +1,7 @@
 __docformat__ = 'restructedtext en'
 import warnings
 from sklearn.datasets import fetch_mldata
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 import numpy as np
 
 __author__ = "Miquel Perello Nieto"
@@ -87,10 +87,11 @@ class Dataset(object):
         return [x_train, y_train, x_test, y_test]
 
     def reduce_number_instances(self, proportion=0.1):
-        skf = StratifiedKFold(self._target, n_folds=1.0/proportion)
+        skf = StratifiedKFold(n_splits=int(1.0/proportion))
         test_folds = skf.test_folds
-        _, _, self._data, self._target = self.separate_sets(
-                                    self._data, self._target, 0, test_folds)
+        train_idx, test_idx = next(iter(skf.split(X=self._data,
+                                                  y=self._target)))
+        self._data, self._target = self._data[test_idx], self._target[test_idx]
 
     @property
     def target(self):
@@ -581,7 +582,6 @@ class Data(object):
 
 def test_datasets(dataset_names):
     from sklearn.svm import SVC
-    from sklearn.cross_validation import StratifiedKFold
     data = Data(dataset_names=dataset_names)
 
     def separate_sets(x, y, test_fold_id, test_folds):
@@ -599,15 +599,17 @@ def test_datasets(dataset_names):
         skf = StratifiedKFold(dataset.target, n_folds=n_folds, shuffle=True)
         test_folds = skf.test_folds
         accuracies[name] = np.zeros(n_folds)
-        for test_fold in np.arange(n_folds):
-            x_train, y_train, x_test, y_test = separate_sets(
-                    dataset.data, dataset.target, test_fold, test_folds)
+        test_fold = 0
+        for train_idx, test_idx in skf.split(X=dataset.data, y=dataset.target):
+            x_train, y_train = dataset.data[train_idx], dataset.target[train_idx]
+            x_test, y_test = dataset.data[test_idx], dataset.target[test_idx]
 
             svc = SVC(C=1.0, kernel='rbf', degree=1, tol=0.01)
             svc.fit(x_train, y_train)
             prediction = svc.predict(x_test)
             accuracies[name][test_fold] = 100*np.mean((prediction == y_test))
             print("Acc = {0:.2f}%".format(accuracies[name][test_fold]))
+            test_fold += 1
     return accuracies
 
 def test():
