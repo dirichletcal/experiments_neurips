@@ -1,9 +1,9 @@
 *.pyc
 *.sw*
 venv
-.vscode
 .idea/
 # Results folders
 results_*/
 # Slurm output files
 *.out
+.vscode

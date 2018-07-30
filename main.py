@@ -20,7 +20,7 @@ from sklearn.svm import SVC
 
 # Parallelization
 import itertools
-from scoop import futures
+from scoop import futures, shared, logger
 
 # Our classes and modules
 from calib.utils.calibration import cv_calibration
@@ -36,12 +36,6 @@ from calib.utils.summaries import generate_summary_hist
 
 # Our datasets module
 from data_wrappers.datasets import Data
-from data_wrappers.datasets import datasets_li2014
-from data_wrappers.datasets import datasets_hempstalk2008
-from data_wrappers.datasets import datasets_others
-from data_wrappers.datasets import datasets_big
-from data_wrappers.datasets import datasets_small_example
-from data_wrappers.datasets import datasets_binary
 from data_wrappers.datasets import datasets_non_binary
 
 
@@ -103,16 +97,18 @@ def parse_arguments():
                         action='store_true', default=False,
                         help='''Show additional messages''')
     parser.add_argument('-d', '--datasets', dest='datasets', type=str,
-                        default='iris,autos',
+                        default='iris,libras-movement',
                         help='''Comma separated dataset names or one of the
                         defined groups in the datasets package''')
     return parser.parse_args()
 
 
 def compute_all(args):
-    (name, dataset, n_folds, inner_folds, mc, classifier_name, verbose) = args
+    (name, n_folds, inner_folds, mc, classifier_name, verbose) = args
+    dataset = shared.getConst(name)
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
+    logger.info(locals())
     skf = StratifiedKFold(dataset.target, n_folds=n_folds,
                           shuffle=True, random_state=mc)
     df = MyDataFrame(columns=columns)
@@ -122,15 +118,11 @@ def compute_all(args):
     for test_fold in np.arange(n_folds):
         x_train, y_train, x_test, y_test = get_sets(dataset.data, t, test_fold,
                                                     test_folds)
-        accs, losses, briers, mean_probas, cl = cv_calibration(classifier,
-                                                               methods,
-                                                               x_train, y_train,
-                                                               x_test, y_test,
-                                                               cv=inner_folds,
-                                                               score_type=score_type,
-                                                               model_type='full-stack',
-                                                               verbose=verbose,
-                                                               seed=mc)
+        results = cv_calibration(classifier, methods, x_train, y_train, x_test,
+                                 y_test, cv=inner_folds, score_type=score_type,
+                                 model_type='full-stack', verbose=verbose,
+                                 seed=mc)
+        accs, losses, briers, mean_probas, cl = results
 
         for method in methods:
             m_text = 'None' if method is None else method
@@ -144,7 +136,7 @@ def compute_all(args):
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 		 verbose, datasets, inner_folds):
     global methods
-    print(locals())
+    logger.info(locals())
     results_path = os.path.join(results_path, classifier_name)
 
     if datasets in globals():
@@ -161,24 +153,26 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     for name, dataset in data.datasets.items():
         df = MyDataFrame(columns=columns)
-        print(dataset)
+        logger.info(dataset)
         # Assert that every class has enough samples to perform the two
         # cross-validataion steps (classifier + calibrator)
         smaller_count = min(dataset.counts)
         if (smaller_count < n_folds) or \
            ((smaller_count*(n_folds-1)/n_folds) < inner_folds):
-            print(("At least one of the classes does not have enough samples "
-                   "for outer {} folds and inner {} folds").format(n_folds,
-                                                             inner_folds))
+            logger.warn(("At least one of the classes does not have enough "
+                         "samples for outer {} folds and inner {} folds"
+                        ).format(n_folds, inner_folds))
             # TODO Remove problematic class instead
-            print("Removing dataset from experiments and skipping")
+            logger.warn("Removing dataset from experiments and skipping")
             dataset_names = [aux for aux in dataset_names if aux != name]
             continue
 
         mcs = np.arange(mc_iterations)
+        logger.info(dataset)
+        shared.setConst(**{name: dataset})
         # All the arguments as a list of lists
-        args = [[name], [dataset], [n_folds], [inner_folds], mcs,
-                [classifier_name], [verbose]]
+        args = [[name], [n_folds], [inner_folds], mcs, [classifier_name],
+                [verbose]]
         args = list(itertools.product(*args))
 
         dfs = futures.map(compute_all, args)
@@ -195,8 +189,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                     values=['acc', 'loss', 'brier'],
                     index=['method'], aggfunc=[np.mean, np.std])
 
-        print(table)
-        print('Histogram of all the scores')
+        logger.info(table)
+        logger.info('Histogram of all the scores')
         hist_rows = []
         for method in methods:
             m_text = 'None' if method is None else method
@@ -208,8 +202,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
             hist_rows.append([m_text, name] + list(hist[0]))
         df_all = df_all.append(df)
         df_all_hist = df_all_hist.append_rows(hist_rows)
-        print(df_all_hist[df_all_hist['dataset'] == name])
-        print('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+        logger.info(df_all_hist[df_all_hist['dataset'] == name])
+        logger.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
 
     table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
                                index=['dataset', 'method'],
@@ -232,3 +226,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 if __name__ == '__main__':
     args = parse_arguments()
     main(**vars(args))
+
+
+
+
+
+
