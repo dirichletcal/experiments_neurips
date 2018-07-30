@@ -39,7 +39,8 @@ from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_non_binary
 
 
-methods = [None, 'beta', 'beta_am', 'isotonic', 'sigmoid', 'dirichlet_full']
+methods = [None, 'beta', 'beta_am', 'isotonic', 'sigmoid', 
+        'dirichlet_full', 'dirichlet_diag', 'dirichlet_fix_diag']
 #methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
 #           'dirichlet_fix_diag', 'isotonic', 'sigmoid',
 #           'beta', 'beta_ab', 'beta_am']
