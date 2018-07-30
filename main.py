@@ -8,7 +8,7 @@ from __future__ import division
 import argparse
 import os
 import numpy as np
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB
 import calib.models.adaboost as our
@@ -109,15 +109,14 @@ def compute_all(args):
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
     logger.info(locals())
-    skf = StratifiedKFold(dataset.target, n_folds=n_folds,
-                          shuffle=True, random_state=mc)
+    skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=mc)
     df = MyDataFrame(columns=columns)
-    test_folds = skf.test_folds
     class_counts = np.bincount(dataset.target)
     t = dataset.target
-    for test_fold in np.arange(n_folds):
-        x_train, y_train, x_test, y_test = get_sets(dataset.data, t, test_fold,
-                                                    test_folds)
+    fold_id = 0
+    for train_idx, test_idx in skf.split(X=dataset.data, y=dataset.target):
+        x_train, y_train = dataset.data[train_idx], dataset.target[train_idx]
+        x_test, y_test = dataset.data[test_idx], dataset.target[test_idx]
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
                                  model_type='full-stack', verbose=verbose,
@@ -126,9 +125,10 @@ def compute_all(args):
 
         for method in methods:
             m_text = 'None' if method is None else method
-            df = df.append_rows([[name, m_text, mc, test_fold,
+            df = df.append_rows([[name, m_text, mc, fold_id,
                                   accs[method], losses[method], briers[method],
                                   mean_probas[method]]])
+        fold_id += 1
     return df
 
 
