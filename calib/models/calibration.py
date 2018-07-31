@@ -25,6 +25,50 @@ from dirichlet.calib.multinomial import MultinomialRegression
 from mixture_of_dirichlet import MixDir
 
 
+class _DummyCalibration(BaseEstimator, RegressorMixin):
+    """Dummy regression model. The purpose of this class is to give
+    the CalibratedClassifierCV class the option to just return the
+    probabilities of the base classifier.
+
+
+    """
+    def fit(self, X, y, sample_weight=None):
+        """Does nothing.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples,)
+            Training data.
+
+        y : array-like, shape (n_samples,)
+            Training target.
+
+        sample_weight : array-like, shape = [n_samples] or None
+            Sample weights. If None, then samples are equally weighted.
+
+        Returns
+        -------
+        self : object
+            Returns an instance of self.
+        """
+        return self
+
+    def predict_proba(self, T):
+        """Return the probabilities of the base classifier.
+
+        Parameters
+        ----------
+        T : array-like, shape (n_samples, n_classes)
+            Data to predict from.
+
+        Returns
+        -------
+        T_ : array, shape (n_samples, n_classes)
+            The predicted data.
+        """
+        return T
+
+
 class IsotonicCalibration(IsotonicRegression):
     def predict_proba(self, *args, **kwargs):
         return super(IsotonicCalibration, self).predict(*args, **kwargs)
@@ -33,6 +77,21 @@ class IsotonicCalibration(IsotonicRegression):
 class SigmoidCalibration(_SigmoidCalibration):
     def predict_proba(self, *args, **kwargs):
         return super(SigmoidCalibration, self).predict(*args, **kwargs)
+
+
+MAP_CALIBRATORS = {
+    'None': _DummyCalibration(),
+    'isotonic': OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip')),
+    'sigmoid': OneVsRestCalibrator(SigmoidCalibration()),
+    'beta': OneVsRestCalibrator(BetaCalibration(parameters="abm")),
+    'beta_am': OneVsRestCalibrator(BetaCalibration(parameters="am")),
+    'beta_ab': OneVsRestCalibrator(BetaCalibration(parameters="ab")),
+    'multinomial': MultinomialRegression(),
+    'dirichlet_full': DirichletCalibrator(matrix_type='full'),
+    'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
+    'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
+    'dirichlet_mixture': MixDir()
+}
 
 
 class CalibratedModel(BaseEstimator, ClassifierMixin):
@@ -116,32 +175,7 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         #     weights = np.append(weights, 1.0 - weights)
         #     df = np.append(df, df)
 
-        if self.method is None:
-            self.calibrator = _DummyCalibration()
-        elif self.method == 'isotonic':
-            self.calibrator = OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip'))
-        elif self.method == 'sigmoid':
-            self.calibrator = OneVsRestCalibrator(SigmoidCalibration())
-        elif self.method == 'beta':
-            self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="abm"))
-        elif self.method == 'beta_am':
-            self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="am"))
-        elif self.method == 'beta_ab':
-            self.calibrator = OneVsRestCalibrator(BetaCalibration(parameters="ab"))
-        elif self.method == 'multinomial':
-            self.calibrator = MultinomialRegression()
-        elif self.method == 'dirichlet_full':
-            self.calibrator = DirichletCalibrator(matrix_type='full')
-        elif self.method == 'dirichlet_diag':
-            self.calibrator = DirichletCalibrator(matrix_type='diagonal')
-        elif self.method == 'dirichlet_fix_diag':
-            self.calibrator = DirichletCalibrator(matrix_type='fixed_diagonal')
-        elif self.method == 'dirichlet_mixture':
-            self.calibrator = MixDir()
-        else:
-            raise ValueError('method should be None, "multinomial", '
-                             'or "dirichlet_full". '
-                             'Got %s.' % self.method)
+        self.calibrator = MAP_CALIBRATORS[self.method]
         self.calibrator.fit(df, y, sample_weight)
         return self
 
@@ -205,45 +239,3 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         return np.argmax(self.predict_proba(X), axis=1)
 
 
-class _DummyCalibration(BaseEstimator, RegressorMixin):
-    """Dummy regression model. The purpose of this class is to give
-    the CalibratedClassifierCV class the option to just return the
-    probabilities of the base classifier.
-
-
-    """
-    def fit(self, X, y, sample_weight=None):
-        """Does nothing.
-
-        Parameters
-        ----------
-        X : array-like, shape (n_samples,)
-            Training data.
-
-        y : array-like, shape (n_samples,)
-            Training target.
-
-        sample_weight : array-like, shape = [n_samples] or None
-            Sample weights. If None, then samples are equally weighted.
-
-        Returns
-        -------
-        self : object
-            Returns an instance of self.
-        """
-        return self
-
-    def predict_proba(self, T):
-        """Return the probabilities of the base classifier.
-
-        Parameters
-        ----------
-        T : array-like, shape (n_samples, n_classes)
-            Data to predict from.
-
-        Returns
-        -------
-        T_ : array, shape (n_samples, n_classes)
-            The predicted data.
-        """
-        return T

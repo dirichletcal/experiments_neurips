@@ -20,6 +20,7 @@ from sklearn.svm import SVC
 
 # Parallelization
 import itertools
+import scoop
 from scoop import futures, shared, logger
 
 # Our classes and modules
@@ -39,36 +40,39 @@ from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_non_binary
 
 
-methods = [None, 'beta', 'beta_am', 'isotonic', 'sigmoid', 
-        'dirichlet_full', 'dirichlet_diag', 'dirichlet_fix_diag']
-#methods = [None, 'multinomial', 'dirichlet_full', 'dirichlet_diag',
-#           'dirichlet_fix_diag', 'isotonic', 'sigmoid',
-#           'beta', 'beta_ab', 'beta_am']
 classifiers = {
-                  'mock': MockClassifier(),
-                  'nbayes': GaussianNB(),
-                  'logistic': LogisticRegression(),
-                  'adao': our.AdaBoostClassifier(n_estimators=200),
-                  'adas': their.AdaBoostClassifier(n_estimators=200),
-                  'forest': RandomForestClassifier(n_estimators=200),
-                  'mlp': MLPClassifier(),
-                  'svm': SVC(probability=True)
+      'mock': MockClassifier(),
+      'nbayes': GaussianNB(),
+      'logistic': LogisticRegression(),
+      'adao': our.AdaBoostClassifier(n_estimators=200),
+      'adas': their.AdaBoostClassifier(n_estimators=200),
+      'forest': RandomForestClassifier(n_estimators=200),
+      'mlp': MLPClassifier(),
+      'svm': SVC(probability=True)
 }
 score_types = {
-                  'mock': 'predict_proba',
-                  'nbayes': 'predict_proba',
-                  'logistic': 'predict_proba',
-                  'adao': 'predict_proba',
-                  'adas': 'predict_proba',
-                  'forest': 'predict_proba',
-                  'mlp': 'predict_proba',
-                  'svm': 'sigmoid'
+      'mock': 'predict_proba',
+      'nbayes': 'predict_proba',
+      'logistic': 'predict_proba',
+      'adao': 'predict_proba',
+      'adas': 'predict_proba',
+      'forest': 'predict_proba',
+      'mlp': 'predict_proba',
+      'svm': 'sigmoid'
 }
 
 columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
            'c_probas']
 
 save_columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier']
+
+
+def comma_separated_strings(s):
+    try:
+        return s.split(',')
+    except ValueError:
+        msg = "Not a valid comma separated list: {}".format(s)
+        raise argparse.ArgumentTypeError(msg)
 
 
 def parse_arguments():
@@ -97,15 +101,22 @@ def parse_arguments():
     parser.add_argument('-v', '--verbose', dest='verbose',
                         action='store_true', default=False,
                         help='''Show additional messages''')
-    parser.add_argument('-d', '--datasets', dest='datasets', type=str,
-                        default='iris,libras-movement',
+    parser.add_argument('-d', '--datasets', dest='datasets',
+                        type=comma_separated_strings,
+                        default=['iris', 'car'],
                         help='''Comma separated dataset names or one of the
                         defined groups in the datasets package''')
+    parser.add_argument('-m', '--methods', dest='methods',
+                        type=comma_separated_strings,
+                        default=['None', 'beta', 'beta_am', 'isotonic',
+                                 'sigmoid', 'dirichlet_full', 'dirichlet_diag',
+                                 'dirichlet_fix_diag'],
+                        help='''Comma separated calibration methods''')
     return parser.parse_args()
 
 
 def compute_all(args):
-    (name, n_folds, inner_folds, mc, classifier_name, verbose) = args
+    (name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
     dataset = shared.getConst(name)
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
@@ -125,8 +136,7 @@ def compute_all(args):
         accs, losses, briers, mean_probas, cl = results
 
         for method in methods:
-            m_text = 'None' if method is None else method
-            df = df.append_rows([[name, m_text, mc, fold_id,
+            df = df.append_rows([[name, method, mc, fold_id,
                                   accs[method], losses[method], briers[method],
                                   mean_probas[method]]])
         fold_id += 1
@@ -135,15 +145,11 @@ def compute_all(args):
 
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
-		 verbose, datasets, inner_folds):
-    global methods
+		 verbose, datasets, inner_folds, methods):
     logger.info(locals())
     results_path = os.path.join(results_path, classifier_name)
 
-    if datasets in globals():
-        dataset_names = globals()[datasets]
-    else:
-        dataset_names = datasets.split(',')
+    dataset_names = datasets
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
     columns_hist = ['method', 'dataset'] + ['{}-{}'.format(i/10, (i+1)/10) for
@@ -173,10 +179,17 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         shared.setConst(**{name: dataset})
         # All the arguments as a list of lists
         args = [[name], [n_folds], [inner_folds], mcs, [classifier_name],
-                [verbose]]
+                [methods], [verbose]]
         args = list(itertools.product(*args))
 
-        dfs = futures.map(compute_all, args)
+        # If only one worker, then do not use scoop
+        if scoop.SIZE != 1:
+            logger.info('Jobs will be deployed in {} workers'.format(scoop.SIZE))
+            map_f = futures.map
+        else:
+            map_f = map
+
+        dfs = map_f(compute_all, args)
 
         df = df.concat(dfs)
 
@@ -194,13 +207,12 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         logger.info('Histogram of all the scores')
         hist_rows = []
         for method in methods:
-            m_text = 'None' if method is None else method
             hist = np.histogram(
                             np.concatenate(
                                 df[df.dataset == name][df.method ==
-                                                       m_text]['c_probas'].values),
+                                                       method]['c_probas'].values),
                                 range=(0.0, 1.0))
-            hist_rows.append([m_text, name] + list(hist[0]))
+            hist_rows.append([method, name] + list(hist[0]))
         df_all = df_all.append(df)
         df_all_hist = df_all_hist.append_rows(hist_rows)
         logger.info(df_all_hist[df_all_hist['dataset'] == name])

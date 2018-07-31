@@ -1,4 +1,5 @@
 from __future__ import division
+import logging
 import numpy as np
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.preprocessing import LabelBinarizer
@@ -15,6 +16,7 @@ from calib.utils.functions import beta_test
 from calib.utils.functions import fit_beta_moments
 from calib.utils.functions import fit_beta_midpoint
 
+logger = logging.getLogger(__name__)
 
 def get_calibrated_scores(classifiers, methods, scores):
     probas = []
@@ -63,9 +65,8 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
         classifier = clone(base_classifier)
         classifier.fit(x_t, y_t)
         for method in methods:
-            if verbose:
-                print("Calibrating with {}".format( 'none' if method is None
-                                                   else method))
+            logger.debug("Calibrating with {}".format( 'none' if method is None
+                                               else method))
             ccv = calibrate(classifier, x_c, y_c, method=method,
                             score_type=score_type)
             if model_type == 'map-only':
