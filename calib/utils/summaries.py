@@ -144,6 +144,7 @@ def generate_summaries(df, summary_path):
         - 'acc': Accuracy
         - 'loss': A loss
         - 'brier': Brier score
+        - 'exec_time': Mean execution time
         - 'classifier': Original classifier used to train
 
     '''
@@ -151,7 +152,8 @@ def generate_summaries(df, summary_path):
                                         regex=True)
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
-    measures = (('acc', True), ('loss', False), ('brier', False))
+    measures = (('acc', True), ('loss', False), ('brier', False),
+                ('exec_time', False))
     for measure, max_is_better in measures:
         print('# Measure = {}'.format(measure))
         table = df.pivot_table(index=['classifier'], columns=['method'],

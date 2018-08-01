@@ -30,6 +30,7 @@ from calib.utils.functions import get_sets
 from calib.utils.functions import table_to_latex
 from calib.utils.functions import to_latex
 from calib.utils.functions import p_value
+from calib.models.calibration import MAP_CALIBRATORS
 
 from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
@@ -62,9 +63,10 @@ score_types = {
 }
 
 columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
-           'c_probas']
+           'c_probas', 'exec_time']
 
-save_columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier']
+save_columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
+                'exec_time']
 
 
 def comma_separated_strings(s):
@@ -111,7 +113,9 @@ def parse_arguments():
                         default=['None', 'beta', 'beta_am', 'isotonic',
                                  'sigmoid', 'dirichlet_full', 'dirichlet_diag',
                                  'dirichlet_fix_diag'],
-                        help='''Comma separated calibration methods''')
+                        help=('Comma separated calibration methods from ' +
+                              'the following options: ' +
+                              ', '.join(MAP_CALIBRATORS.keys())))
     return parser.parse_args()
 
 
@@ -133,12 +137,12 @@ def compute_all(args):
                                  y_test, cv=inner_folds, score_type=score_type,
                                  model_type='full-stack', verbose=verbose,
                                  seed=mc)
-        accs, losses, briers, mean_probas, cl = results
+        accs, losses, briers, mean_probas, cl, exec_time = results
 
         for method in methods:
             df = df.append_rows([[name, method, mc, fold_id,
                                   accs[method], losses[method], briers[method],
-                                  mean_probas[method]]])
+                                  mean_probas[method], exec_time[method]]])
         fold_id += 1
     return df
 
@@ -218,14 +222,14 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         logger.info(df_all_hist[df_all_hist['dataset'] == name])
         logger.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
 
-    table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
-                               index=['dataset', 'method'],
-                               aggfunc=[np.mean, np.std])
-
     df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
     df_all_hist = df_all_hist.set_index(['method', 'dataset'])
     df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
     df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
+
+    table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
+                               index=['dataset', 'method'],
+                               aggfunc=[np.mean, np.std])
 
     table.to_csv(os.path.join(results_path, classifier_name + '_main_results.csv'))
     table.to_latex(os.path.join(results_path, classifier_name + '_main_results.tex'))

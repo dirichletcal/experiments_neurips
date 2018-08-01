@@ -1,4 +1,5 @@
 from __future__ import division
+import time
 import logging
 import numpy as np
 from sklearn.cross_validation import StratifiedKFold
@@ -51,6 +52,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     mean_probas = {method: np.zeros((y_test_bin.shape))
                    for method in methods}
     classifiers = {method: [] for method in methods}
+    exec_time = {method: [] for method in methods}
     main_classifier = clone(base_classifier)
     rejected_count = 0
     if model_type == 'map-only':
@@ -67,8 +69,11 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
         for method in methods:
             logger.debug("Calibrating with {}".format( 'none' if method is None
                                                else method))
+            start = time.time()
             ccv = calibrate(classifier, x_c, y_c, method=method,
                             score_type=score_type)
+            end = time.time()
+            exec_time[method].append(end - start)
             if model_type == 'map-only':
                 ccv.set_base_estimator(main_classifier, score_type=score_type)
             predicted_proba = ccv.predict_proba(x_test)
@@ -84,7 +89,8 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             in methods}
     briers = {method: brier_score(mean_probas[method], y_test_bin) for method
               in methods}
-    return accs, losses, briers, mean_probas, classifiers
+    mean_time = {method: np.mean(exec_time[method]) for method in methods}
+    return accs, losses, briers, mean_probas, classifiers, mean_time
 
 
 def cv_calibration_map_differences(base_classifier, x_train, y_train, cv=3,
