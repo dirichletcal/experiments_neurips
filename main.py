@@ -156,9 +156,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     dataset_names = datasets
     dataset_names.sort()
     df_all = MyDataFrame(columns=columns)
-    columns_hist = ['method', 'dataset'] + ['{}-{}'.format(i/10, (i+1)/10) for
-                                            i in range(0,10)]
-    df_all_hist = MyDataFrame(columns=columns_hist)
+    columns_hist = ['classifier', 'dataset', 'calibration'] + \
+                   ['{}-{}'.format(i/10, (i+1)/10) for i in range(0,10)]
 
     data = Data(dataset_names=dataset_names)
 
@@ -209,35 +208,28 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
         logger.info(table)
         logger.info('Histogram of all the scores')
-        hist_rows = []
         for method in methods:
-            hist = np.histogram(
-                            np.concatenate(
-                                df[df.dataset == name][df.method ==
-                                                       method]['c_probas'].values),
-                                range=(0.0, 1.0))
-            hist_rows.append([method, name] + list(hist[0]))
-        df_all = df_all.append(df)
-        df_all_hist = df_all_hist.append_rows(hist_rows)
-        logger.info(df_all_hist[df_all_hist['dataset'] == name])
+            hist = np.histogram(np.concatenate(
+                        df[df.dataset == name][df.method ==
+                                               method]['c_probas'].values),
+                        range=(0.0, 1.0))
+            df_hist = MyDataFrame(data=[[classifier_name, name, method] +
+                                       hist[0].tolist()],
+                                  columns=columns_hist)
+            df_hist.to_csv(os.path.join(results_path, '_'.join(
+                [classifier_name, name, method, 'score_histogram.csv'])))
+            logger.info(df_hist)
         logger.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
 
-    df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
-    df_all_hist = df_all_hist.set_index(['method', 'dataset'])
-    df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
-    df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
 
-    table = df_all.pivot_table(values=['acc', 'loss', 'brier'],
-                               index=['dataset', 'method'],
-                               aggfunc=[np.mean, np.std])
+    #df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
+    #df_all_hist = df_all_hist.set_index(['method', 'dataset'])
+    #df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
+    #df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
+    #generate_summary_hist(df_all_hist.astype(float), results_path)
 
-    table.to_csv(os.path.join(results_path, classifier_name + '_main_results.csv'))
-    table.to_latex(os.path.join(results_path, classifier_name + '_main_results.tex'))
+    #generate_summaries(df_all, results_path)
 
-    df_all['classifier'] = classifier_name
-    generate_summaries(df_all, results_path)
-
-    generate_summary_hist(df_all_hist.astype(float), results_path)
 
 
 if __name__ == '__main__':
