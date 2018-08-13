@@ -199,8 +199,11 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         if not os.path.exists(results_path):
             os.makedirs(results_path)
 
-        df[save_columns].to_csv(os.path.join(results_path, classifier_name +
-                                             '_' + name + '_raw_results.csv'))
+        for method in methods:
+            df[df['method'] == method][save_columns].to_csv(
+                os.path.join(results_path, '_'.join([classifier_name, name,
+                                                     method,
+                                                     'raw_results.csv'])))
 
         table = df[df.dataset == name].pivot_table(
                     values=['acc', 'loss', 'brier'],
