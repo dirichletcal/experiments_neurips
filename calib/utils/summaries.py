@@ -152,6 +152,7 @@ def generate_summaries(df, summary_path):
                                         regex=True)
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
+
     measures = (('acc', True), ('loss', False), ('brier', False),
                 ('exec_time', False))
     for measure, max_is_better in measures:
@@ -249,6 +250,15 @@ def generate_summaries(df, summary_path):
             df_to_heatmap(table['mean'][measure], file_basename + '_rows.svg',
                           title='Normalised rows for ' + measure,
                           normalise_rows=True)
+
+
+    for classifier_name in classifiers:
+        table = df.pivot_table(values=['acc', 'loss', 'brier'],
+                               index=['dataset', 'method'],
+                               aggfunc=[np.mean, np.std])
+        table.to_csv(os.path.join(summary_path, classifier_name + '_main_results.csv'))
+        table.to_latex(os.path.join(summary_path, classifier_name + '_main_results.tex'))
+
 
 
 def generate_summary_hist(df, summary_path):

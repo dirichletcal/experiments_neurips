@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from calib.utils.summaries import load_all_csv
 from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
+from calib.utils.summaries import generate_summary_hist
 
 
 def parse_arguments():
@@ -23,6 +24,12 @@ def main(results_path, summary_path):
     df = load_all_csv(results_path, ".*raw_results.csv")
     summary_path = create_summary_path(summary_path, results_path)
     generate_summaries(df, summary_path)
+
+    df = load_all_csv(results_path, ".*score_histogram.csv")
+    del df['Unnamed: 0']
+    del df['filename']
+    df.set_index(['dataset', 'classifier', 'calibration'], inplace=True)
+    generate_summary_hist(df, summary_path)
 
 
 if __name__ == '__main__':
