@@ -185,9 +185,13 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                 [methods], [verbose]]
         args = list(itertools.product(*args))
 
+        logger.info('{} jobs will be deployed in {} workers'.format(
+            len(args), scoop.SIZE))
+        logger.debug('The following is a list with all the arguments')
+        logger.debug(args)
+
         # If only one worker, then do not use scoop
         if scoop.SIZE != 1:
-            logger.info('Jobs will be deployed in {} workers'.format(scoop.SIZE))
             map_f = futures.map
         else:
             map_f = map
