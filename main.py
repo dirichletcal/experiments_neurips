@@ -1,7 +1,5 @@
 # Usage:
-# Parallelized in multiple threads:
-#   python -m scoop -n 4 main.py # where -n is the number of workers (
-# threads)
+# Parallelized in multiple threads: #   python -m scoop -n 4 main.py # where -n is the number of workers ( # threads)
 # Not parallelized (easier to debug):
 #   python main.py
 from __future__ import division
@@ -20,8 +18,8 @@ from sklearn.svm import SVC
 
 # Parallelization
 import itertools
-import scoop
-from scoop import futures, shared, logger
+#import scoop
+#from scoop import futures, shared
 
 # Our classes and modules
 from calib.utils.calibration import cv_calibration
@@ -40,6 +38,8 @@ from calib.utils.summaries import generate_summary_hist
 from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_non_binary
 
+import logging
+logger = logging.getLogger(__name__)
 
 classifiers = {
       'mock': MockClassifier(),
@@ -121,7 +121,8 @@ def parse_arguments():
 
 def compute_all(args):
     (name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
-    dataset = shared.getConst(name)
+    data = Data(dataset_names=[name])
+    dataset = data.datasets[name]
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
     logger.info(locals())
@@ -179,22 +180,23 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
         mcs = np.arange(mc_iterations)
         logger.info(dataset)
-        shared.setConst(**{name: dataset})
+        #shared.setConst(**{name: dataset})
         # All the arguments as a list of lists
         args = [[name], [n_folds], [inner_folds], mcs, [classifier_name],
                 [methods], [verbose]]
         args = list(itertools.product(*args))
 
-        logger.info('{} jobs will be deployed in {} workers'.format(
-            len(args), scoop.SIZE))
+        #logger.info('{} jobs will be deployed in {} workers'.format(
+        #    len(args), scoop.SIZE))
         logger.debug('The following is a list with all the arguments')
         logger.debug(args)
 
         # If only one worker, then do not use scoop
-        if scoop.SIZE != 1:
-            map_f = futures.map
-        else:
-            map_f = map
+        #if scoop.SIZE != 1:
+        #    map_f = futures.map
+        #else:
+        #    map_f = map
+        map_f = map
 
         dfs = map_f(compute_all, args)
 
@@ -238,13 +240,6 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     #generate_summaries(df_all, results_path)
 
 
-
 if __name__ == '__main__':
     args = parse_arguments()
     main(**vars(args))
-
-
-
-
-
-
