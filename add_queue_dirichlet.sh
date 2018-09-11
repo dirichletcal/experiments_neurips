@@ -1,22 +1,28 @@
 #!/bin/bash
 
 #SBATCH --job-name=dirichlet_job
+##SBATCH --partition=test
 #SBATCH --partition=veryshort
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=28
-#SBATCH --time=0-06:00:00
-##SBATCH --mem=100M
+#SBATCH --cpus-per-task=1
+##SBATCH --time=0-00:10:00
+#SBATCH --time=0-03:00:00
+#SBATCH --mem=100M
 ### A total of 156 runs
-#SBATCH --array=100-155
+#SBATCH --array=0-155
 #SBATCH --exclusive
 
-# Activate the virtual environment
-source activate dirichletvenv
+# Load Anaconda 3 and Python 3.6
+#module load languages/anaconda3/5.2.0-tflow-1.7
+#source activate dirichletvenv
 
 #! change the working directory
 # (default is home directory)
 cd $SLURM_SUBMIT_DIR
+
+# Activate the virtual environment
+source ./venv/bin/activate
 
 echo Running on host `hostname`
 echo Time is `date`
@@ -37,6 +43,9 @@ declare -a classifier_names=(
     )
 
 declare -a dataset_names=(
+    'iris'
+    'glass'
+    'car'
     'optdigits'
     'libras-movement'
     'pendigits'
@@ -56,9 +65,6 @@ declare -a dataset_names=(
     'letter'
     'segment'
     'mfeat-morphological'
-    'iris'
-    'glass'
-    'car'
     'balance-scale'
     'mfeat-karhunen'
     'mfeat-zernike'
@@ -81,6 +87,10 @@ echo "Hosts are ${hosts}"
 datasets='datasets_non_binary'
 output_path='results'`date +"_%d_%m_%Y_"`${datasets}
 
-time srun python -m scoop --host ${hosts} -v main.py \
+# When using scoop some executions get halted for a long time
+#time srun python -m scoop --host ${hosts} -v main.py \
+#    --classifier ${classifier} --output-path ${output_path} \
+#    --datasets ${dataset} --seed 42
+time srun python main.py \
     --classifier ${classifier} --output-path ${output_path} \
     --datasets ${dataset} --seed 42
