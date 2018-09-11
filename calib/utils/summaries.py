@@ -226,12 +226,14 @@ def generate_summaries(df, summary_path):
                                                columns=['method'],
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
+            if max_is_better:
+                table *= -1
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
         df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
                                         columns=table.columns.levels[2])
         str_table = to_latex(classifiers, df_mean_rankings, precision=1,
                              table_size='\\small',
-                             max_is_better=max_is_better,
+                             max_is_better=False,
                              caption=('Ranking of calibration methods ' +
                                       'applied to each classifier ' +
                                       'with the measure={}'
