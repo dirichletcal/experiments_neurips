@@ -105,8 +105,9 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
 # the column and row names?
 def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
              table_size="\\normalsize", caption="", label='table',
-             add_std=True, position='!H'):
-    column_names = table.columns.levels[2]
+             add_std=True, position='!H', column_names=None):
+    if column_names is None:
+        column_names = table.columns.levels[2]
     n_columns = len(column_names)
     row_names = table.index
     n_rows = len(row_names)

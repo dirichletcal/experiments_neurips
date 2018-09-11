@@ -13,6 +13,7 @@ from calib.utils.plots import df_to_heatmap
 from scipy.stats import ranksums
 from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
+from scipy.stats import rankdata
 
 
 def load_all_csv(results_path, expression=".*.csv"):
@@ -215,6 +216,36 @@ def generate_summaries(df, summary_path):
                                   label='tab:mannwhitney:{}'.format(measure),
                                   str_format='%1.1e'
                                 )
+
+        ranking_table = np.zeros((len(classifiers),
+                                  df.method.unique().shape[0]))
+        for i, classifier_name in enumerate(classifiers):
+            print('- Classifier name = {}'.format(classifier_name))
+            class_mask = df['classifier'] == classifier_name
+            table = df[class_mask].pivot_table(index=['dataset'],
+                                               columns=['method'],
+                                               values=[measure],
+                                               aggfunc=[np.mean, np.std])
+            ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
+        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
+                                        columns=table.columns.levels[2])
+        str_table = to_latex(classifiers, df_mean_rankings, precision=1,
+                             table_size='\\small',
+                             max_is_better=max_is_better,
+                             caption=('Ranking of calibration methods ' +
+                                      'applied to each classifier ' +
+                                      'with the measure={}'
+                                      ).format(measure),
+                             label='table:{}'.format(measure),
+                             add_std=False,
+                             column_names=df_mean_rankings.columns)
+        file_basename = os.path.join(summary_path,
+                                     '{}_rankings'.format(measure))
+        with open(file_basename + '.tex', "w") as text_file:
+            text_file.write(str_table)
+
+
+
 
         for classifier_name in classifiers:
             print('- Classifier name = {}'.format(classifier_name))
