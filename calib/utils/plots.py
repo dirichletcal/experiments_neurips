@@ -12,6 +12,9 @@ from calib.utils.functions import df_normalise
 
 import pandas as pd
 
+# Critical difference plot
+import Orange
+
 
 def reliability_diagram(prob, Y, marker='--', label='', alpha=1, linewidth=1,
                         ax_reliability=None, clip=True):
@@ -344,3 +347,9 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
         print('Canceling tight_layout for figure {}'.format(filename))
     fig.savefig(filename)
     plt.close(fig)
+
+def export_critical_difference(avranks, num_datasets, names, filename):
+    cd = Orange.evaluation.compute_CD(avranks, num_datasets)
+    Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6, textspace=1.5)
+    plt.savefig(filename)
+

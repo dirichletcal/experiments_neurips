@@ -9,6 +9,7 @@ from calib.utils.functions import to_latex
 
 # Visualisations
 from calib.utils.plots import df_to_heatmap
+from calib.utils.plots import export_critical_difference
 
 from scipy.stats import ranksums
 from scipy.stats import mannwhitneyu
@@ -229,6 +230,15 @@ def generate_summaries(df, summary_path):
             if max_is_better:
                 table *= -1
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
+
+            filename = os.path.join(summary_path, 'crit_diff_' +
+                                    classifier_name + '.pdf')
+
+            export_critical_difference(avranks=ranking_table[i],
+                                       num_datasets=table.shape[0],
+                                       names=table.columns.levels[2],
+                                       filename=filename)
+
         df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
                                         columns=table.columns.levels[2])
         str_table = to_latex(classifiers, df_mean_rankings, precision=1,
@@ -257,7 +267,7 @@ def generate_summaries(df, summary_path):
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
 
-            # Perform a Friedman Chi-square statistic test
+            # Perform a Friedman statistic test
             ftest = compute_friedmanchisquare(table)
             print(ftest)
 
@@ -267,7 +277,7 @@ def generate_summaries(df, summary_path):
                                  caption=('Ranking of calibration methods ' +
                                           'applied on the classifier ' +
                                           '{} with the measure={}' +
-                                          '(Friedman Chi-square statistic test ' +
+                                          '(Friedman statistic test ' +
                                           '= {:.2E}, p-value = {:.2E})'
                                           ).format(classifier_name, measure,
                                                   ftest.statistic, ftest.pvalue),
