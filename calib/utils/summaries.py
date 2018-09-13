@@ -232,7 +232,8 @@ def generate_summaries(df, summary_path):
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
 
             filename = os.path.join(summary_path, 'crit_diff_' +
-                                    classifier_name + '.pdf')
+                                    classifier_name + '_' +
+                                    measure + '.pdf')
 
             export_critical_difference(avranks=ranking_table[i],
                                        num_datasets=table.shape[0],
