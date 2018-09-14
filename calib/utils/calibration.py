@@ -46,10 +46,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     # Ensure the same classes in train and test partitions
     assert_array_equal(np.unique(y_train), np.unique(y_test))
     binarizer.fit(y_train)
-    y_test_bin = binarizer.transform(y_test)
-    if y_test_bin.shape[1] == 1:
-        y_test_bin = np.hstack((y_test_bin -1, y_test_bin))
-    mean_probas = {method: np.zeros((y_test_bin.shape))
+    mean_probas = {method: np.zeros((y_test.shape[0], len(binarizer.classes_)))
                    for method in methods}
     classifiers = {method: [] for method in methods}
     exec_time = {method: [] for method in methods}
@@ -77,12 +74,15 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             if model_type == 'map-only':
                 ccv.set_base_estimator(main_classifier, score_type=score_type)
             predicted_proba = ccv.predict_proba(x_test)
-            if predicted_proba.shape[1] == 1:
-                predicted_proba = np.hstack((predicted_proba - 1,
-                                             predicted_proba))
             mean_probas[method] += predicted_proba / cv
             classifiers[method].append(ccv)
 
+    y_test_bin = binarizer.transform(y_test)
+    if y_test_bin.shape[1] == 1:
+        y_test_bin = np.hstack((1 - y_test_bin, y_test_bin))
+    # TODO we are doing a bootstrap of calibration methods... Shouldn't we
+    # asses the performance of each individual calibrator and then compute the
+    # mean? Is this the same?
     losses = {method: cross_entropy(mean_probas[method], y_test_bin) for method
               in methods}
     accs = {method: np.mean((mean_probas[method].argmax(axis=1)) == y_test) for method
