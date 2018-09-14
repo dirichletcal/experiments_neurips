@@ -111,7 +111,7 @@ def parse_arguments():
     parser.add_argument('-m', '--methods', dest='methods',
                         type=comma_separated_strings,
                         default=['None', 'beta', 'beta_am', 'isotonic',
-                                 'sigmoid', 'dirichlet_full', 'dirichlet_diag',
+                                 'dirichlet_full', 'dirichlet_diag',
                                  'dirichlet_fix_diag'],
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
@@ -169,7 +169,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         # cross-validataion steps (classifier + calibrator)
         smaller_count = min(dataset.counts)
         if (smaller_count < n_folds) or \
-           ((smaller_count*(n_folds-1)/n_folds) < inner_folds):
+           ((smaller_count*(n_folds-1)/n_folds) < inner_folds) or \
+           ((dataset.target.shape[0]/dataset.n_classes) < 100):
             logger.warn(("At least one of the classes does not have enough "
                          "samples for outer {} folds and inner {} folds"
                         ).format(n_folds, inner_folds))
