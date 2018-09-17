@@ -315,12 +315,13 @@ def generate_summaries(df, summary_path):
 
 def generate_summary_hist(df, summary_path):
     file_basename = os.path.join(summary_path, 'scores_histogram')
+    df = df.sort_index()
     df_to_heatmap(df, file_basename + '.svg', title='Mean score histograms',
                   normalise_rows=True)
 
-    for dataset in df.index.levels[1]:
-        df_to_heatmap(df.loc[(slice(None), [dataset]),
-                             :].reset_index(level='dataset', drop=True),
-                      file_basename + '_' + dataset + '.svg',
-                      title='Mean score histograms ' + dataset,
+    for classifier in df.index.levels[1]:
+        df_to_heatmap(df.loc[(slice(None), [classifier]),
+                             :].reset_index(level='classifier', drop=True),
+                      file_basename + '_' + classifier + '.svg',
+                      title='Mean score histograms ' + classifier,
                       normalise_rows=True)
