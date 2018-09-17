@@ -220,6 +220,7 @@ def generate_summaries(df, summary_path):
 
         ranking_table = np.zeros((len(classifiers),
                                   df.method.unique().shape[0]))
+        num_datasets = np.zeros(len(classifiers), dtype='int')
         for i, classifier_name in enumerate(classifiers):
             print('- Classifier name = {}'.format(classifier_name))
             class_mask = df['classifier'] == classifier_name
@@ -230,6 +231,7 @@ def generate_summaries(df, summary_path):
             if max_is_better:
                 table *= -1
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
+            num_datasets[i] = len(table)
 
             filename = os.path.join(summary_path, 'crit_diff_' +
                                     classifier_name + '_' +
@@ -239,6 +241,12 @@ def generate_summaries(df, summary_path):
                                        num_datasets=table.shape[0],
                                        names=table.columns.levels[2],
                                        filename=filename)
+        export_critical_difference(avranks=ranking_table.mean(axis=0),
+                                   num_datasets=num_datasets.sum(),
+                                   names=table.columns.levels[2],
+                                   filename=os.path.join(summary_path,
+                                                         'crit_diff_' +
+                                                         measure + '.pdf'))
 
         df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
                                         columns=table.columns.levels[2])
