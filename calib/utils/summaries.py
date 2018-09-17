@@ -241,15 +241,17 @@ def generate_summaries(df, summary_path):
                                        num_datasets=table.shape[0],
                                        names=table.columns.levels[2],
                                        filename=filename)
-        export_critical_difference(avranks=ranking_table.mean(axis=0),
+
+        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
+                                        columns=table.columns.levels[2])
+        # TODO check that performing the ranking of the rankings is appropriate
+        export_critical_difference(avranks=df_mean_rankings.apply(rankdata,
+                                                                  axis=1).mean(),
                                    num_datasets=num_datasets.sum(),
                                    names=table.columns.levels[2],
                                    filename=os.path.join(summary_path,
                                                          'crit_diff_' +
                                                          measure + '.pdf'))
-
-        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
-                                        columns=table.columns.levels[2])
         str_table = to_latex(classifiers, df_mean_rankings, precision=1,
                              table_size='\\small',
                              max_is_better=False,
