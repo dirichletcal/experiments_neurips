@@ -2,7 +2,7 @@ from __future__ import division
 import time
 import logging
 import numpy as np
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.base import clone
 from numpy.testing import assert_array_equal
@@ -39,7 +39,7 @@ def calibrate(classifier, x_cali, y_cali, method=None, score_type=None):
 
 def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                    y_test, cv=3, score_type=None,
-                   model_type='map-only', verbose=NameError, seed=None):
+                    verbose=NameError, seed=None):
     ''' Train a classifier with the specified dataset and calibrate
 
     Parameters
@@ -64,8 +64,6 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     score_type : string
         String indicating the function to call to obtain predicted
         probabilities from the classifier.
-    model_type : string
-        Legacy argument (to be removed)
     verbose : ErrorType
     seed : int
         Seed for the stratified k folds
@@ -87,27 +85,27 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     mean_time : dict of float
         Mean calibration time for the inner folds
     '''
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True,
-                            random_state=seed)
-    binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
     # Ensure the same classes in train and test partitions
     assert_array_equal(np.unique(y_train), np.unique(y_test))
+
+    # Prepare a binarizer
+    binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
     binarizer.fit(y_train)
+
     mean_probas = {method: np.zeros((y_test.shape[0], len(binarizer.classes_)))
                    for method in methods}
     classifiers = {method: [] for method in methods}
     exec_time = {method: [] for method in methods}
-    main_classifier = clone(base_classifier)
-    rejected_count = 0
-    if model_type == 'map-only':
-        main_classifier.fit(x_train, y_train)
-    for i, (train, cali) in enumerate(folds):
+
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
+    for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
         x_t = x_train[train]
         y_t = y_train[train]
         x_c = x_train[cali]
         y_c = y_train[cali]
         # Ensure the same classes in train and test partitions
         assert_array_equal(np.unique(y_t), np.unique(y_c))
+
         classifier = clone(base_classifier)
         classifier.fit(x_t, y_t)
         for method in methods:
@@ -118,8 +116,6 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                             score_type=score_type)
             end = time.time()
             exec_time[method].append(end - start)
-            if model_type == 'map-only':
-                ccv.set_base_estimator(main_classifier, score_type=score_type)
             predicted_proba = ccv.predict_proba(x_test)
             mean_probas[method] += predicted_proba / cv
             classifiers[method].append(ccv)
@@ -142,14 +138,15 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
 
 def cv_calibration_map_differences(base_classifier, x_train, y_train, cv=3,
                                    score_type=None):
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
     a = np.zeros((cv, 2))
     b = np.zeros((cv, 2))
     m = np.zeros((cv, 2))
     df_pos = None
     df_neg = None
     ccv = None
-    for i, (train, cali) in enumerate(folds):
+
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
+    for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
         if i < cv:
             x_t = x_train[train]
             y_t = y_train[train]
@@ -169,9 +166,9 @@ def cv_calibration_map_differences(base_classifier, x_train, y_train, cv=3,
 
 def cv_confidence_intervals(base_classifier, x_train, y_train, x_test,
                             y_test, cv=2, score_type=None):
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
     intervals = None
-    for i, (train, cali) in enumerate(folds):
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
+    for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
         if i == 0:
             x_t = x_train[train]
             y_t = y_train[train]
@@ -202,9 +199,9 @@ def cv_confidence_intervals(base_classifier, x_train, y_train, x_test,
 
 def cv_p_improvement(base_classifier, x_train, y_train, x_test,
                             y_test, cv=2, score_type=None):
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
     p_values = np.array([])
-    for i, (train, cali) in enumerate(folds):
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
+    for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
         if i < cv:
             x_t = x_train[train]
             y_t = y_train[train]
@@ -229,11 +226,12 @@ def cv_p_improvement(base_classifier, x_train, y_train, x_test,
 
 def cv_p_improvement_correct(base_classifier, x_train, y_train, x_test,
                              y_test, cv=2, score_type=None):
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
     bins = np.linspace(0, 1, 101)
     improv_counts = np.zeros(100)
     total_counts = np.zeros(100)
-    for i, (train, cali) in enumerate(folds):
+
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
+    for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
         if i < cv:
             x_t = x_train[train]
             y_t = y_train[train]
@@ -264,11 +262,11 @@ def cv_p_improvement_correct(base_classifier, x_train, y_train, x_test,
 
 def cv_all_p(base_classifier, x_train, y_train, x_test, y_test, cv=2,
              score_type=None):
-    folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True)
     p_values = np.zeros(cv)
     improvements = np.zeros(cv)
     p_values_dist = np.zeros(cv)
-    for i, (train, cali) in enumerate(folds):
+    skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
+    for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
         if i < cv:
             x_t = x_train[train]
             y_t = y_train[train]
