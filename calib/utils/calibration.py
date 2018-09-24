@@ -40,6 +40,53 @@ def calibrate(classifier, x_cali, y_cali, method=None, score_type=None):
 def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                    y_test, cv=3, score_type=None,
                    model_type='map-only', verbose=NameError, seed=None):
+    ''' Train a classifier with the specified dataset and calibrate
+
+    Parameters
+    ----------
+    base_classifier : string
+        Name of the classifier to be trained and tested
+    methods : list of strings
+        List of all the calibrators to train and test
+    x_train : array-like, shape (n_train_samples, n_features)
+        Training data.
+    y_train : array-like of integers, shape (n_train_samples,)
+        Labels for each training sample in integer form
+    x_test : array-like, shape (n_test_samples, n_features)
+        Test data.
+    y_test : array-like of integers, shape (n_test_samples,)
+        Labels for each test sample in integer form
+    cv : int
+        Number of folds to perform in the training set, to train the classifier
+        and the calibrator. The classifier is always trained in the bigger
+        fold, while the calibrator is trained in the remaining 1 fold. This is
+        repeated 'cv' times.
+    score_type : string
+        String indicating the function to call to obtain predicted
+        probabilities from the classifier.
+    model_type : string
+        Legacy argument (to be removed)
+    verbose : ErrorType
+    seed : int
+        Seed for the stratified k folds
+    Returns
+    -------
+    Each of the following dictionaries contain one entry with a calibrator and
+    their corresponding information:
+
+    accs : dict of float
+        Mean accuracy for the inner folds
+    losses : dict of float
+        Mean Log-loss for the inner folds
+    briers : dict of float
+        Mean Brier score for the inner folds
+    mean_probas : array of floats (n_samples_test, n_classes)
+        Mean probability predictions for the inner folds and the test set
+    classifiers : dict of list of classifier objects
+        List of object classifiers
+    mean_time : dict of float
+        Mean calibration time for the inner folds
+    '''
     folds = StratifiedKFold(y_train, n_folds=cv, shuffle=True,
                             random_state=seed)
     binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
