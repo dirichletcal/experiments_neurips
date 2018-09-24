@@ -2,6 +2,7 @@ __docformat__ = 'restructedtext en'
 import warnings
 from sklearn.datasets import fetch_mldata
 from sklearn.model_selection import StratifiedKFold
+from sklearn.utils import shuffle as skl_shuffle
 import numpy as np
 
 __author__ = "Miquel Perello Nieto"
@@ -57,10 +58,13 @@ datasets_all = list(set(datasets_li2014 + datasets_hempstalk2008 +
 datasets_non_binary = [d for d in datasets_all if d not in datasets_binary]
 
 class Dataset(object):
-    def __init__(self, name, data, target):
+    def __init__(self, name, data, target, shuffle=True):
         self.name = name
         self._data = self.standardize_data(data)
         self._target, self._classes, self._names, self._counts = self.standardize_targets(target)
+        if shuffle:
+            self._data, self._target = skl_shuffle(self._data, self._target)
+
 
     def standardize_data(self, data):
         new_data = data.astype(float)
