@@ -3,6 +3,7 @@ import numpy as np
 
 from scipy.special import expit
 
+from sklearn.base import clone
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.utils import check_X_y, indexable, column_or_1d
 from sklearn.utils.validation import check_is_fitted
@@ -10,7 +11,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from sklearn.calibration import _SigmoidCalibration
 
-from python_betacal.betacal import BetaCalibration
+from betacal import BetaCalibration
 
 from calib.utils.functions import fit_beta_nll
 from calib.utils.functions import fit_beta_moments
@@ -30,7 +31,7 @@ class _DummyCalibration(BaseEstimator, RegressorMixin):
     the CalibratedClassifierCV class the option to just return the
     probabilities of the base classifier.
     """
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, *args):
         """Does nothing"""
         return self
 
@@ -40,8 +41,22 @@ class _DummyCalibration(BaseEstimator, RegressorMixin):
 
 
 class IsotonicCalibration(IsotonicRegression):
-    def predict_proba(self, *args, **kwargs):
-        return super(IsotonicCalibration, self).predict(*args, **kwargs)
+    def fit(self, scores, y, *args, **kwargs):
+        '''
+        Score=0 corresponds to y=0, and score=1 to y=1
+        Parameters
+        ----------
+        scores : array-like, shape = [n_samples,]
+            Data.
+        y : array-like, shape = [n_samples, ]
+            Labels.
+        Returns
+        -------
+        self
+        '''
+        return super(IsotonicCalibration, self).fit(scores, y, *args, **kwargs)
+    def predict_proba(self, scores, *args, **kwargs):
+        return self.transform(scores, *args, **kwargs)
 
 
 class SigmoidCalibration(_SigmoidCalibration):
@@ -56,7 +71,6 @@ MAP_CALIBRATORS = {
     'beta': OneVsRestCalibrator(BetaCalibration(parameters="abm")),
     'beta_am': OneVsRestCalibrator(BetaCalibration(parameters="am")),
     'beta_ab': OneVsRestCalibrator(BetaCalibration(parameters="ab")),
-    'multinomial': MultinomialRegression(),
     'dirichlet_full': DirichletCalibrator(matrix_type='full'),
     'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
     'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
@@ -82,7 +96,7 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         self.base_estimator = base_estimator
         self.score_type = score_type
 
-    def fit(self, X, y, sample_weight=None):
+    def fit(self, X, y):
         """Fit the calibrated model
 
         Parameters
@@ -92,9 +106,6 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
 
         y : array-like, shape (n_samples, n_classes)
             Target values.
-
-        sample_weight : array-like, shape = [n_samples] or None
-            Sample weights. If None, then samples are equally weighted.
 
         Returns
         -------
@@ -108,9 +119,15 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
 
         scores = self.base_estimator.predict_proba(X)
 
-        self.calibrator = MAP_CALIBRATORS[self.method]
+        self.calibrator = clone(MAP_CALIBRATORS[self.method])
         # TODO isotonic with binary y = (n_samples, ) fails, needs one-hot-enc.
-        self.calibrator.fit(scores, y, sample_weight)
+        self.calibrator.fit(scores, y)
+        #print(self.method)
+        #print('scores.shape(X) ' + str(scores.shape))
+        #print('prob.shape(S) ' + str(self.calibrator.predict_proba(scores).shape))
+        #print('prob.shape(X) ' + str(self.predict_proba(X).shape))
+        #if self.method == 'isotonic':
+        #    from IPython import embed; embed()
         return self
 
     def predict_proba(self, X):

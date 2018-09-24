@@ -13,7 +13,7 @@ from sklearn.utils.metaestimators import if_delegate_has_method
 from sklearn.utils.validation import check_is_fitted
 
 
-def _fit_binary(estimator, X, y, classes=None, sample_weight=None):
+def _fit_binary(estimator, X, y, classes=None):
     """Fit a single binary estimator."""
     unique_y = np.unique(y)
     if len(unique_y) == 1:
@@ -27,13 +27,14 @@ def _fit_binary(estimator, X, y, classes=None, sample_weight=None):
         estimator = _ConstantPredictor().fit(X, unique_y)
     else:
         estimator = clone(estimator)
-        estimator.fit(X, y, sample_weight)
+        estimator.fit(X, y)
     return estimator
 
 
 class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
     """One-vs-the-rest (OvR) multiclass/multilabel strategy
-    Also known as one-vs-all, this strategy consists in fitting one classifier
+
+    Also known as one-vs-all, this strategy consists in fitting one calibrator
     per class. For each classifier, the class is fitted against all the other
     classes. In addition to its computational efficiency (only `n_classes`
     classifiers are needed), one advantage of this approach is its
@@ -74,8 +75,11 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         self.n_jobs = n_jobs
         self.normalize = normalize
 
-    def fit(self, X, y, sample_weight):
+    def fit(self, X, y):
         """Fit underlying estimators.
+
+        If the number of classes = 2, only one model is trained to predict the
+        class 1 (second column)
         Parameters
         ----------
         X : (sparse) array-like, shape = [n_samples, n_classes]
@@ -91,11 +95,15 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         # outpreform or match a dense label binarizer in all cases and has also
         # resulted in less or equal memory consumption in the fit_ovr function
         # overall.
+        if X.shape[1] == 2:
+            x_columns = (X[:,1].ravel().T, )
+        else:
+            x_columns = (col.ravel() for col in X.T)
+
         self.label_binarizer_ = LabelBinarizer(sparse_output=True)
         Y = self.label_binarizer_.fit_transform(y)
         Y = Y.tocsc()
         self.classes_ = self.label_binarizer_.classes_
-        x_columns = (col.ravel() for col in X.T)
         y_columns = (col.toarray().ravel() for col in Y.T)
         # In cases where individual estimators are very fast to train setting
         # n_jobs > 1 in can results in slower performance due to the overhead
@@ -130,7 +138,11 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         check_is_fitted(self, 'estimators_')
         # Y[i, j] gives the probability that sample i has the label j.
         # In the multi-label case, these are not disjoint.
-        x_columns = (col.ravel() for col in X.T)
+        if X.shape[1] == 2:
+            x_columns = (X[:,1].ravel().T, )
+        else:
+            x_columns = (col.ravel() for col in X.T)
+
         # Removed indexing as follows: e.predict_proba(x_column)[:, 1]
         Y = np.array([e.predict_proba(x_column)
                       for (e, x_column) in zip(self.estimators_, x_columns)]).T

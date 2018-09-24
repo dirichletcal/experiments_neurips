@@ -12,7 +12,7 @@ from calib.models.calibration import CalibratedModel
 from .functions import cross_entropy
 from .functions import brier_score
 from .functions import beta_test
-from python_betacal.betacal import BetaCalibration
+from betacal import BetaCalibration
 from calib.utils.functions import beta_test
 from calib.utils.functions import fit_beta_moments
 from calib.utils.functions import fit_beta_midpoint
