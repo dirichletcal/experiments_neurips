@@ -120,6 +120,52 @@ def parse_arguments():
 
 
 def compute_all(args):
+    ''' Train a classifier with the specified dataset and calibrate
+
+    Parameters
+    ----------
+    args is a tuple with all the following:
+
+    name : string
+        Name of the dataset to use
+    n_folds : int
+        Number of folds to perform n-fold-cross-validation to train and test
+        the classifier + calibrator.
+    inner_folds : int
+        The training set selected from the fold before, is divided into
+        training of the classifier and training of the calibrator.
+    mc : int
+        Monte Carlo repetition index, in order to set different seeds to
+        different repetitions, but same seed in calibrators in the same Monte
+        Carlo repetition.
+    classifier_name : string
+        Name of the classifier to be trained and tested
+    methods : list of strings
+        List of calibrators to be trained and tested
+    verbose : int
+        Integer indicating the verbosity level
+
+    Returns
+    -------
+    df : pands.DataFrame
+        DataFrame with the overall results of every calibration method
+        name : string
+            Name of the dataset
+        method : string
+            Calibrator method
+        mc : int
+            Monte Carlo repetition index
+        acc : float
+            Mean accuracy for the inner folds
+        loss : float
+            Mean Log-loss for the inner folds
+        brier : float
+            Mean Brier score for the inner folds
+        mean_probas : array of floats (n_samples_test, n_classes)
+            Mean probability predictions for the inner folds and the test set
+        exec_time : float
+            Mean calibration time for the inner folds
+    '''
     (name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
     data = Data(dataset_names=[name])
     dataset = data.datasets[name]
