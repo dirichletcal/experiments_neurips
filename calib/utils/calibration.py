@@ -30,13 +30,6 @@ def get_calibrated_scores(classifiers, methods, scores):
     return probas
 
 
-def calibrate(classifier, x_cali, y_cali, method=None, score_type=None):
-    ccv = CalibratedModel(base_estimator=classifier, method=method,
-                          score_type=score_type)
-    ccv.fit(x_cali, y_cali)
-    return ccv
-
-
 def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
                    y_test, cv=3, score_type=None,
                     verbose=NameError, seed=None):
@@ -112,8 +105,9 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             logger.debug("Calibrating with {}".format( 'none' if method is None
                                                else method))
             start = time.time()
-            ccv = calibrate(classifier, x_c, y_c, method=method,
-                            score_type=score_type)
+            ccv = CalibratedModel(base_estimator=classifier, method=method,
+                                  score_type=score_type)
+            ccv.fit(x_c, y_c)
             end = time.time()
             exec_time[method].append(end - start)
             predicted_proba = ccv.predict_proba(x_test)
@@ -211,7 +205,7 @@ def cv_p_improvement(base_classifier, x_train, y_train, x_test,
             classifier.fit(x_t, y_t)
             ccv = calibrate(classifier, x_c, y_c, method="beta",
                             score_type=score_type)
-            scores = ccv._preproc(x_test)
+            scores = ccv.base_estimator.predict_proba(x_test)
             scores_beta = ccv.predict_proba(x_test)[:, 1]
 
             ll_before = cross_entropy(scores, y_test)
@@ -241,8 +235,8 @@ def cv_p_improvement_correct(base_classifier, x_train, y_train, x_test,
             classifier.fit(x_t, y_t)
             ccv = calibrate(classifier, x_c, y_c, method="beta",
                             score_type=score_type)
-            scores_c = ccv._preproc(x_c)
-            scores = ccv._preproc(x_test)
+            scores_c = ccv.base_estimator.predict_proba(x_c)
+            scores = ccv.base_estimator.predict_proba(x_test)
             scores_beta = ccv.predict_proba(x_test)[:, 1]
 
             ll_before = cross_entropy(scores, y_test)
@@ -276,8 +270,8 @@ def cv_all_p(base_classifier, x_train, y_train, x_test, y_test, cv=2,
             classifier.fit(x_t, y_t)
             ccv = calibrate(classifier, x_c, y_c, method="beta",
                             score_type=score_type)
-            scores_c = ccv._preproc(x_c)
-            scores = ccv._preproc(x_test)
+            scores_c = ccv.base_estimator.predict_proba(x_c)
+            scores = ccv.base_estimator.predict_proba(x_test)
 
             test = beta_test(ccv.calibrator.calibrator_.map_,
                              test_type="adev", scores=scores_c)
