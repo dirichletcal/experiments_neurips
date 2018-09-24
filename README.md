@@ -118,4 +118,5 @@ curl https://bootstrap.pypa.io/get-pip.py | python
 
 Currently there is only tests for Dirichlet
 
-    python -m unittest discover dirichlet/
+    python -m unittest discover dirichlet
+    python -m unittest discover betacal
