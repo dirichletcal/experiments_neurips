@@ -182,8 +182,7 @@ def compute_all(args):
         x_test, y_test = dataset.data[test_idx], dataset.target[test_idx]
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
-                                 model_type='full-stack', verbose=verbose,
-                                 seed=mc)
+                                 verbose=verbose, seed=mc)
         accs, losses, briers, mean_probas, cl, exec_time = results
 
         for method in methods:
