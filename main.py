@@ -39,7 +39,7 @@ from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_non_binary
 
 import logging
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 classifiers = {
       'mock': MockClassifier(),
@@ -171,7 +171,7 @@ def compute_all(args):
     dataset = data.datasets[name]
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
-    logger.info(locals())
+    logging.info(locals())
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=mc)
     df = MyDataFrame(columns=columns)
     class_counts = np.bincount(dataset.target)
@@ -182,8 +182,7 @@ def compute_all(args):
         x_test, y_test = dataset.data[test_idx], dataset.target[test_idx]
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
-                                 model_type='full-stack', verbose=verbose,
-                                 seed=mc)
+                                 verbose=verbose, seed=mc)
         accs, losses, briers, mean_probas, cl, exec_time = results
 
         for method in methods:
@@ -197,7 +196,7 @@ def compute_all(args):
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 		 verbose, datasets, inner_folds, methods):
-    logger.info(locals())
+    logging.info(locals())
     results_path = os.path.join(results_path, classifier_name)
 
     dataset_names = datasets
@@ -210,33 +209,33 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
     for name, dataset in data.datasets.items():
         df = MyDataFrame(columns=columns)
-        logger.info(dataset)
+        logging.info(dataset)
         # Assert that every class has enough samples to perform the two
         # cross-validataion steps (classifier + calibrator)
         smaller_count = min(dataset.counts)
         if (smaller_count < n_folds) or \
            ((smaller_count*(n_folds-1)/n_folds) < inner_folds) or \
-           ((dataset.target.shape[0]/dataset.n_classes) < 100):
-            logger.warn(("At least one of the classes does not have enough "
+          ((dataset.target.shape[0]/dataset.n_classes) < 100):
+            logging.warn(("At least one of the classes does not have enough "
                          "samples for outer {} folds and inner {} folds"
                         ).format(n_folds, inner_folds))
             # TODO Remove problematic class instead
-            logger.warn("Removing dataset from experiments and skipping")
+            logging.warn("Removing dataset from experiments and skipping")
             dataset_names = [aux for aux in dataset_names if aux != name]
             continue
 
         mcs = np.arange(mc_iterations)
-        logger.info(dataset)
+        logging.info(dataset)
         #shared.setConst(**{name: dataset})
         # All the arguments as a list of lists
         args = [[name], [n_folds], [inner_folds], mcs, [classifier_name],
                 [methods], [verbose]]
         args = list(itertools.product(*args))
 
-        #logger.info('{} jobs will be deployed in {} workers'.format(
+        #logging.info('{} jobs will be deployed in {} workers'.format(
         #    len(args), scoop.SIZE))
-        logger.debug('The following is a list with all the arguments')
-        logger.debug(args)
+        logging.debug('The following is a list with all the arguments')
+        logging.debug(args)
 
         # If only one worker, then do not use scoop
         #if scoop.SIZE != 1:
@@ -262,8 +261,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                     values=['acc', 'loss', 'brier'],
                     index=['method'], aggfunc=[np.mean, np.std])
 
-        logger.info(table)
-        logger.info('Histogram of all the scores')
+        logging.info(table)
+        logging.info('Histogram of all the scores')
         for method in methods:
             hist = np.histogram(np.concatenate(
                         df[df.dataset == name][df.method ==
@@ -274,8 +273,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                                   columns=columns_hist)
             df_hist.to_csv(os.path.join(results_path, '_'.join(
                 [classifier_name, name, method, 'score_histogram.csv'])))
-            logger.info(df_hist)
-        logger.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+            logging.info(df_hist)
+        logging.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
 
 
     #df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
