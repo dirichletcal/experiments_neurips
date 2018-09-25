@@ -62,11 +62,10 @@ score_types = {
       'svm': 'sigmoid'
 }
 
-columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
-           'c_probas', 'exec_time']
+columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
+           'test_fold', 'acc', 'loss', 'brier', 'c_probas', 'exec_time']
 
-save_columns = ['dataset', 'method', 'mc', 'test_fold', 'acc', 'loss', 'brier',
-                'exec_time']
+save_columns = [c for c in columns if c not in ['c_probas']]
 
 
 def comma_separated_strings(s):
@@ -110,7 +109,7 @@ def parse_arguments():
                         defined groups in the datasets package''')
     parser.add_argument('-m', '--methods', dest='methods',
                         type=comma_separated_strings,
-                        default=['None', 'beta', 'beta_am', 'isotonic',
+                        default=['uncalibrated', 'beta', 'beta_am', 'isotonic',
                                  'dirichlet_full', 'dirichlet_diag',
                                  'dirichlet_fix_diag'],
                         help=('Comma separated calibration methods from ' +
@@ -149,7 +148,7 @@ def compute_all(args):
     -------
     df : pands.DataFrame
         DataFrame with the overall results of every calibration method
-        name : string
+        d_name : string
             Name of the dataset
         method : string
             Calibrator method
@@ -166,9 +165,9 @@ def compute_all(args):
         exec_time : float
             Mean calibration time for the inner folds
     '''
-    (name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
-    data = Data(dataset_names=[name])
-    dataset = data.datasets[name]
+    (d_name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
+    data = Data(dataset_names=[d_name])
+    dataset = data.datasets[d_name]
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
     logging.info(locals())
@@ -186,8 +185,10 @@ def compute_all(args):
         accs, losses, briers, mean_probas, cl, exec_time = results
 
         for method in methods:
-            df = df.append_rows([[name, method, mc, fold_id,
-                                  accs[method], losses[method], briers[method],
+            df = df.append_rows([[d_name, dataset.n_classes,
+                                  dataset.n_features, dataset.n_samples,
+                                  method, mc, fold_id, accs[method],
+                                  losses[method], briers[method],
                                   mean_probas[method], exec_time[method]]])
         fold_id += 1
     return df

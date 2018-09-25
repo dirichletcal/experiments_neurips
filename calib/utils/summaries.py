@@ -140,6 +140,9 @@ def generate_summaries(df, summary_path):
     df:     pandas.DataFrame
         The dataframe needs at least the following columns
         - 'dataset': name of the dataset
+        - 'n_classes':
+        - 'n_features':
+        - 'n_samples':
         - 'method': calibration method (or method to compare)
         - 'mc': Monte Carlo iteration
         - 'test_fold': Number of the test fold
@@ -154,6 +157,12 @@ def generate_summaries(df, summary_path):
                                         regex=True)
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
+
+    # Export summary of datasets
+    (df[['dataset', 'n_samples', 'n_features', 'n_classes']]
+        .drop_duplicates()
+        .set_index('dataset')
+        .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
     measures = (('acc', True), ('loss', False), ('brier', False),
                 ('exec_time', False))

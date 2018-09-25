@@ -128,6 +128,14 @@ class Dataset(object):
     def n_classes(self):
         return len(self._classes)
 
+    @property
+    def n_features(self):
+        return self._data.shape[1]
+
+    @property
+    def n_samples(self):
+        return self._data.shape[0]
+
     def __str__(self):
         return("Name = {}\n"
                "Data shape = {}\n"

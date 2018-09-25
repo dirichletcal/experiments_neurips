@@ -65,7 +65,7 @@ class SigmoidCalibration(_SigmoidCalibration):
 
 
 MAP_CALIBRATORS = {
-    'None': _DummyCalibration(),
+    'uncalibrated': _DummyCalibration(),
     'isotonic': OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip')),
     'sigmoid': OneVsRestCalibrator(SigmoidCalibration()),
     'beta': OneVsRestCalibrator(BetaCalibration(parameters="abm")),
