@@ -162,6 +162,7 @@ def generate_summaries(df, summary_path):
     (df[['dataset', 'n_samples', 'n_features', 'n_classes']]
         .drop_duplicates()
         .set_index('dataset')
+        .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
     measures = (('acc', True), ('loss', False), ('brier', False),
