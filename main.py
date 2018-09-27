@@ -20,6 +20,7 @@ from sklearn.svm import SVC
 import itertools
 #import scoop
 #from scoop import futures, shared
+from multiprocessing import cpu_count, Pool
 
 # Our classes and modules
 from calib.utils.calibration import cv_calibration
@@ -115,6 +116,10 @@ def parse_arguments():
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
                               ', '.join(MAP_CALIBRATORS.keys())))
+    parser.add_argument('-j', '--jobs', dest='n_jobs', type=int,
+                        default=-1,
+                        help='''Number of jobs to run concurrently. -1 to use all
+                                available CPUs''')
     return parser.parse_args()
 
 
@@ -196,7 +201,7 @@ def compute_all(args):
 
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
-		 verbose, datasets, inner_folds, methods):
+		 verbose, datasets, inner_folds, methods, n_jobs):
     logging.info(locals())
     results_path = os.path.join(results_path, classifier_name)
 
@@ -243,7 +248,12 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         #    map_f = futures.map
         #else:
         #    map_f = map
-        map_f = map
+        #map_f = map
+        if n_jobs == -1:
+            n_jobs = cpu_count()
+        p = Pool(n_jobs)
+        map_f = p.map
+
 
         dfs = map_f(compute_all, args)
 
