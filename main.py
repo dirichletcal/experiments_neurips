@@ -40,7 +40,6 @@ from data_wrappers.datasets import Data
 from data_wrappers.datasets import datasets_non_binary
 
 import logging
-logging.basicConfig(level=logging.INFO)
 
 classifiers = {
       'mock': MockClassifier(),
@@ -101,8 +100,9 @@ def parse_arguments():
                         default='results_test',
                         help='''Path to store all the results''')
     parser.add_argument('-v', '--verbose', dest='verbose',
-                        action='store_true', default=False,
-                        help='''Show additional messages''')
+                        type=int, default=logging.INFO,
+                        help='''Show additional messages, from 10 (debug) to
+                        50 (fatal)''')
     parser.add_argument('-d', '--datasets', dest='datasets',
                         type=comma_separated_strings,
                         default=['iris', 'car'],
@@ -116,7 +116,7 @@ def parse_arguments():
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
                               ', '.join(MAP_CALIBRATORS.keys())))
-    parser.add_argument('-j', '--jobs', dest='n_jobs', type=int,
+    parser.add_argument('-w', '--workers', dest='n_workers', type=int,
                         default=-1,
                         help='''Number of jobs to run concurrently. -1 to use all
                                 available CPUs''')
@@ -201,7 +201,8 @@ def compute_all(args):
 
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
-		 verbose, datasets, inner_folds, methods, n_jobs):
+		 verbose, datasets, inner_folds, methods, n_workers):
+    logging.basicConfig(level=verbose)
     logging.info(locals())
     results_path = os.path.join(results_path, classifier_name)
 
@@ -238,8 +239,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                 [methods], [verbose]]
         args = list(itertools.product(*args))
 
-        #logging.info('{} jobs will be deployed in {} workers'.format(
-        #    len(args), scoop.SIZE))
+        logging.info('There are ' + str(len(args)) + ' sets of arguments that need to be run')
         logging.debug('The following is a list with all the arguments')
         logging.debug(args)
 
@@ -249,12 +249,19 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         #else:
         #    map_f = map
         #map_f = map
-        if n_jobs == -1:
-            n_jobs = cpu_count()
-        p = Pool(n_jobs)
-        map_f = p.map
+        if n_workers == -1:
+            n_workers = cpu_count()
+
+        if n_workers > len(args):
+            n_workers = len(args)
+            p = Pool(n_workers)
+            map_f = p.map
+        elif n_workers == 1:
+            map_f = map
 
 
+        logging.info('{} jobs will be deployed in {} workers'.format(
+            len(args), n_workers))
         dfs = map_f(compute_all, args)
 
         df = df.concat(dfs)
