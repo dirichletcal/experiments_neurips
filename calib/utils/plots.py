@@ -356,7 +356,11 @@ def export_critical_difference(avranks, num_datasets, names, filename):
 
 
 def export_boxplot(method, scores, y_test, n_classes, name_classes,
-                   positive_scores, title, filename):
+                   title, filename, file_ext ='.svg', per_class=True):
+
+    positive_scores = [scores[y_test == i,i].flatten() for i in
+                       range(n_classes)]
+
     fig = plt.figure()
     fig.suptitle(title, bbox=dict(facecolor='white', lw=0))
     ax = fig.add_subplot(111)
@@ -367,7 +371,30 @@ def export_boxplot(method, scores, y_test, n_classes, name_classes,
                          yerr=[s.std() for s in positive_scores],
                          fmt='.', capsize=3, color='green',
                          clip_on=True, zorder=-900)
-    ax.boxplot(positive_scores, notch=True)
+    ax.boxplot(positive_scores, notch=True, whis=[5, 95])
     ax.set_xticklabels(name_classes)
-    fig.savefig(filename)
+    fig.savefig(filename + file_ext)
+    plt.close(fig)
+
+    if not per_class:
+        return
+
+    fig = plt.figure(figsize=(6, n_classes*2))
+    fig.suptitle(title, bbox=dict(facecolor='white', lw=0))
+    class_scores = [scores[y_test == i] for i in range(n_classes)]
+    for i, cs_i in enumerate(class_scores):
+        ax = fig.add_subplot(n_classes,1,i+1)
+        ax.set_ylabel(name_classes[i])
+        ax.set_ylim([0, 1])
+        ebars = ax.errorbar(x=np.arange(1,n_classes+1)+0.3, y=cs_i.mean(axis=0),
+                             yerr=cs_i.std(axis=0),
+                             fmt='.', capsize=3, color='green',
+                             clip_on=True, zorder=-900)
+        ax.boxplot(cs_i, notch=True, whis=[5, 95])
+        if i == n_classes-1:
+            ax.set_xticklabels(name_classes)
+        else:
+            plt.setp(ax.get_xticklabels(), visible=False)
+
+    fig.savefig(filename + '_per_class' + file_ext)
     plt.close(fig)

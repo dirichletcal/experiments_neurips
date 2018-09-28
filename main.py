@@ -277,12 +277,10 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         # Export score distributions for dataset + classifier + calibrator
         df_scores = df.drop_duplicates(subset=['dataset', 'method'])
         for index, row in df_scores.iterrows():
-            positive_scores = [row['c_probas'][row['y_test'] == i,i].flatten() for i in
-                               range(row['n_classes'])]
             filename = os.path.join(results_path, '_'.join([classifier_name,
                                                             name,
                                                             row['method'],
-                                                            'positive_scores.svg']))
+                                                            'positive_scores']))
             title = (("{}, test samples = {}, {}\n"
                    "acc = {:.2f}, log-loss = {:.2e}, brier = {:.2e}")
                        .format(name, len(row['y_test']),
@@ -294,11 +292,14 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                                y_test = row['y_test'],
                                n_classes = row['n_classes'],
                                name_classes = dataset.names,
-                               positive_scores = positive_scores,
                                title = title,
-                               filename=filename)
+                               filename=filename, file_ext='.svg')
             except Error as e:
                 print(e)
+
+
+            scores = [row['c_probas'][row['y_test'] == i].flatten() for i in
+                               range(row['n_classes'])]
 
         for method in methods:
             df[df['method'] == method][save_columns].to_csv(
