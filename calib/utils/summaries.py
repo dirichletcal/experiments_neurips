@@ -189,6 +189,13 @@ def generate_summaries(df, summary_path):
         except AssertionError as e:
             print(e)
 
+        # Export the Mean performance of each method
+        table = df.pivot_table(index=['dataset', 'classifier', 'n_classes'],
+                               columns=['method'],
+                               values=[measure])
+        table.columns = table.columns.droplevel()
+        table.to_csv(os.path.join(summary_path, measure + '.csv'))
+
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
                                       'classifier'], columns=['method'],
                                values=[measure])
