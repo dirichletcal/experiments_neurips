@@ -145,7 +145,7 @@ def compute_all(args):
         Carlo repetition.
     classifier_name : string
         Name of the classifier to be trained and tested
-    methods : list of strings
+    methods : string, or list of strings
         List of calibrators to be trained and tested
     verbose : int
         Integer indicating the verbosity level
@@ -172,6 +172,8 @@ def compute_all(args):
             Mean calibration time for the inner folds
     '''
     (d_name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
+    if isinstance(methods, str):
+        methods = (methods,)
     data = Data(dataset_names=[d_name])
     dataset = data.datasets[d_name]
     classifier = classifiers[classifier_name]
@@ -238,7 +240,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         #shared.setConst(**{name: dataset})
         # All the arguments as a list of lists
         args = [[name], [n_folds], [inner_folds], mcs, [classifier_name],
-                [methods], [verbose]]
+                methods, [verbose]]
         args = list(itertools.product(*args))
 
         logging.info('There are ' + str(len(args)) + ' sets of arguments that need to be run')

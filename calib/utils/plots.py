@@ -396,5 +396,6 @@ def export_boxplot(method, scores, y_test, n_classes, name_classes,
         else:
             plt.setp(ax.get_xticklabels(), visible=False)
 
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig(filename + '_per_class' + file_ext)
     plt.close(fig)
