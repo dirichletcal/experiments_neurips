@@ -34,6 +34,7 @@ from calib.models.calibration import MAP_CALIBRATORS
 from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
 from calib.utils.summaries import generate_summary_hist
+from calib.utils.plots import export_boxplot
 
 # Our datasets module
 from data_wrappers.datasets import Data
@@ -63,7 +64,7 @@ score_types = {
 }
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
-           'test_fold', 'acc', 'loss', 'brier', 'c_probas', 'exec_time']
+           'test_fold', 'acc', 'loss', 'brier', 'c_probas', 'y_test', 'exec_time']
 
 save_columns = [c for c in columns if c not in ['c_probas']]
 
@@ -194,7 +195,8 @@ def compute_all(args):
                                   dataset.n_features, dataset.n_samples,
                                   method, mc, fold_id, accs[method],
                                   losses[method], briers[method],
-                                  mean_probas[method], exec_time[method]]])
+                                  mean_probas[method], y_test,
+                                  exec_time[method]]])
         fold_id += 1
     return df
 
@@ -268,6 +270,32 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
         if not os.path.exists(results_path):
             os.makedirs(results_path)
+
+        # Export score distributions for dataset + classifier + calibrator
+        df_scores = df.drop_duplicates(subset=['dataset', 'method'])
+        for index, row in df_scores.iterrows():
+            positive_scores = [row['c_probas'][row['y_test'] == i,i].flatten() for i in
+                               range(row['n_classes'])]
+            filename = os.path.join(results_path, '_'.join([classifier_name,
+                                                            name,
+                                                            row['method'],
+                                                            'positive_scores.svg']))
+            title = (("{}, test samples = {}, {}\n"
+                   "acc = {:.2f}, log-loss = {:.2e}, brier = {:.2e}")
+                       .format(name, len(row['y_test']),
+                               row['method'], row['acc'],
+                               row['loss'], row['brier']))
+            try:
+                export_boxplot(method = row['method'],
+                               scores = row['c_probas'],
+                               y_test = row['y_test'],
+                               n_classes = row['n_classes'],
+                               name_classes = dataset.names,
+                               positive_scores = positive_scores,
+                               title = title,
+                               filename=filename)
+            except Error as e:
+                print(e)
 
         for method in methods:
             df[df['method'] == method][save_columns].to_csv(
