@@ -252,12 +252,15 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         if n_workers == -1:
             n_workers = cpu_count()
 
-        if n_workers > len(args):
-            n_workers = len(args)
+
+        if n_workers == 1:
+            map_f = map
+        else:
+            if n_workers > len(args):
+                n_workers = len(args)
+
             p = Pool(n_workers)
             map_f = p.map
-        elif n_workers == 1:
-            map_f = map
 
 
         logging.info('{} jobs will be deployed in {} workers'.format(
