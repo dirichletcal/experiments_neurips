@@ -352,4 +352,22 @@ def export_critical_difference(avranks, num_datasets, names, filename):
     cd = Orange.evaluation.compute_CD(avranks, num_datasets)
     Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6, textspace=1.5)
     plt.savefig(filename)
+    plt.close()
 
+
+def export_boxplot(method, scores, y_test, n_classes, name_classes,
+                   positive_scores, title, filename):
+    fig = plt.figure()
+    fig.suptitle(title, bbox=dict(facecolor='white', lw=0))
+    ax = fig.add_subplot(111)
+    ax.set_ylim([0, 1])
+    ebars = ax.errorbar(x=np.arange(1,n_classes+1)+0.3, y=[s.mean()
+                                                            for s in
+                                                            positive_scores],
+                         yerr=[s.std() for s in positive_scores],
+                         fmt='.', capsize=3, color='green',
+                         clip_on=True, zorder=-900)
+    ax.boxplot(positive_scores, notch=True)
+    ax.set_xticklabels(name_classes)
+    fig.savefig(filename)
+    plt.close(fig)
