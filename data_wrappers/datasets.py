@@ -58,13 +58,16 @@ datasets_all = list(set(datasets_li2014 + datasets_hempstalk2008 +
 datasets_non_binary = [d for d in datasets_all if d not in datasets_binary]
 
 class Dataset(object):
-    def __init__(self, name, data, target, shuffle=True):
+    def __init__(self, name, data, target, shuffle=False, random_state=None):
         self.name = name
         self._data = self.standardize_data(data)
         self._target, self._classes, self._names, self._counts = self.standardize_targets(target)
         if shuffle:
-            self._data, self._target = skl_shuffle(self._data, self._target)
+            self.shuffle(random_state=random_state)
 
+    def shuffle(self, random_state=None):
+        self._data, self._target = skl_shuffle(self._data, self._target,
+                                               random_state=random_state)
 
     def standardize_data(self, data):
         new_data = data.astype(float)
@@ -203,7 +206,8 @@ class Data(object):
                     'hypothyroid':'uci-20070111 hypothyroid'
             }
 
-    def __init__(self, data_home='./datasets/', dataset_names=None, load_all=False):
+    def __init__(self, data_home='./datasets/', dataset_names=None,
+                 load_all=False, shuffle=True, random_state=None):
         self.data_home = data_home
         self.datasets = {}
 
@@ -212,6 +216,10 @@ class Data(object):
             self.load_datasets_by_name(dataset_names)
         elif dataset_names is not None:
             self.load_datasets_by_name(dataset_names)
+
+        if shuffle:
+            for name in self.datasets.keys():
+                self.datasets[name].shuffle(random_state=random_state)
 
 
     def load_datasets_by_name(self, names):

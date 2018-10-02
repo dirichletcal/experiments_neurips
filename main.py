@@ -171,11 +171,9 @@ def compute_all(args):
         exec_time : float
             Mean calibration time for the inner folds
     '''
-    (d_name, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
+    (dataset, n_folds, inner_folds, mc, classifier_name, methods, verbose) = args
     if isinstance(methods, str):
         methods = (methods,)
-    data = Data(dataset_names=[d_name])
-    dataset = data.datasets[d_name]
     classifier = classifiers[classifier_name]
     score_type = score_types[classifier_name]
     logging.info(locals())
@@ -193,7 +191,7 @@ def compute_all(args):
         accs, losses, briers, mean_probas, cl, exec_time = results
 
         for method in methods:
-            df = df.append_rows([[d_name, dataset.n_classes,
+            df = df.append_rows([[dataset.name, dataset.n_classes,
                                   dataset.n_features, dataset.n_samples,
                                   method, mc, fold_id, accs[method],
                                   losses[method], briers[method],
@@ -216,7 +214,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     columns_hist = ['classifier', 'dataset', 'calibration'] + \
                    ['{}-{}'.format(i/10, (i+1)/10) for i in range(0,10)]
 
-    data = Data(dataset_names=dataset_names)
+    data = Data(dataset_names=dataset_names, shuffle=True,
+                random_state=seed_num)
 
     for name, dataset in data.datasets.items():
         df = MyDataFrame(columns=columns)
@@ -239,7 +238,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         logging.info(dataset)
         #shared.setConst(**{name: dataset})
         # All the arguments as a list of lists
-        args = [[name], [n_folds], [inner_folds], mcs, [classifier_name],
+        args = [[dataset], [n_folds], [inner_folds], mcs, [classifier_name],
                 methods, [verbose]]
         args = list(itertools.product(*args))
 
@@ -247,15 +246,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         logging.debug('The following is a list with all the arguments')
         logging.debug(args)
 
-        # If only one worker, then do not use scoop
-        #if scoop.SIZE != 1:
-        #    map_f = futures.map
-        #else:
-        #    map_f = map
-        #map_f = map
         if n_workers == -1:
             n_workers = cpu_count()
-
 
         if n_workers == 1:
             map_f = map
@@ -265,7 +257,6 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
 
             p = Pool(n_workers)
             map_f = p.map
-
 
         logging.info('{} jobs will be deployed in {} workers'.format(
             len(args), n_workers))
