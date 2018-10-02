@@ -67,7 +67,7 @@ columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
            'test_fold', 'train_acc', 'train_loss', 'train_brier', 'acc',
            'loss', 'brier', 'c_probas', 'y_test', 'exec_time']
 
-save_columns = [c for c in columns if c not in ['c_probas']]
+save_columns = [c for c in columns if c not in ['c_probas', 'y_test']]
 
 
 def comma_separated_strings(s):
