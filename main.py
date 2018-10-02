@@ -45,12 +45,12 @@ import logging
 classifiers = {
       'mock': MockClassifier(),
       'nbayes': GaussianNB(),
-      'logistic': LogisticRegression(),
+      'logistic': LogisticRegression(random_state=42),
       'adao': our.AdaBoostClassifier(n_estimators=200),
-      'adas': their.AdaBoostClassifier(n_estimators=200),
-      'forest': RandomForestClassifier(n_estimators=200),
-      'mlp': MLPClassifier(),
-      'svm': SVC(probability=True)
+      'adas': their.AdaBoostClassifier(n_estimators=200, random_state=42),
+      'forest': RandomForestClassifier(n_estimators=200, random_state=42),
+      'mlp': MLPClassifier(random_state=42),
+      'svm': SVC(probability=True, random_state=42)
 }
 score_types = {
       'mock': 'predict_proba',
@@ -64,7 +64,8 @@ score_types = {
 }
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
-           'test_fold', 'acc', 'loss', 'brier', 'c_probas', 'y_test', 'exec_time']
+           'test_fold', 'train_acc', 'train_loss', 'train_brier', 'acc',
+           'loss', 'brier', 'c_probas', 'y_test', 'exec_time']
 
 save_columns = [c for c in columns if c not in ['c_probas']]
 
@@ -188,13 +189,14 @@ def compute_all(args):
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
                                  verbose=verbose, seed=mc)
-        accs, losses, briers, mean_probas, cl, exec_time = results
+        train_acc, train_loss, train_brier, accs, losses, briers, mean_probas, cl, exec_time = results
 
         for method in methods:
             df = df.append_rows([[dataset.name, dataset.n_classes,
                                   dataset.n_features, dataset.n_samples,
-                                  method, mc, fold_id, accs[method],
-                                  losses[method], briers[method],
+                                  method, mc, fold_id, train_acc[method],
+                                  train_loss[method], train_brier[method],
+                                  accs[method], losses[method], briers[method],
                                   mean_probas[method], y_test,
                                   exec_time[method]]])
         fold_id += 1
@@ -301,10 +303,15 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                                                      'raw_results.csv'])))
 
         table = df[df.dataset == name].pivot_table(
+                    values=['train_acc', 'train_loss', 'train_brier'],
+                    index=['method'], aggfunc=[np.mean, np.std])
+        logging.info(table)
+
+        table = df[df.dataset == name].pivot_table(
                     values=['acc', 'loss', 'brier'],
                     index=['method'], aggfunc=[np.mean, np.std])
-
         logging.info(table)
+
         logging.info('Histogram of all the scores')
         for method in methods:
             hist = np.histogram(np.concatenate(

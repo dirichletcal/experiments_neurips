@@ -83,12 +83,15 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
 
     # Prepare a binarizer
     binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
-    binarizer.fit(y_train)
+    y_train_bin = binarizer.fit_transform(y_train)
 
     mean_probas = {method: np.zeros((y_test.shape[0], len(binarizer.classes_)))
                    for method in methods}
     classifiers = {method: [] for method in methods}
     exec_time = {method: [] for method in methods}
+    train_acc = {method: 0 for method in methods}
+    train_loss = {method: 0 for method in methods}
+    train_brier = {method: 0 for method in methods}
 
     skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
     for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
@@ -114,6 +117,11 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             mean_probas[method] += predicted_proba / cv
             classifiers[method].append(ccv)
 
+            predicted_proba = ccv.predict_proba(x_c)
+            train_acc[method] += np.mean(predicted_proba.argmax(axis=1) == y_train[cali])/cv
+            train_loss[method] += cross_entropy(predicted_proba, y_train_bin[cali])/cv
+            train_brier[method] += brier_score(predicted_proba, y_train_bin[cali])/cv
+
     y_test_bin = binarizer.transform(y_test)
     if y_test_bin.shape[1] == 1:
         y_test_bin = np.hstack((1 - y_test_bin, y_test_bin))
@@ -127,7 +135,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     briers = {method: brier_score(mean_probas[method], y_test_bin) for method
               in methods}
     mean_time = {method: np.mean(exec_time[method]) for method in methods}
-    return accs, losses, briers, mean_probas, classifiers, mean_time
+    return train_acc, train_loss, train_brier, accs, losses, briers, mean_probas, classifiers, mean_time
 
 
 def cv_calibration_map_differences(base_classifier, x_train, y_train, cv=3,
