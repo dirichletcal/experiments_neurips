@@ -146,8 +146,11 @@ def generate_summaries(df, summary_path):
         - 'method': calibration method (or method to compare)
         - 'mc': Monte Carlo iteration
         - 'test_fold': Number of the test fold
+        - 'train_acc': Training Accuracy
+        - 'train_loss': Training log-loss
+        - 'train_brier': Training Brier score
         - 'acc': Accuracy
-        - 'loss': A loss
+        - 'loss': log-loss
         - 'brier': Brier score
         - 'exec_time': Mean execution time
         - 'classifier': Original classifier used to train
@@ -166,7 +169,8 @@ def generate_summaries(df, summary_path):
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
     measures = (('acc', True), ('loss', False), ('brier', False),
-                ('exec_time', False))
+                ('train_acc', True), ('train_loss', False),
+                ('train_brier', False), ('exec_time', False))
     for measure, max_is_better in measures:
         print('# Measure = {}'.format(measure))
         table = df.pivot_table(index=['classifier'], columns=['method'],
@@ -195,6 +199,11 @@ def generate_summaries(df, summary_path):
                                values=[measure])
         table.columns = table.columns.droplevel()
         table.to_csv(os.path.join(summary_path, measure + '.csv'))
+
+        # Print correlation results
+        for method in ['pearson', 'kendall', 'spearman']:
+            print('\n{} correlation for the measure {}'.format(method, measure))
+            print(table.reset_index(level='n_classes').corr(method=method))
 
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
                                       'classifier'], columns=['method'],
@@ -324,12 +333,12 @@ def generate_summaries(df, summary_path):
 
 
     for classifier_name in classifiers:
-        table = df.pivot_table(values=['acc', 'loss', 'brier'],
+        table = df.pivot_table(values=['train_acc', 'train_loss',
+                                       'train_brier', 'acc', 'loss', 'brier'],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
         table.to_csv(os.path.join(summary_path, classifier_name + '_main_results.csv'))
         table.to_latex(os.path.join(summary_path, classifier_name + '_main_results.tex'))
-
 
 
 def generate_summary_hist(df, summary_path):
