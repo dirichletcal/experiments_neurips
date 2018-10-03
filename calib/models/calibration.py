@@ -75,7 +75,11 @@ MAP_CALIBRATORS = {
     'ovr_dir_diag': OneVsRestCalibrator(DirichletCalibrator(matrix_type='diagonal')),
     'ovr_dir_fixd': OneVsRestCalibrator(DirichletCalibrator(matrix_type='fixed_diagonal')),
     'dirichlet_full': DirichletCalibrator(matrix_type='full'),
-    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=0.1),
+    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=0.1), # This one is legacy
+    'dirichlet_full_l2_01': DirichletCalibrator(matrix_type='full', l2=0.1),
+    'dirichlet_full_l2_001': DirichletCalibrator(matrix_type='full', l2=0.01),
+    'dirichlet_full_l2_0001': DirichletCalibrator(matrix_type='full', l2=0.001),
+    'dirichlet_full_l2_00001': DirichletCalibrator(matrix_type='full', l2=0.0001),
     'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
     'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
     'dirichlet_mixture': MixDir()
