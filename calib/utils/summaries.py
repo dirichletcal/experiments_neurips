@@ -16,6 +16,8 @@ from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
 from scipy.stats import rankdata
 
+pd.set_option('display.width', 1000)
+
 
 def load_all_csv(results_path, expression=".*.csv"):
     regexp = re.compile(expression)
@@ -193,17 +195,35 @@ def generate_summaries(df, summary_path):
         except AssertionError as e:
             print(e)
 
-        # Export the Mean performance of each method
-        table = df.pivot_table(index=['dataset', 'classifier', 'n_classes'],
-                               columns=['method'],
-                               values=[measure])
-        table.columns = table.columns.droplevel()
-        table.to_csv(os.path.join(summary_path, measure + '.csv'))
+        if 'train_' not in measure:
+            # Export the Mean performance of each method
+            table = df.pivot_table(index=['dataset', 'classifier', 'n_classes',
+                                          'n_samples'],
+                                   columns=['method'],
+                                   values=[measure])
+            table.columns = table.columns.droplevel()
+            table.to_csv(os.path.join(summary_path, measure + '.csv'))
 
-        # Print correlation results
-        for method in ['pearson', 'kendall', 'spearman']:
+            # Print correlation results
+            method = 'spearman' # for non-linear ranking correlations
+            #method = 'pearson' # for linear ranking correlations
             print('\n{} correlation for the measure {}'.format(method, measure))
-            print(table.reset_index(level='n_classes').corr(method=method))
+            corr_test = table.reset_index(level=['n_classes', 'n_samples']).corr(method=method)
+            print(corr_test)
+
+            if ('train_' + measure) in [m[0] for m in measures]:
+                table = df.pivot_table(index=['dataset', 'classifier', 'n_classes',
+                                              'n_samples'],
+                                       columns=['method'],
+                                       values=['train_' + measure])
+                table.columns = table.columns.droplevel()
+                table.to_csv(os.path.join(summary_path, 'train_' + measure + '.csv'))
+                print('\n{} correlation for the measure {}'.format(method, 'train_' + measure))
+                corr_train = table.reset_index(level=['n_classes', 'n_samples']).corr(method=method)
+                print(corr_train)
+                print('\n{} correlation difference of test - training for the measure {}'.format(method, measure))
+                print(corr_test - corr_train)
+
 
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
                                       'classifier'], columns=['method'],
@@ -292,9 +312,6 @@ def generate_summaries(df, summary_path):
                                      '{}_rankings'.format(measure))
         with open(file_basename + '.tex', "w") as text_file:
             text_file.write(str_table)
-
-
-
 
         for classifier_name in classifiers:
             print('- Classifier name = {}'.format(classifier_name))
