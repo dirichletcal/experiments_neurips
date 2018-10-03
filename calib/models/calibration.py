@@ -31,7 +31,7 @@ class _DummyCalibration(BaseEstimator, RegressorMixin):
     the CalibratedClassifierCV class the option to just return the
     probabilities of the base classifier.
     """
-    def fit(self, *args):
+    def fit(self, *args, **kwargs):
         """Does nothing"""
         return self
 
