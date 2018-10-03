@@ -110,7 +110,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             start = time.time()
             ccv = CalibratedModel(base_estimator=classifier, method=method,
                                   score_type=score_type)
-            ccv.fit(x_c, y_c)
+            ccv.fit(x_c, y_c, X_val=x_t, y_val=y_t) # x_t and y_t for validation
             end = time.time()
             exec_time[method].append(end - start)
             predicted_proba = ccv.predict_proba(x_test)

@@ -75,7 +75,7 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         self.n_jobs = n_jobs
         self.normalize = normalize
 
-    def fit(self, X, y):
+    def fit(self, X, y, **kwargs):
         """Fit underlying estimators.
 
         If the number of classes = 2, only one model is trained to predict the

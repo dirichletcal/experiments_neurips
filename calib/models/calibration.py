@@ -75,7 +75,7 @@ MAP_CALIBRATORS = {
     'ovr_dir_diag': OneVsRestCalibrator(DirichletCalibrator(matrix_type='diagonal')),
     'ovr_dir_fixd': OneVsRestCalibrator(DirichletCalibrator(matrix_type='fixed_diagonal')),
     'dirichlet_full': DirichletCalibrator(matrix_type='full'),
-    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=0.1), # This one is legacy
+    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=[0.0, 0.0001, 0.001, 0.01]), # This one is legacy
     'dirichlet_full_l2_01': DirichletCalibrator(matrix_type='full', l2=0.1),
     'dirichlet_full_l2_001': DirichletCalibrator(matrix_type='full', l2=0.01),
     'dirichlet_full_l2_0001': DirichletCalibrator(matrix_type='full', l2=0.001),
@@ -104,7 +104,7 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
         self.base_estimator = base_estimator
         self.score_type = score_type
 
-    def fit(self, X, y):
+    def fit(self, X, y, X_val=None, y_val=None, *args, **kwargs):
         """Fit the calibrated model
 
         Parameters
@@ -127,9 +127,18 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
 
         scores = self.base_estimator.predict_proba(X)
 
+        if X_val is not None and y_val is not None:
+            X_val, y_val = check_X_y(X_val, y_val, accept_sparse=['csc', 'csr', 'coo'],
+                             multi_output=True)
+            X_val, y_val = indexable(X_val, y_val)
+            # TODO add scores of validation
+            scores_val = self.base_estimator.predict_proba(X_val)
+        else:
+            scores_val = None
+
         self.calibrator = clone(MAP_CALIBRATORS[self.method])
         # TODO isotonic with binary y = (n_samples, ) fails, needs one-hot-enc.
-        self.calibrator.fit(scores, y)
+        self.calibrator.fit(scores, y, X_val=scores_val, y_val=y_val, *args, **kwargs)
         #print(self.method)
         #print('scores.shape(X) ' + str(scores.shape))
         #print('prob.shape(S) ' + str(self.calibrator.predict_proba(scores).shape))
