@@ -226,8 +226,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
         # cross-validataion steps (classifier + calibrator)
         smaller_count = min(dataset.counts)
         if (smaller_count < n_folds) or \
-           ((smaller_count*(n_folds-1)/n_folds) < inner_folds) or \
-          ((dataset.target.shape[0]/dataset.n_classes) < 100):
+           ((smaller_count*(n_folds-1)/n_folds) < inner_folds):
             logging.warn(("At least one of the classes does not have enough "
                          "samples for outer {} folds and inner {} folds"
                         ).format(n_folds, inner_folds))

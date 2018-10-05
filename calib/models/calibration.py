@@ -72,10 +72,11 @@ MAP_CALIBRATORS = {
     'beta_am': OneVsRestCalibrator(BetaCalibration(parameters="am")),
     'beta_ab': OneVsRestCalibrator(BetaCalibration(parameters="ab")),
     'ovr_dir_full': OneVsRestCalibrator(DirichletCalibrator(matrix_type='full')),
+    'ovr_dir_full_l2': OneVsRestCalibrator(DirichletCalibrator(matrix_type='full', l2=[0.0, 0.0001, 0.001, 0.01])),
     'ovr_dir_diag': OneVsRestCalibrator(DirichletCalibrator(matrix_type='diagonal')),
     'ovr_dir_fixd': OneVsRestCalibrator(DirichletCalibrator(matrix_type='fixed_diagonal')),
     'dirichlet_full': DirichletCalibrator(matrix_type='full'),
-    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=[0.0, 0.0001, 0.001, 0.01]), # This one is legacy
+    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full', l2=[0.0, 0.0001, 0.001, 0.01]),
     'dirichlet_full_l2_01': DirichletCalibrator(matrix_type='full', l2=0.1),
     'dirichlet_full_l2_001': DirichletCalibrator(matrix_type='full', l2=0.01),
     'dirichlet_full_l2_0001': DirichletCalibrator(matrix_type='full', l2=0.001),
@@ -127,7 +128,7 @@ class CalibratedModel(BaseEstimator, ClassifierMixin):
 
         scores = self.base_estimator.predict_proba(X)
 
-        if X_val is not None and y_val is not None:
+        if X_val is not None:
             X_val, y_val = check_X_y(X_val, y_val, accept_sparse=['csc', 'csr', 'coo'],
                              multi_output=True)
             X_val, y_val = indexable(X_val, y_val)

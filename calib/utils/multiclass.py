@@ -1,4 +1,5 @@
 # Adapted from  scikit-learn.sklearn.multiclass
+import inspect
 import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin, clone
@@ -13,7 +14,7 @@ from sklearn.utils.metaestimators import if_delegate_has_method
 from sklearn.utils.validation import check_is_fitted
 
 
-def _fit_binary(estimator, X, y, classes=None):
+def _fit_binary(estimator, X, y, X_val=None, y_val=None, classes=None):
     """Fit a single binary estimator."""
     unique_y = np.unique(y)
     if len(unique_y) == 1:
@@ -27,7 +28,10 @@ def _fit_binary(estimator, X, y, classes=None):
         estimator = _ConstantPredictor().fit(X, unique_y)
     else:
         estimator = clone(estimator)
-        estimator.fit(X, y)
+        if X_val is not None and y_val is not None:
+            estimator.fit(X, y, X_val=X_val, y_val=y_val)
+        else:
+            estimator.fit(X, y)
     return estimator
 
 
@@ -75,7 +79,7 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         self.n_jobs = n_jobs
         self.normalize = normalize
 
-    def fit(self, X, y, **kwargs):
+    def fit(self, X, y, X_val=None, y_val=None, **kwargs):
         """Fit underlying estimators.
 
         If the number of classes = 2, only one model is trained to predict the
@@ -105,14 +109,30 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         Y = Y.tocsc()
         self.classes_ = self.label_binarizer_.classes_
         y_columns = (col.toarray().ravel() for col in Y.T)
+
+        if 'X_val' in inspect.getargspec(self.estimator.fit).args and \
+            X_val is not None:
+            if X_val.shape[1] == 2:
+                x_val_columns = (X_val[:,1].ravel().T, )
+            else:
+                x_val_columns = (col.ravel() for col in X_val.T)
+
+            Y_val = self.label_binarizer_.transform(y_val)
+            Y_val = Y_val.tocsc()
+            y_val_columns = (col.toarray().ravel() for col in Y_val.T)
+        else:
+            x_val_columns = [None]*np.shape(Y)[0]
+            y_val_columns = [None]*np.shape(Y)[0]
+
         # In cases where individual estimators are very fast to train setting
         # n_jobs > 1 in can results in slower performance due to the overhead
         # of spawning threads.  See joblib issue #112.
         self.estimators_ = Parallel(n_jobs=self.n_jobs)(delayed(_fit_binary)(
-            self.estimator, x_column, y_column, classes=[
-                "not %s" % self.label_binarizer_.classes_[i],
-                self.label_binarizer_.classes_[i]])
-            for i, (x_column, y_column) in enumerate(zip(x_columns, y_columns)))
+            self.estimator, x_column, y_column, x_val_column, y_val_column,
+            classes=[ "not %s" % self.label_binarizer_.classes_[i],
+                     self.label_binarizer_.classes_[i]])
+            for i, (x_column, y_column, x_val_column, y_val_column) in enumerate(zip(x_columns, y_columns, x_val_columns,
+                                                         y_val_columns)))
 
         return self
 
