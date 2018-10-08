@@ -313,6 +313,25 @@ def generate_summaries(df, summary_path):
         with open(file_basename + '.tex', "w") as text_file:
             text_file.write(str_table)
 
+        ## --------------------------------------------------------------##
+        ## Version 2 for the aggregated rankings
+        # Perform rankings of dataset+classifier vs calibration method
+        table = df.pivot_table(index=['dataset', 'classifier'],
+                               columns=['method'],
+                               values=[measure], aggfunc=np.mean)
+        if max_is_better:
+            table *= -1
+        ranking_table_all = table.apply(rankdata, axis=1).mean()
+
+        export_critical_difference(avranks=ranking_table_all,
+                                   num_datasets=len(table),
+                                   names=ranking_table_all.index.levels[1],
+                                   filename=os.path.join(summary_path,
+                                                         'crit_diff_' +
+                                                         measure + '_v2.pdf'))
+        ## End Version 2 for the aggregated rankings
+        ## --------------------------------------------------------------##
+
         for classifier_name in classifiers:
             print('- Classifier name = {}'.format(classifier_name))
             class_mask = df['classifier'] == classifier_name
