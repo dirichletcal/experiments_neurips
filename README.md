@@ -120,3 +120,5 @@ Currently there is only tests for Dirichlet
 
     python -m unittest discover dirichlet
     python -m unittest discover betacal
+
+That can be run together with the **run_unittests.sh** script
