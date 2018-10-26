@@ -330,7 +330,7 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
     ax.set_xticks(np.arange(0.5, len(df.columns), 1))
     ax.set_xticklabels(xticklabels, rotation = 45, ha="right")
 
-    middle_value = (df.values.max() + df.values.min())/2.0
+    middle_value = (df.max().max() + df.min().min())/2.0
     if annotate:
         for y in range(df.shape[0]):
             for x in range(df.shape[1]):
