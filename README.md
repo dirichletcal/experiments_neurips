@@ -18,6 +18,12 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+For following pulls that include the submodule updates you can run
+
+```
+sh git_pull.sh
+```
+
 From now, every time that you want to run the main or other code first load the
 environment with
 
