@@ -166,13 +166,14 @@ def generate_summaries(df, summary_path):
 
     # Assert that all experiments have finished
     for column in ['method', 'classifier']:
-        df_count = df.pivot_table(index=['dataset'], columns=[column],
-                                  values=['loss'], aggfunc='count')
-        print(df_count)
-        file_basename = os.path.join(summary_path,
-                                     'results_count_{}'.format(column))
-        df_to_heatmap(df_count, file_basename + '.svg',
-                      title='Results count', cmap='Greys_r')
+        for measure in ['acc', 'loss', 'brier']:
+            df_count = df.pivot_table(index=['dataset'], columns=[column],
+                                      values=[measure], aggfunc='count')
+            file_basename = os.path.join(summary_path,
+                                         'results_count_{}_{}'.format(column,
+                                                                      measure))
+            df_to_heatmap(df_count, file_basename + '.svg',
+                          title='Results count finite ' + measure, cmap='Greys_r')
 
     # Export summary of datasets
     (df[['dataset', 'n_samples', 'n_features', 'n_classes']]
