@@ -158,10 +158,21 @@ def generate_summaries(df, summary_path):
         - 'classifier': Original classifier used to train
 
     '''
+    # Shorten some names
     df['method'] = df['method'].replace(to_replace='dirichlet', value='dir',
                                         regex=True)
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
+
+    # Assert that all experiments have finished
+    for column in ['method', 'classifier']:
+        df_count = df.pivot_table(index=['dataset'], columns=[column],
+                                  values=['loss'], aggfunc='count')
+        print(df_count)
+        file_basename = os.path.join(summary_path,
+                                     'results_count_{}'.format(column))
+        df_to_heatmap(df_count, file_basename + '.svg',
+                      title='Results count', cmap='Greys_r')
 
     # Export summary of datasets
     (df[['dataset', 'n_samples', 'n_features', 'n_classes']]

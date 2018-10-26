@@ -277,7 +277,7 @@ def multiindex_to_strings(index):
 
 
 def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
-                 normalise_columns=False, normalise_rows=False):
+                 normalise_columns=False, normalise_rows=False, cmap=None):
     ''' Exports a heatmap of the given pandas DataFrame
 
     Parameters
@@ -323,7 +323,7 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
     ax = fig.add_subplot(111)
     if title is not None:
         ax.set_title(title)
-    cax = ax.pcolor(df)
+    cax = ax.pcolor(df, cmap=cmap)
     fig.colorbar(cax)
     ax.set_yticks(np.arange(0.5, len(df.index), 1))
     ax.set_yticklabels(yticklabels)
