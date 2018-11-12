@@ -7,3 +7,5 @@ results_*/
 # Slurm output files
 *.out
 .vscode
+.ipynb_checkpoints/test-checkpoint.ipynb
+test.ipynb
