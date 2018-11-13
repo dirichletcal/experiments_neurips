@@ -9,12 +9,15 @@ from calib.utils.functions import to_latex
 
 # Visualisations
 from calib.utils.plots import df_to_heatmap
+from calib.utils.plots import export_dataset_analysis
 from calib.utils.plots import export_critical_difference
 
 from scipy.stats import ranksums
 from scipy.stats import mannwhitneyu
 from scipy.stats import friedmanchisquare
 from scipy.stats import rankdata
+
+import matplotlib.pyplot as pyplot
 
 pd.set_option('display.width', 1000)
 
@@ -182,11 +185,17 @@ def generate_summaries(df, summary_path):
         .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
+
     measures = (('acc', True), ('loss', False), ('brier', False),
                 ('train_acc', True), ('train_loss', False),
                 ('train_brier', False), ('exec_time', False))
     for measure, max_is_better in measures:
         print('# Measure = {}'.format(measure))
+        if 'train_' not in measure:
+            filename = os.path.join(summary_path,
+                                'n_samples_scatter')
+            export_dataset_analysis(df, measure, filename)
+
         table = df.pivot_table(index=['classifier'], columns=['method'],
                                values=[measure], aggfunc=[np.mean, np.std])
 

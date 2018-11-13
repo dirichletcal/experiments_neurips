@@ -399,3 +399,23 @@ def export_boxplot(method, scores, y_test, n_classes, name_classes,
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])
     fig.savefig(filename + '_per_class' + file_ext)
     plt.close(fig)
+
+
+def export_dataset_analysis(df, measure, filename, file_ext='.svg'):
+    df = df.copy()
+    df['method'] = df['method'].astype('category')
+    df['dataset'] = df['dataset'].astype('category')
+    df['classifier'] = df['classifier'].astype('category')
+
+    for method in df['method'].cat.categories:
+        fig = plt.figure(figsize=(10,5))
+        fig.suptitle(method)
+        ax = fig.add_subplot(121)
+        df[df['method'] == method].plot(kind='scatter', x='n_samples',
+                                        y=measure, ax=ax,
+                                        alpha=0.5)
+        ax = fig.add_subplot(122)
+        df[df['method'] == method].plot(kind='scatter', x='n_classes',
+                                        y=measure, ax=ax, alpha=0.5)
+        fig.savefig('{}_{}_{}.{}'.format(filename, method, measure, file_ext))
+        plt.close(fig)
