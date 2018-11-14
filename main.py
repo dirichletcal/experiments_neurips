@@ -114,7 +114,7 @@ def parse_arguments():
                         type=comma_separated_strings,
                         default=['uncalibrated', 'beta', 'beta_am', 'isotonic',
                                  'dirichlet_full', 'dirichlet_diag',
-                                 'dirichlet_fix_diag', 'ovr_dir_full'],
+                                 'dirichlet_fix_diag', 'conf'],
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
                               ', '.join(MAP_CALIBRATORS.keys())))

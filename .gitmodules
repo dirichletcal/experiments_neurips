@@ -1,6 +1,7 @@
 [submodule "dirichlet"]
 	path = dirichlet
 	url = https://bitbucket.org/dirichlet_cal/dirichlet.git
+	branch = confusion-matrix-calib
 [submodule "python"]
 	path = python_betacal
 	url = https://github.com/betacal/python

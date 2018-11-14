@@ -108,7 +108,11 @@ MAP_CALIBRATORS = {
     'dirichlet_full_l2_00001': DirichletCalibrator(matrix_type='full', l2=0.0001),
     'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
     'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
-    'dirichlet_mixture': MixDir()
+    'dirichlet_mixture': MixDir(),
+    'conf': DirichletCalibrator(matrix_type='conf',
+                                             comp_l2=False,
+                                             l2=[1e0, 1e-1, 1e-2, 1e-3, 1e-4,
+                                                 0.0]),
 }
 
 
