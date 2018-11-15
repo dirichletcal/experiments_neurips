@@ -78,7 +78,7 @@ def compute_friedmanchisquare(table):
         - k is the datasets: table['mean'].values).tolist()
         - k is the calibration methods: table['mean'].T.values).tolist()
     '''
-    return friedmanchisquare(*(table['mean'].T.values).tolist())
+    return friedmanchisquare(*(table.T.values).tolist())
 
 
 def paired_test(table, stats_func=ranksums):
@@ -285,6 +285,7 @@ def generate_summaries(df, summary_path):
                                   str_format='%1.1e'
                                 )
 
+
         ranking_table = np.zeros((len(classifiers),
                                   df.method.unique().shape[0]))
         num_datasets = np.zeros(len(classifiers), dtype='int')
@@ -295,74 +296,9 @@ def generate_summaries(df, summary_path):
                                                columns=['method'],
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
-            if max_is_better:
-                table *= -1
-            ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
-            num_datasets[i] = len(table)
-
-            filename = os.path.join(summary_path, 'crit_diff_' +
-                                    classifier_name + '_' +
-                                    measure + '.pdf')
-
-            export_critical_difference(avranks=ranking_table[i],
-                                       num_datasets=table.shape[0],
-                                       names=table.columns.levels[2],
-                                       filename=filename)
-
-        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
-                                        columns=table.columns.levels[2])
-        # TODO check that performing the ranking of the rankings is appropriate
-        export_critical_difference(avranks=df_mean_rankings.apply(rankdata,
-                                                                  axis=1).mean(),
-                                   num_datasets=num_datasets.sum(),
-                                   names=table.columns.levels[2],
-                                   filename=os.path.join(summary_path,
-                                                         'crit_diff_' +
-                                                         measure + '.pdf'))
-        str_table = to_latex(classifiers, df_mean_rankings, precision=1,
-                             table_size='\\small',
-                             max_is_better=False,
-                             caption=('Ranking of calibration methods ' +
-                                      'applied to each classifier ' +
-                                      'with the measure={}'
-                                      ).format(measure),
-                             label='table:{}'.format(measure),
-                             add_std=False,
-                             column_names=df_mean_rankings.columns)
-        file_basename = os.path.join(summary_path,
-                                     '{}_rankings'.format(measure))
-        with open(file_basename + '.tex', "w") as text_file:
-            text_file.write(str_table)
-
-        ## --------------------------------------------------------------##
-        ## Version 2 for the aggregated rankings
-        # Perform rankings of dataset+classifier vs calibration method
-        table = df.pivot_table(index=['dataset', 'classifier'],
-                               columns=['method'],
-                               values=[measure], aggfunc=np.mean)
-        if max_is_better:
-            table *= -1
-        ranking_table_all = table.apply(rankdata, axis=1).mean()
-
-        export_critical_difference(avranks=ranking_table_all,
-                                   num_datasets=len(table),
-                                   names=ranking_table_all.index.levels[1],
-                                   filename=os.path.join(summary_path,
-                                                         'crit_diff_' +
-                                                         measure + '_v2.pdf'))
-        ## End Version 2 for the aggregated rankings
-        ## --------------------------------------------------------------##
-
-        for classifier_name in classifiers:
-            print('- Classifier name = {}'.format(classifier_name))
-            class_mask = df['classifier'] == classifier_name
-            table = df[class_mask].pivot_table(index=['dataset'],
-                                               columns=['method'],
-                                               values=[measure],
-                                               aggfunc=[np.mean, np.std])
 
             # Perform a Friedman statistic test
-            ftest = compute_friedmanchisquare(table)
+            ftest = compute_friedmanchisquare(table['mean'])
             print(ftest)
 
             str_table = to_latex(dataset_names, table, precision=2,
@@ -387,6 +323,57 @@ def generate_summaries(df, summary_path):
             df_to_heatmap(table['mean'][measure], file_basename + '_rows.svg',
                           title='Normalised rows for ' + measure,
                           normalise_rows=True)
+
+        #for i, classifier_name in enumerate(classifiers):
+            print('- Classifier name = {}'.format(classifier_name))
+            class_mask = df['classifier'] == classifier_name
+            table = df[class_mask].pivot_table(index=['dataset'],
+                                               columns=['method'],
+                                               values=[measure],
+                                               aggfunc=[np.mean, np.std])
+            if max_is_better:
+                table *= -1
+            ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
+            num_datasets[i] = len(table)
+
+            filename = os.path.join(summary_path, 'crit_diff_' +
+                                    classifier_name + '_' +
+                                    measure + '.pdf')
+
+            print(('Critical Difference computed with avranks of shape {} ' +
+                   'for {} datasets').format(np.shape(ranking_table[i]),
+                                         table.shape[0]))
+            export_critical_difference(avranks=ranking_table[i],
+                                       num_datasets=table.shape[0],
+                                       names=table.columns.levels[2],
+                                       filename=filename,
+                                       title='(p-value = {:.2e}, #D = {})'.format(ftest.pvalue, table.shape[0]))
+
+        ## --------------------------------------------------------------##
+        ## Version 2 for the aggregated rankings
+        # Perform rankings of dataset+classifier vs calibration method
+        table = df.pivot_table(index=['dataset', 'classifier'],
+                               columns=['method'],
+                               values=[measure], aggfunc=np.mean)
+        if max_is_better:
+            table *= -1
+        ranking_table_all = table.apply(rankdata, axis=1).mean()
+        ftest = compute_friedmanchisquare(table)
+        print('Friedman test on the full table of shape {}'.format(
+                    np.shape(table)))
+        print(ftest)
+        print(('Critical Difference V.2 computed with avranks of shape {} for' +
+               '{} datasets').format(np.shape(ranking_table_all),
+                                     len(table)))
+        export_critical_difference(avranks=ranking_table_all,
+                                   num_datasets=len(table),
+                                   names=ranking_table_all.index.levels[1],
+                                   filename=os.path.join(summary_path,
+                                                         'crit_diff_' +
+                                                         measure + '_v2.pdf'),
+                                   title='(p-value = {:.2e}, #D = {})'.format(ftest.pvalue, len(table)))
+        ## End Version 2 for the aggregated rankings
+        ## --------------------------------------------------------------##
 
 
     for classifier_name in classifiers:

@@ -348,9 +348,14 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
     fig.savefig(filename)
     plt.close(fig)
 
-def export_critical_difference(avranks, num_datasets, names, filename):
-    cd = Orange.evaluation.compute_CD(avranks, num_datasets)
-    Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6, textspace=1.5)
+def export_critical_difference(avranks, num_datasets, names, filename,
+                               title=None):
+    cd = Orange.evaluation.compute_CD(avranks, num_datasets, alpha='0.05',
+                                      test='bonferroni-dunn')
+    Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6,
+                                  textspace=1.5)
+    fig = plt.gcf()
+    fig.suptitle(title, horizontalalignment='left')
     plt.savefig(filename)
     plt.close()
 
