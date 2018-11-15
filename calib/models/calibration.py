@@ -10,6 +10,8 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from sklearn.calibration import _SigmoidCalibration
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import KBinsDiscretizer
 
 from betacal import BetaCalibration
 
@@ -64,7 +66,39 @@ class SigmoidCalibration(_SigmoidCalibration):
         return super(SigmoidCalibration, self).predict(*args, **kwargs)
 
 
+class BinningCalibration(BaseEstimator, RegressorMixin):
+    def __init__(self, n_bins=10, strategy='uniform'):
+        self.strategy = strategy
+        self.n_bins = n_bins
+
+    def fit(self, scores, y, *args, **kwargs):
+        '''
+        Score=0 corresponds to y=0, and score=1 to y=1
+        Parameters
+        ----------
+        scores : array-like, shape = [n_samples,]
+            Data.
+        y : array-like, shape = [n_samples, ]
+            Labels.
+        Returns
+        -------
+        self
+        '''
+        self.enc = KBinsDiscretizer(n_bins=self.n_bins, encode='onehot',
+                                    strategy=self.strategy)
+        self.enc.fit(scores.reshape(-1,1))
+        s_binned = self.enc.fit_transform(scores.reshape(-1,1))
+        self.reg = LinearRegression().fit(s_binned, y)
+        return self
+
+    def predict_proba(self, scores, *args, **kwargs):
+        return self.reg.predict(self.enc.transform(scores.reshape(-1,1)))
+
+
 MAP_CALIBRATORS = {
+    'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform')),
+    'binning_freq' :OneVsRestCalibrator(BinningCalibration(strategy='quantile')),
+    'binning_kmeans' :OneVsRestCalibrator(BinningCalibration(strategy='kmeans')), # Not working yet
     'uncalibrated': _DummyCalibration(),
     'isotonic': OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip')),
     'sigmoid': OneVsRestCalibrator(SigmoidCalibration()),
