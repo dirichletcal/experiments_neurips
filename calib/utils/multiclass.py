@@ -175,6 +175,9 @@ class OneVsRestCalibrator(BaseEstimator, ClassifierMixin):
         if not self.multilabel_:
             # Then, probabilities should be normalized to 1.
             Y /= np.sum(Y, axis=1)[:, np.newaxis]
+            # Change all columns to zero for a uniform prediction
+            Y[np.isnan(Y)] = 1/Y.shape[1]
+
         return Y
 
     @property
