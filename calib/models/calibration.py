@@ -57,6 +57,7 @@ class IsotonicCalibration(IsotonicRegression):
         self
         '''
         return super(IsotonicCalibration, self).fit(scores, y, *args, **kwargs)
+
     def predict_proba(self, scores, *args, **kwargs):
         return self.transform(scores, *args, **kwargs)
 
@@ -67,9 +68,18 @@ class SigmoidCalibration(_SigmoidCalibration):
 
 
 class BinningCalibration(BaseEstimator, RegressorMixin):
-    def __init__(self, n_bins=10, strategy='uniform'):
+    def __init__(self, n_bins=10, strategy='uniform', alpha=1.0):
+        '''
+        alpha : Laplace smoothing (x + a)/(N + 2a)
+        n_bins: Number of bins
+        stragegy:
+                - uniform: for equal width bins
+                - quantile: for equal frequency bins
+                - kmeans: for each bin with same nearest center to a 1D k-means
+        '''
         self.strategy = strategy
         self.n_bins = n_bins
+        self.alpha = alpha
 
     def fit(self, scores, y, *args, **kwargs):
         '''
@@ -84,15 +94,19 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         -------
         self
         '''
-        self.enc = KBinsDiscretizer(n_bins=self.n_bins, encode='onehot',
+        self.enc = KBinsDiscretizer(n_bins=self.n_bins, encode='onehot-dense',
                                     strategy=self.strategy)
         self.enc.fit(scores.reshape(-1,1))
-        s_binned = self.enc.fit_transform(scores.reshape(-1,1))
-        self.reg = LinearRegression().fit(s_binned, y)
+        s_binned = self.enc.fit_transform(scores.reshape(-1,1)).astype(bool)
+        self.predictions = np.zeros(self.n_bins)
+        for i, column in enumerate(s_binned.T):
+            self.predictions[i] = (np.sum(y[column]) + self.alpha)/ \
+                                    (np.sum(column) + self.alpha*2)
         return self
 
     def predict_proba(self, scores, *args, **kwargs):
-        return self.reg.predict(self.enc.transform(scores.reshape(-1,1)))
+        s_binned = self.enc.transform(scores.reshape(-1,1)).astype(bool)
+        return self.predictions[np.argmax(s_binned, axis=1)]
 
 
 MAP_CALIBRATORS = {
