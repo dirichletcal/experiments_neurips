@@ -10,8 +10,6 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from sklearn.calibration import _SigmoidCalibration
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import KBinsDiscretizer
 
 from betacal import BetaCalibration
 
@@ -94,19 +92,29 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         -------
         self
         '''
-        self.enc = KBinsDiscretizer(n_bins=self.n_bins, encode='onehot-dense',
-                                    strategy=self.strategy)
-        self.enc.fit(scores.reshape(-1,1))
-        s_binned = self.enc.fit_transform(scores.reshape(-1,1)).astype(bool)
+        if len(np.shape(scores)) > 1:
+            scores = scores[:,1]
+        # TODO check that this code is correct:
+        if self.strategy == 'quantile':
+            self.bins = np.sort(scores)[::int(np.ceil(len(scores)/self.n_bins))]
+            self.bins = np.hstack([self.bins, scores[-1]])
+        elif self.strategy == 'uniform':
+            self.bins = np.linspace(scores.min(), scores.max(), self.n_bins+1)
+        self.bins[0] = - np.inf
+        self.bins[-1] = np.inf
+        s_binned = np.digitize(scores, self.bins) -1
         self.predictions = np.zeros(self.n_bins)
-        for i, column in enumerate(s_binned.T):
-            self.predictions[i] = (np.sum(y[column]) + self.alpha)/ \
-                                    (np.sum(column) + self.alpha*2)
+        for i in range(self.n_bins):
+            self.predictions[i] = (np.sum(y[s_binned == i]) + self.alpha)/ \
+                                    (np.sum(s_binned == i) + self.alpha*2)
+
         return self
 
     def predict_proba(self, scores, *args, **kwargs):
-        s_binned = self.enc.transform(scores.reshape(-1,1)).astype(bool)
-        return self.predictions[np.argmax(s_binned, axis=1)]
+        if len(np.shape(scores)) > 1:
+            scores = scores[:,1]
+        s_binned = np.digitize(scores, self.bins) -1
+        return self.predictions[s_binned]
 
 
 MAP_CALIBRATORS = {
