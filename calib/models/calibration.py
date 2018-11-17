@@ -10,6 +10,7 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.linear_model import LogisticRegression
 from sklearn.isotonic import IsotonicRegression
 from sklearn.calibration import _SigmoidCalibration
+from sklearn.metrics import log_loss
 
 from betacal import BetaCalibration
 
@@ -79,7 +80,7 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         self.n_bins = n_bins
         self.alpha = alpha
 
-    def fit(self, scores, y, *args, **kwargs):
+    def fit(self, scores, y, X_val=None, y_val=None, *args, **kwargs):
         '''
         Score=0 corresponds to y=0, and score=1 to y=1
         Parameters
@@ -92,6 +93,24 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         -------
         self
         '''
+        if isinstance(self.n_bins, list):
+            if X_val is None or y_val is None:
+                raise ValueError('If n_bins is a list, scores_val and y_val are required during fit')
+            calibrators = []
+            losses = []
+            for n_bins in self.n_bins:
+                cal = BinningCalibration(n_bins=n_bins, strategy=self.strategy,
+                                           alpha=self.alpha)
+                cal.fit(scores, y)
+                predict = cal.predict_proba(X_val)
+                losses.append(log_loss(y_val, predict))
+                calibrators.append(cal)
+            best_idx = np.argmin(losses)
+            self.n_bins = calibrators[best_idx].n_bins
+            self.bins = calibrators[best_idx].bins
+            self.predictions = calibrators[best_idx].predictions
+            return self
+
         if len(np.shape(scores)) > 1:
             scores = scores[:,1]
         # TODO check that this code is correct:
@@ -113,13 +132,18 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
     def predict_proba(self, scores, *args, **kwargs):
         if len(np.shape(scores)) > 1:
             scores = scores[:,1]
-        s_binned = np.digitize(scores, self.bins) -1
+        s_binned = np.digitize(scores, self.bins) - 1
         return self.predictions[s_binned]
 
 
+
 MAP_CALIBRATORS = {
-    'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform')),
-    'binning_freq' :OneVsRestCalibrator(BinningCalibration(strategy='quantile')),
+    'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform',
+                                                           n_bins=[5, 10, 15,
+                                                                   20, 25, 30])),
+    'binning_freq' :OneVsRestCalibrator(BinningCalibration(strategy='quantile',
+                                                           n_bins=[5, 10, 15,
+                                                                   20, 25, 30])),
     'binning_kmeans' :OneVsRestCalibrator(BinningCalibration(strategy='kmeans')), # Not working yet
     'uncalibrated': _DummyCalibration(),
     'isotonic': OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip')),
