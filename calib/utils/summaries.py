@@ -140,6 +140,48 @@ def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
         f.write(tex_table)
 
 
+def generate_summaries_per_calibrator(df, summary_path):
+    def MakeList(x):
+        T = tuple(x)
+        if len(T) > 1:
+            return T
+        else:
+            return T[0]
+
+    MAP_METHOD = {'binning_freq': 'n_bins=(?P<bins>\w+)',
+                  'binning_width': 'n_bins=(?P<bins>\w+)',
+                  'dir_full_l2': ' l2=(?P<l2>\d+\.\d+)',
+                  'dir_full_comp_l2': ' l2=(?P<l2>\d+\.\d+)',
+                  'dirichlet_full_prefixdiag_l2': ' l2=(?P<l2>\d+\.\d+)'
+                 }
+    for key, regex in MAP_METHOD.items():
+        print(key)
+        df_aux = df[df['method'] == key][['dataset', 'classifier', 'calibrators']]
+        if len(df_aux) == 0:
+            continue
+        df_aux['calibrators'] = df_aux['calibrators'].apply(lambda x: re.findall(regex, x))
+        df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
+                                    values=['calibrators'], aggfunc=MakeList)
+        fig = pyplot.figure(figsize=(df_aux.shape[0]*3, df_aux.shape[1]*3))
+        fig.suptitle(key)
+        ij = 1
+        for i, dat in enumerate(df_aux.index):
+            for j, cla in enumerate(df_aux.columns.levels[1]):
+                values = df_aux.loc[dat, ('calibrators', cla)]
+                ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
+                parameters = np.concatenate(values).flatten()
+                uniq, counts = np.unique(parameters, return_counts=True)
+                print(uniq)
+                print(counts)
+                ax.bar(uniq, counts)
+                if j == 0:
+                    ax.set_ylabel(dat)
+                if i == 0:
+                    ax.set_title(cla)
+                ij += 1
+        fig.savefig(os.path.join(summary_path, '{}.svg'.format(key)))
+
+
 def generate_summaries(df, summary_path):
     '''
     df:     pandas.DataFrame
@@ -159,6 +201,7 @@ def generate_summaries(df, summary_path):
         - 'brier': Brier score
         - 'exec_time': Mean execution time
         - 'classifier': Original classifier used to train
+        - 'calibrators': List of calibrators with their parameters
 
     '''
     # Shorten some names
@@ -185,6 +228,7 @@ def generate_summaries(df, summary_path):
         .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
+    generate_summaries_per_calibrator(df, summary_path)
 
     measures = (('acc', True), ('loss', False), ('brier', False),
                 ('train_acc', True), ('train_loss', False),
