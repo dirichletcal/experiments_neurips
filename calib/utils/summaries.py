@@ -162,12 +162,14 @@ def generate_summaries_per_calibrator(df, summary_path):
         df_aux['calibrators'] = df_aux['calibrators'].apply(lambda x: re.findall(regex, x))
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['calibrators'], aggfunc=MakeList)
-        fig = pyplot.figure(figsize=(df_aux.shape[0]*3, df_aux.shape[1]*3))
+        fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
         fig.suptitle(key)
         ij = 1
         for i, dat in enumerate(df_aux.index):
             for j, cla in enumerate(df_aux.columns.levels[1]):
                 values = df_aux.loc[dat, ('calibrators', cla)]
+                if values is None:
+                    continue
                 ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
                 parameters = np.concatenate(values).flatten()
                 uniq, counts = np.unique(parameters, return_counts=True)
