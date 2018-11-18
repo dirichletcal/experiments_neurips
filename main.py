@@ -65,7 +65,7 @@ score_types = {
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
            'test_fold', 'train_acc', 'train_loss', 'train_brier', 'acc',
-           'loss', 'brier', 'c_probas', 'y_test', 'exec_time']
+           'loss', 'brier', 'c_probas', 'y_test', 'exec_time', 'calibrators']
 
 save_columns = [c for c in columns if c not in ['c_probas', 'y_test']]
 
@@ -198,7 +198,9 @@ def compute_all(args):
                                   train_loss[method], train_brier[method],
                                   accs[method], losses[method], briers[method],
                                   mean_probas[method], y_test,
-                                  exec_time[method]]])
+                                  exec_time[method],
+                                  [c.calibrator.__dict__ for c in cl[method]]
+                                  ]])
         fold_id += 1
     return df
 
