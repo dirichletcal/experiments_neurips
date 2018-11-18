@@ -78,6 +78,7 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         '''
         self.strategy = strategy
         self.n_bins = n_bins
+        self.n_bins_grid = n_bins
         self.alpha = alpha
 
     def fit(self, scores, y, X_val=None, y_val=None, *args, **kwargs):
@@ -173,10 +174,6 @@ MAP_CALIBRATORS = {
                                                         l2=[1e0, 1e-1, 1e-2,
                                                             1e-3, 1e-4, 0.0],
                                                         initializer='preFixDiag'),
-    'dirichlet_full_comp_l2': DirichletCalibrator(matrix_type='full',
-                                                  comp_l2=True,
-                                                        l2=[1e0, 1e-1, 1e-2,
-                                                            1e-3, 1e-4, 0.0]),
     'dirichlet_full_prefixdiag_comp_l2': DirichletCalibrator(matrix_type='full',
                                                              comp_l2=True,
                                                              l2=[1e0, 1e-1, 1e-2,
