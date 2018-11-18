@@ -168,9 +168,10 @@ def generate_summaries_per_calibrator(df, summary_path):
         for i, dat in enumerate(df_aux.index):
             for j, cla in enumerate(df_aux.columns.levels[1]):
                 values = df_aux.loc[dat, ('calibrators', cla)]
+                ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
+                ij += 1
                 if values is None:
                     continue
-                ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
                 parameters = np.concatenate(values).flatten()
                 uniq, counts = np.unique(parameters, return_counts=True)
                 print(uniq)
@@ -180,7 +181,6 @@ def generate_summaries_per_calibrator(df, summary_path):
                     ax.set_ylabel(dat)
                 if i == 0:
                     ax.set_title(cla)
-                ij += 1
         fig.savefig(os.path.join(summary_path, '{}.svg'.format(key)))
 
 
