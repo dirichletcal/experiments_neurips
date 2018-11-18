@@ -65,7 +65,7 @@ score_types = {
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
            'test_fold', 'train_acc', 'train_loss', 'train_brier', 'acc',
-           'loss', 'brier', 'c_probas', 'y_test', 'exec_time', 'calibrators']
+           'loss', 'brier', 'confusion_matrix', 'c_probas', 'y_test', 'exec_time', 'calibrators']
 
 save_columns = [c for c in columns if c not in ['c_probas', 'y_test']]
 
@@ -189,7 +189,7 @@ def compute_all(args):
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
                                  verbose=verbose, seed=mc)
-        train_acc, train_loss, train_brier, accs, losses, briers, mean_probas, cl, exec_time = results
+        train_acc, train_loss, train_brier, accs, losses, briers, cms, mean_probas, cl, exec_time = results
 
         for method in methods:
             df = df.append_rows([[dataset.name, dataset.n_classes,
@@ -197,7 +197,7 @@ def compute_all(args):
                                   method, mc, fold_id, train_acc[method],
                                   train_loss[method], train_brier[method],
                                   accs[method], losses[method], briers[method],
-                                  mean_probas[method], y_test,
+                                  cms[method], mean_probas[method], y_test,
                                   exec_time[method],
                                   [c.calibrator.__dict__ for c in cl[method]]
                                   ]])

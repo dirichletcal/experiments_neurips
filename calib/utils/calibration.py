@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.base import clone
+from sklearn.metrics import confusion_matrix
 from numpy.testing import assert_array_equal
 
 from calib.models.calibration import _DummyCalibration
@@ -134,8 +135,10 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             in methods}
     briers = {method: brier_score(mean_probas[method], y_test_bin) for method
               in methods}
+    cms = {method: confusion_matrix(y_test, mean_probas[method].argmax(axis=1)) for method
+              in methods}
     mean_time = {method: np.mean(exec_time[method]) for method in methods}
-    return train_acc, train_loss, train_brier, accs, losses, briers, mean_probas, classifiers, mean_time
+    return train_acc, train_loss, train_brier, accs, losses, briers, cms, mean_probas, classifiers, mean_time
 
 
 def cv_calibration_map_differences(base_classifier, x_train, y_train, cv=3,
