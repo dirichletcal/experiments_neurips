@@ -393,6 +393,25 @@ def generate_summaries(df, summary_path):
                                        filename=filename,
                                        title='(p-value = {:.2e}, #D = {})'.format(ftest.pvalue, table.shape[0]))
 
+        ## Export the summary of all rankings
+        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
+                                        columns=table.columns.levels[2])
+        # TODO check that performing the ranking of the rankings is appropriate
+        str_table = to_latex(classifiers, df_mean_rankings, precision=1,
+                             table_size='\\small',
+                             max_is_better=False,
+                             caption=('Ranking of calibration methods ' +
+                                      'applied to each classifier ' +
+                                      'with the measure={}'
+                                      ).format(measure),
+                             label='table:{}'.format(measure),
+                             add_std=False,
+                             column_names=df_mean_rankings.columns)
+        file_basename = os.path.join(summary_path,
+                                     '{}_rankings'.format(measure))
+        with open(file_basename + '.tex', "w") as text_file:
+            text_file.write(str_table)
+
         ## --------------------------------------------------------------##
         ## Version 2 for the aggregated rankings
         # Perform rankings of dataset+classifier vs calibration method
