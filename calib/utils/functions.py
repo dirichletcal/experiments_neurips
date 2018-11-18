@@ -7,7 +7,7 @@ from scipy.stats import percentileofscore
 from scipy.optimize import fmin
 from scipy.optimize import minimize_scalar
 import scipy.integrate as integrate
-from python_betacal.betacal import BetaCalibration
+from betacal import BetaCalibration
 from scipy.special import gamma as gamma_func
 from scipy.stats import gamma
 
