@@ -199,17 +199,22 @@ def generate_summaries_per_calibrator(df, summary_path):
         fig.savefig(os.path.join(summary_path, '{}.svg'.format(key)))
 
     # heatmaps of parameters
-    MAP_METHOD = {'dir_full_l2': " 'weights_':(.*?), '",
-                  'dir_full_comp_l2': " 'weights_':(.*?), '",
-                  'dirichlet_full_prefixdiag_l2': " 'weights_':(.*?), '"
+    # FIXME change MAP method as it is not being used
+    MAP_METHOD = {'dir_full_l2': " 'weights_':(.*?)]])'",
+                  'dir_full_comp_l2': " 'weights_':(.*?)]])",
+                  'dirichlet_full_prefixdiag_l2': " 'weights_':(.*?)]])"
                  }
     def weight_matrix(string):
-        solution = re.findall(" 'weights_':(.*?), '", string, flags=re.DOTALL)
+        solution = re.findall(" 'weights_':(.*?)]]\)", string, flags=re.DOTALL)
         matrices = []
         for s in solution:
             matrices.append(np.fromstring(''.join(c for c in s if c in
                                                   '0123456789e+,'), sep=','))
-            matrices[-1] = matrices[-1].reshape(int(np.floor(np.sqrt(len(matrices[-1])))), -1)
+            try:
+                matrices[-1] = matrices[-1].reshape(int(np.floor(np.sqrt(len(matrices[-1])))), -1)
+            except ValueError as e:
+                print(e)
+                from IPython import embed; embed();
         return matrices
 
     for key, regex in MAP_METHOD.items():
@@ -232,18 +237,23 @@ def generate_summaries_per_calibrator(df, summary_path):
                 if i == 0:
                     ax.set_title(cla)
                 ij += 1
+                if values is None:
+                    continue
                 parameters = np.concatenate(values).mean(axis=0)
+                # FIXME solve problem here, it seems that values is always
+                # empty?
                 if isinstance(parameters, np.float):
                     continue
                 cax = ax.pcolor(parameters)
                 middle_value = (parameters.max() + parameters.min())/2.0
+                fontsize = 10/(parameters.shape[0]-2)
                 for y in range(parameters.shape[0]):
                     for x in range(parameters.shape[1]):
                         color = 'white' if middle_value > parameters[y, x] else 'black'
                         ax.text(x + 0.5, y + 0.5, '%.e' % parameters[y, x],
                                  horizontalalignment='center',
                                  verticalalignment='center',
-                                 color=color, fontsize=8
+                                 color=color, fontsize=fontsize
                                  )
                 ax.invert_yaxis()
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
