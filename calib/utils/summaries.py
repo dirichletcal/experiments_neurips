@@ -163,7 +163,9 @@ def generate_summaries_per_calibrator(df, summary_path):
                                                                                 x)).astype(float))
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['calibrators'], aggfunc=MakeList)
-        all_unique = np.unique(np.hstack(df_aux.values.flatten()).flatten())
+        all_unique = df_aux.values.flatten()
+        all_unique = all_unique[all_unique != None]
+        all_unique = np.unique(np.hstack(all_unique).flatten())
         fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
         fig.suptitle(key)
         ij = 1
@@ -171,6 +173,10 @@ def generate_summaries_per_calibrator(df, summary_path):
             for j, cla in enumerate(df_aux.columns.levels[1]):
                 values = df_aux.loc[dat, ('calibrators', cla)]
                 ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
+                if j == 0:
+                    ax.set_ylabel(dat)
+                if i == 0:
+                    ax.set_title(cla)
                 ij += 1
                 if values is None:
                     continue
@@ -188,10 +194,7 @@ def generate_summaries_per_calibrator(df, summary_path):
                 uniq = uniq[sorted_idx].astype(str)
                 counts = counts[sorted_idx]
                 ax.bar(uniq, counts)
-                if j == 0:
-                    ax.set_ylabel(dat)
-                if i == 0:
-                    ax.set_title(cla)
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
         fig.savefig(os.path.join(summary_path, '{}.svg'.format(key)))
 
 
