@@ -8,6 +8,7 @@ from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin
 from sklearn.utils import check_X_y, indexable, column_or_1d
 from sklearn.utils.validation import check_is_fitted
 from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegressionCV
 from sklearn.isotonic import IsotonicRegression
 from sklearn.calibration import _SigmoidCalibration
 from sklearn.metrics import log_loss
@@ -59,6 +60,42 @@ class IsotonicCalibration(IsotonicRegression):
 
     def predict_proba(self, scores, *args, **kwargs):
         return self.transform(scores, *args, **kwargs)
+
+def logit(x):
+    eps = np.finfo(x.dtype).eps
+    x = np.clip(x, eps, 1-eps)
+    return np.log(x/(1 - x))
+
+class LogisticCalibration(LogisticRegression):
+    def __init__(self, C=1.0, solver='lbfgs', multi_class='ovr'):
+        self.C_grid = C
+        self.C = C
+        self.solver = solver
+        super(LogisticCalibration, self).__init__(C=C, solver=solver,
+                                                  multi_class='ovr')
+
+    def fit(self, scores, y, X_val=None, y_val=None, *args, **kwargs):
+        if isinstance(self.C_grid, list):
+            calibrators = []
+            losses = np.zeros(len(self.C_grid))
+            for i, C in enumerate(self.C_grid):
+                cal = LogisticCalibration(C=C, solver=self.solver,
+                                          multi_class=self.multi_class)
+                cal.fit(scores, y)
+                losses[i] = log_loss(y_val, cal.predict_proba(X_val))
+                calibrators.append(cal)
+            best_idx = losses.argmin()
+            self.C = calibrators[best_idx].C
+        return super(LogisticCalibration, self).fit(logit(scores), y, *args,
+                                                **kwargs)
+
+    def predict_proba(self, scores, *args, **kwargs):
+        return super(LogisticCalibration, self).predict_proba(logit(scores),
+                                                              *args, **kwargs)
+
+    def predict(self, scores, *args, **kwargs):
+        return super(LogisticCalibration, self).predict(logit(scores), *args,
+                                                        **kwargs)
 
 
 class SigmoidCalibration(_SigmoidCalibration):
@@ -139,6 +176,7 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
 
 
 MAP_CALIBRATORS = {
+    'logistic': LogisticCalibration(C=[1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5]),
     'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform',
                                                            n_bins=[5, 10, 15,
                                                                    20, 25, 30])),
