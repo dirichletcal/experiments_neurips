@@ -148,6 +148,7 @@ def generate_summaries_per_calibrator(df, summary_path):
         else:
             return T[0]
 
+    # Histograms of parameters
     MAP_METHOD = {'binning_freq': 'n_bins=(?P<bins>\w+)',
                   'binning_width': 'n_bins=(?P<bins>\w+)',
                   'dir_full_l2': ' l2=(?P<l2>\d+\.\d+)',
@@ -196,6 +197,57 @@ def generate_summaries_per_calibrator(df, summary_path):
                 ax.bar(uniq, counts)
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
         fig.savefig(os.path.join(summary_path, '{}.svg'.format(key)))
+
+    # heatmaps of parameters
+    MAP_METHOD = {'dir_full_l2': " 'weights_':(.*?), '",
+                  'dir_full_comp_l2': " 'weights_':(.*?), '",
+                  'dirichlet_full_prefixdiag_l2': " 'weights_':(.*?), '"
+                 }
+    def weight_matrix(string):
+        solution = re.findall(" 'weights_':(.*?), '", string, flags=re.DOTALL)
+        matrices = []
+        for s in solution:
+            matrices.append(np.fromstring(''.join(c for c in s if c in
+                                                  '0123456789e+,'), sep=','))
+            matrices[-1] = matrices[-1].reshape(int(np.floor(np.sqrt(len(matrices[-1])))), -1)
+        return matrices
+
+    for key, regex in MAP_METHOD.items():
+        df_aux = df[df['method'] == key][['dataset', 'classifier', 'calibrators']]
+        if len(df_aux) == 0:
+            continue
+        df_aux['calibrators'] = df_aux['calibrators'].apply(weight_matrix)
+        df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
+                                    values=['calibrators'],
+                                    aggfunc=MakeList)
+        fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
+        fig.suptitle(key)
+        ij = 1
+        for i, dat in enumerate(df_aux.index):
+            for j, cla in enumerate(df_aux.columns.levels[1]):
+                values = df_aux.loc[dat, ('calibrators', cla)]
+                ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
+                if j == 0:
+                    ax.set_ylabel(dat)
+                if i == 0:
+                    ax.set_title(cla)
+                ij += 1
+                parameters = np.concatenate(values).mean(axis=0)
+                if isinstance(parameters, np.float):
+                    continue
+                cax = ax.pcolor(parameters)
+                middle_value = (parameters.max() + parameters.min())/2.0
+                for y in range(parameters.shape[0]):
+                    for x in range(parameters.shape[1]):
+                        color = 'white' if middle_value > parameters[y, x] else 'black'
+                        ax.text(x + 0.5, y + 0.5, '%.e' % parameters[y, x],
+                                 horizontalalignment='center',
+                                 verticalalignment='center',
+                                 color=color, fontsize=8
+                                 )
+                ax.invert_yaxis()
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        fig.savefig(os.path.join(summary_path, 'heatmap_{}.svg'.format(key)))
 
 
 def generate_summaries(df, summary_path):
