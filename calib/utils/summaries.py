@@ -155,13 +155,15 @@ def generate_summaries_per_calibrator(df, summary_path):
                   'dirichlet_full_prefixdiag_l2': ' l2=(?P<l2>\d+\.\d+)'
                  }
     for key, regex in MAP_METHOD.items():
-        print(key)
         df_aux = df[df['method'] == key][['dataset', 'classifier', 'calibrators']]
         if len(df_aux) == 0:
             continue
-        df_aux['calibrators'] = df_aux['calibrators'].apply(lambda x: re.findall(regex, x))
+        df_aux['calibrators'] = df_aux['calibrators'].apply(lambda x:
+                                                            np.array(re.findall(regex,
+                                                                                x)).astype(float))
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['calibrators'], aggfunc=MakeList)
+        all_unique = np.unique(np.hstack(df_aux.values.flatten()).flatten())
         fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
         fig.suptitle(key)
         ij = 1
@@ -174,8 +176,17 @@ def generate_summaries_per_calibrator(df, summary_path):
                     continue
                 parameters = np.concatenate(values).flatten()
                 uniq, counts = np.unique(parameters, return_counts=True)
-                print(uniq)
-                print(counts)
+                missing_uniq = []
+                missing_counts = []
+                for all_u in all_unique:
+                    if all_u not in uniq:
+                        missing_uniq.append(all_u)
+                        missing_counts.append(0)
+                uniq = np.concatenate((uniq, missing_uniq))
+                counts = np.concatenate((counts, missing_counts))
+                sorted_idx = np.argsort(uniq)
+                uniq = uniq[sorted_idx].astype(str)
+                counts = counts[sorted_idx]
                 ax.bar(uniq, counts)
                 if j == 0:
                     ax.set_ylabel(dat)
