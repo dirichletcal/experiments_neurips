@@ -252,10 +252,6 @@ def summarise_hyperparameters(df, summary_path):
 
     # heatmaps of parameters
     # FIXME change MAP method as it is not being used
-    MAP_METHOD = {'dir_full_l2': " 'weights_':(.*?)]])'",
-                  'dir_full_comp_l2': " 'weights_':(.*?)]])",
-                  'dirichlet_full_prefixdiag_l2': " 'weights_':(.*?)]])"
-                 }
     def weight_matrix(string):
         solution = re.findall("'weights_': array(.*?)]]\)", string, flags=re.DOTALL)
         matrices = []
@@ -270,11 +266,33 @@ def summarise_hyperparameters(df, summary_path):
             matrices.append(x)
         return matrices
 
-    for key, regex in MAP_METHOD.items():
+    def coef_intercept_matrix(string):
+        coeficients = re.findall("'coef_': array(.*?)]]\)", string, flags=re.DOTALL)
+        intercepts = re.findall("'intercept_': array(.*?)]\)", string, flags=re.DOTALL)
+        matrices = []
+        for coef, inter in zip(coeficients, intercepts):
+            coef = np.fromstring(''.join(c for c in coef if c in
+                                                  '0123456789.-e+,'), sep=',')
+            coef = coef.reshape(int(np.floor(np.sqrt(len(coef)))), -1)
+
+            inter = np.fromstring(''.join(c for c in inter if c in
+                                                  '0123456789.-e+,'), sep=',')
+            x = np.vstack((coef.T, inter)).T
+            matrices.append(x)
+        return matrices
+
+    MAP_METHOD = {'dir_full_l2': weight_matrix,
+                  'dir_full_comp_l2': weight_matrix,
+                  'dirichlet_full_prefixdiag_l2': weight_matrix,
+                  'logistic_log': coef_intercept_matrix,
+                  'logistic_logit': coef_intercept_matrix
+                 }
+
+    for key, function in MAP_METHOD.items():
         df_aux = df[df['method'] == key][['dataset', 'classifier', 'calibrators']]
         if len(df_aux) == 0:
             continue
-        df_aux['calibrators'] = df_aux['calibrators'].apply(weight_matrix)
+        df_aux['calibrators'] = df_aux['calibrators'].apply(function)
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['calibrators'],
                                     aggfunc=MakeList)

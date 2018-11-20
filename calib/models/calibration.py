@@ -66,11 +66,19 @@ def logit(x):
     x = np.clip(x, eps, 1-eps)
     return np.log(x/(1 - x))
 
+def log_encode(x):
+    eps = np.finfo(x.dtype).eps
+    x = np.clip(x, eps, 1)
+    return np.log(x)
+
 class LogisticCalibration(LogisticRegression):
-    def __init__(self, C=1.0, solver='lbfgs', multi_class='ovr'):
+    def __init__(self, C=1.0, solver='lbfgs', multi_class='ovr',
+                 log_transform=True):
         self.C_grid = C
         self.C = C
         self.solver = solver
+        self.log_transform = log_transform
+        self.encode = log_encode if  log_transform else logit
         super(LogisticCalibration, self).__init__(C=C, solver=solver,
                                                   multi_class='ovr')
 
@@ -80,22 +88,23 @@ class LogisticCalibration(LogisticRegression):
             losses = np.zeros(len(self.C_grid))
             for i, C in enumerate(self.C_grid):
                 cal = LogisticCalibration(C=C, solver=self.solver,
-                                          multi_class=self.multi_class)
+                                          multi_class=self.multi_class,
+                                          log_transform=self.log_transform)
                 cal.fit(scores, y)
                 losses[i] = log_loss(y_val, cal.predict_proba(X_val))
                 calibrators.append(cal)
             best_idx = losses.argmin()
             self.C = calibrators[best_idx].C
-        return super(LogisticCalibration, self).fit(logit(scores), y, *args,
-                                                **kwargs)
+        return super(LogisticCalibration, self).fit(self.encode(scores), y,
+                *args, **kwargs)
 
     def predict_proba(self, scores, *args, **kwargs):
-        return super(LogisticCalibration, self).predict_proba(logit(scores),
-                                                              *args, **kwargs)
+        return super(LogisticCalibration,
+                self).predict_proba(self.encode(scores), *args, **kwargs)
 
     def predict(self, scores, *args, **kwargs):
-        return super(LogisticCalibration, self).predict(logit(scores), *args,
-                                                        **kwargs)
+        return super(LogisticCalibration, self).predict(self.encode(scores),
+                *args, **kwargs)
 
 
 class SigmoidCalibration(_SigmoidCalibration):
@@ -176,7 +185,10 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
 
 
 MAP_CALIBRATORS = {
-    'logistic': LogisticCalibration(C=[1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5]),
+    'logistic_log': LogisticCalibration(C=[1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
+                                        log_transform=True),
+    'logistic_logit': LogisticCalibration(C=[1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
+                                          log_transform=False),
     'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform',
                                                            n_bins=[5, 10, 15,
                                                                    20, 25, 30])),
