@@ -209,12 +209,8 @@ def generate_summaries_per_calibrator(df, summary_path):
         matrices = []
         for s in solution:
             matrices.append(np.fromstring(''.join(c for c in s if c in
-                                                  '0123456789e+,'), sep=','))
-            try:
-                matrices[-1] = matrices[-1].reshape(int(np.floor(np.sqrt(len(matrices[-1])))), -1)
-            except ValueError as e:
-                print(e)
-                from IPython import embed; embed();
+                                                  '0123456789.-e+,'), sep=','))
+            matrices[-1] = matrices[-1].reshape(int(np.floor(np.sqrt(len(matrices[-1])))), -1)
         return matrices
 
     for key, regex in MAP_METHOD.items():
@@ -246,7 +242,7 @@ def generate_summaries_per_calibrator(df, summary_path):
                     continue
                 cax = ax.pcolor(parameters)
                 middle_value = (parameters.max() + parameters.min())/2.0
-                fontsize = 10/(parameters.shape[0]-2)
+                fontsize = min((20/(parameters.shape[0]-2), 9))
                 for y in range(parameters.shape[0]):
                     for x in range(parameters.shape[1]):
                         color = 'white' if middle_value > parameters[y, x] else 'black'
