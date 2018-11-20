@@ -177,11 +177,11 @@ def summarise_confusion_matrices(df, summary_path):
                     continue
                 cax = ax.pcolor(cms)
                 middle_value = (cms.max() + cms.min())/2.0
-                fontsize = min((20/(cms.shape[0]-2), 9))
+                fontsize = min((30/(cms.shape[0]-2), 9))
                 for y in range(cms.shape[0]):
                     for x in range(cms.shape[1]):
                         color = 'white' if middle_value > cms[y, x] else 'black'
-                        ax.text(x + 0.5, y + 0.5, '%.e' % cms[y, x],
+                        ax.text(x + 0.5, y + 0.5, '%.1f' % cms[y, x],
                                  horizontalalignment='center',
                                  verticalalignment='center',
                                  color=color, fontsize=fontsize
