@@ -140,7 +140,59 @@ def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
         f.write(tex_table)
 
 
-def generate_summaries_per_calibrator(df, summary_path):
+def summarise_confusion_matrices(df, summary_path):
+    def MakeList(x):
+        T = tuple(x)
+        if len(T) > 1:
+            return T
+        else:
+            return T[0]
+    def confusion_matrix(string):
+        cm = np.fromstring(''.join(c for c in string if c in '0123456789.-e+, '), sep=' ')
+        cm = cm.reshape(int(np.sqrt(len(cm))), -1)
+        return cm
+    df['confusion_matrix'] = df['confusion_matrix'].apply(confusion_matrix)
+    for calibrator in df['method'].unique():
+        df_aux = df[df['method'] == calibrator]
+        df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
+                                    values=['confusion_matrix'], aggfunc=MakeList)
+        fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
+        fig.suptitle(calibrator)
+        ij = 1
+        for i, dat in enumerate(df_aux.index):
+            for j, cla in enumerate(df_aux.columns.levels[1]):
+                values = df_aux.loc[dat, ('confusion_matrix', cla)]
+                ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
+                if j == 0:
+                    ax.set_ylabel(dat)
+                if i == 0:
+                    ax.set_title(cla)
+                ij += 1
+                if values is None:
+                    continue
+                cms = np.stack(values).mean(axis=0)
+                # FIXME solve problem here, it seems that values is always
+                # empty?
+                if isinstance(cms, np.float):
+                    continue
+                cax = ax.pcolor(cms)
+                middle_value = (cms.max() + cms.min())/2.0
+                fontsize = min((20/(cms.shape[0]-2), 9))
+                for y in range(cms.shape[0]):
+                    for x in range(cms.shape[1]):
+                        color = 'white' if middle_value > cms[y, x] else 'black'
+                        ax.text(x + 0.5, y + 0.5, '%.e' % cms[y, x],
+                                 horizontalalignment='center',
+                                 verticalalignment='center',
+                                 color=color, fontsize=fontsize
+                                 )
+                ax.invert_yaxis()
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        fig.savefig(os.path.join(summary_path,
+            'confusion_matrices_{}.svg'.format(calibrator)))
+
+
+def summarise_hyperparameters(df, summary_path):
     def MakeList(x):
         T = tuple(x)
         if len(T) > 1:
@@ -149,8 +201,8 @@ def generate_summaries_per_calibrator(df, summary_path):
             return T[0]
 
     # Histograms of parameters
-    MAP_METHOD = {'binning_freq': 'n_bins=(?P<bins>\w+)',
-                  'binning_width': 'n_bins=(?P<bins>\w+)',
+    MAP_METHOD = {'binning_freq': 'n_bins=(?P<bins>\w+), ',
+                  'binning_width': 'n_bins=(?P<bins>\w+), ',
                   'dir_full_l2': ' l2=(?P<l2>\d+\.\d+)',
                   'dir_full_comp_l2': ' l2=(?P<l2>\d+\.\d+)',
                   'dirichlet_full_prefixdiag_l2': ' l2=(?P<l2>\d+\.\d+)'
@@ -235,6 +287,7 @@ def generate_summaries_per_calibrator(df, summary_path):
                 ij += 1
                 if values is None:
                     continue
+                # Stacking (#iter x #crossval x #crossval) on first dimension
                 parameters = np.concatenate(values).mean(axis=0)
                 # FIXME solve problem here, it seems that values is always
                 # empty?
@@ -302,7 +355,9 @@ def generate_summaries(df, summary_path):
         .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
-    generate_summaries_per_calibrator(df, summary_path)
+    summarise_hyperparameters(df, summary_path)
+
+    summarise_confusion_matrices(df, summary_path)
 
     measures = (('acc', True), ('loss', False), ('brier', False),
                 ('train_acc', True), ('train_loss', False),
