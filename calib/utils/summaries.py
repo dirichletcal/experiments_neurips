@@ -260,9 +260,15 @@ def summarise_hyperparameters(df, summary_path):
         solution = re.findall(" 'weights_':(.*?)]]\)", string, flags=re.DOTALL)
         matrices = []
         for s in solution:
-            matrices.append(np.fromstring(''.join(c for c in s if c in
-                                                  '0123456789.-e+,'), sep=','))
-            matrices[-1] = matrices[-1].reshape(int(np.floor(np.sqrt(len(matrices[-1])))), -1)
+            x = np.fromstring(''.join(c for c in s if c in
+                                                  '0123456789.-e+,'), sep=',')
+            x = x.reshape(int(np.floor(np.sqrt(len(x)))), -1)
+            col_sums = np.sum(x,axis=0)
+            amount_to_shift = ( col_sums[:-1] - np.diag(x) ) / (x.shape[0]-1)
+            x = x - np.concatenate((amount_to_shift,[0]))
+            x[:,-1] = x[:,-1] - col_sums[-1] / x.shape[0]
+            matrices.append(x)
+
         return matrices
 
     for key, regex in MAP_METHOD.items():
@@ -355,8 +361,10 @@ def generate_summaries(df, summary_path):
         .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
+    print('Creating summary of hyperparameters')
     summarise_hyperparameters(df, summary_path)
 
+    print('Creating summary of confusion matrices')
     summarise_confusion_matrices(df, summary_path)
 
     measures = (('acc', True), ('loss', False), ('brier', False),
