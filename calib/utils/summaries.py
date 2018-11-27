@@ -501,6 +501,8 @@ def generate_summaries(df, summary_path):
                                                aggfunc=[np.mean, np.std])
 
             # Perform a Friedman statistic test
+            # Remove datasets in which one of the experiments failed
+            table = table[~table.isna().any(axis=1)]
             ftest = compute_friedmanchisquare(table['mean'])
             print(ftest)
 
@@ -534,6 +536,8 @@ def generate_summaries(df, summary_path):
                                                columns=['method'],
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
+            # Remove datasets in which one of the experiments failed
+            table = table[~table.isna().any(axis=1)]
             if max_is_better:
                 table *= -1
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
@@ -577,6 +581,8 @@ def generate_summaries(df, summary_path):
         table = df.pivot_table(index=['dataset', 'classifier'],
                                columns=['method'],
                                values=[measure], aggfunc=np.mean)
+        # Remove datasets and classifier combinations in which one of the experiments failed
+        table = table[~table.isna().any(axis=1)]
         if max_is_better:
             table *= -1
         ranking_table_all = table.apply(rankdata, axis=1).mean()
