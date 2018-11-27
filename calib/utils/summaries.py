@@ -33,9 +33,14 @@ def load_all_csv(results_path, expression=".*.csv"):
                 continue
             filename_list += filename
             classifier = filename.split('_')[0]
-            df_list.append(pd.read_csv(os.path.join(root, filename)))
-            df_list[-1]['classifier'] = classifier
-            df_list[-1]['filename'] = filename
+            try:
+                df_list.append(pd.read_csv(os.path.join(root, filename)))
+                df_list[-1]['classifier'] = classifier
+                df_list[-1]['filename'] = filename
+            except pd.errors.EmptyDataError as e:
+                print('Classifier = {}, filename = {}'.format(classifier,
+                    filename))
+                print(e)
 
     df = pd.concat(df_list)
     return df
