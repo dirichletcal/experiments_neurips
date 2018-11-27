@@ -252,12 +252,8 @@ def summarise_hyperparameters(df, summary_path):
 
     # heatmaps of parameters
     # FIXME change MAP method as it is not being used
-    MAP_METHOD = {'dir_full_l2': " 'weights_':(.*?)]])'",
-                  'dir_full_comp_l2': " 'weights_':(.*?)]])",
-                  'dirichlet_full_prefixdiag_l2': " 'weights_':(.*?)]])"
-                 }
     def weight_matrix(string):
-        solution = re.findall(" 'weights_':(.*?)]]\)", string, flags=re.DOTALL)
+        solution = re.findall("'weights_': array(.*?)]]\)", string, flags=re.DOTALL)
         matrices = []
         for s in solution:
             x = np.fromstring(''.join(c for c in s if c in
@@ -268,14 +264,35 @@ def summarise_hyperparameters(df, summary_path):
             x = x - np.concatenate((amount_to_shift,[0]))
             x[:,-1] = x[:,-1] - col_sums[-1] / x.shape[0]
             matrices.append(x)
-
         return matrices
 
-    for key, regex in MAP_METHOD.items():
+    def coef_intercept_matrix(string):
+        coeficients = re.findall("'coef_': array(.*?)]]\)", string, flags=re.DOTALL)
+        intercepts = re.findall("'intercept_': array(.*?)]\)", string, flags=re.DOTALL)
+        matrices = []
+        for coef, inter in zip(coeficients, intercepts):
+            coef = np.fromstring(''.join(c for c in coef if c in
+                                                  '0123456789.-e+,'), sep=',')
+            coef = coef.reshape(int(np.floor(np.sqrt(len(coef)))), -1)
+
+            inter = np.fromstring(''.join(c for c in inter if c in
+                                                  '0123456789.-e+,'), sep=',')
+            x = np.vstack((coef.T, inter)).T
+            matrices.append(x)
+        return matrices
+
+    MAP_METHOD = {'dir_full_l2': weight_matrix,
+                  'dir_full_comp_l2': weight_matrix,
+                  'dirichlet_full_prefixdiag_l2': weight_matrix,
+                  'logistic_log': coef_intercept_matrix,
+                  'logistic_logit': coef_intercept_matrix
+                 }
+
+    for key, function in MAP_METHOD.items():
         df_aux = df[df['method'] == key][['dataset', 'classifier', 'calibrators']]
         if len(df_aux) == 0:
             continue
-        df_aux['calibrators'] = df_aux['calibrators'].apply(weight_matrix)
+        df_aux['calibrators'] = df_aux['calibrators'].apply(function)
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['calibrators'],
                                     aggfunc=MakeList)
@@ -361,10 +378,10 @@ def generate_summaries(df, summary_path):
         .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
-    print('Creating summary of hyperparameters')
+    print('Generating summary of hyperparameters')
     summarise_hyperparameters(df, summary_path)
 
-    print('Creating summary of confusion matrices')
+    print('Generating summary of confusion matrices')
     summarise_confusion_matrices(df, summary_path)
 
     measures = (('acc', True), ('loss', False), ('brier', False),
@@ -479,6 +496,8 @@ def generate_summaries(df, summary_path):
                                                aggfunc=[np.mean, np.std])
 
             # Perform a Friedman statistic test
+            # Remove datasets in which one of the experiments failed
+            table = table[~table.isna().any(axis=1)]
             ftest = compute_friedmanchisquare(table['mean'])
             print(ftest)
 
@@ -512,6 +531,8 @@ def generate_summaries(df, summary_path):
                                                columns=['method'],
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
+            # Remove datasets in which one of the experiments failed
+            table = table[~table.isna().any(axis=1)]
             if max_is_better:
                 table *= -1
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
@@ -555,6 +576,8 @@ def generate_summaries(df, summary_path):
         table = df.pivot_table(index=['dataset', 'classifier'],
                                columns=['method'],
                                values=[measure], aggfunc=np.mean)
+        # Remove datasets and classifier combinations in which one of the experiments failed
+        table = table[~table.isna().any(axis=1)]
         if max_is_better:
             table *= -1
         ranking_table_all = table.apply(rankdata, axis=1).mean()
