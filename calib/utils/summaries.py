@@ -287,6 +287,7 @@ def summarise_hyperparameters(df, summary_path):
         return matrices
 
     MAP_METHOD = {'dir_full_l2': weight_matrix,
+                  'dir_full_gen': weight_matrix,
                   'dir_full_comp_l2': weight_matrix,
                   'dirichlet_full_prefixdiag_l2': weight_matrix,
                   'logistic_log': coef_intercept_matrix,
