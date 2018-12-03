@@ -113,7 +113,7 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
 # TODO should we make the replacements of underscores out of this function for
 # the column and row names?
 def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
-             table_size="\\normalsize", caption="", label='table',
+             table_size="normalsize", caption="", label='table',
              add_std=True, position='!H', column_names=None):
     if column_names is None:
         column_names = table.columns.levels[2]
@@ -125,7 +125,7 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     avg_ranks = np.zeros(n_columns)
     stds = table.as_matrix()[:, n_columns:]*scale
     str_table = ("\\begin{table}[" + position + "]\n" +
-                 table_size + "\n" +
+                 "\\" + table_size + "\n" +
                  "\\centering\n")
     str_columns = "l"
     str_header = ""
@@ -171,7 +171,7 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
                 str_row_means += ("_{{{0}}}$".format(idx_s))
         str_table += str_row_means + "\\\\\n"
     str_table += "\\midrule\n"
-    str_avg = "average rank"
+    str_avg = "avg rank"
     for i in np.arange(n_columns):
         if avg_ranks[i] == min(avg_ranks):
             str_avg += " & \\bf{{{0:.2f}}}".format(avg_ranks[i])
@@ -181,6 +181,7 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     str_table += (str_avg + "\\\\\n" +
                   "\\bottomrule\n" +
                   "\\end{tabular}\n" +
+                  "\\normalsize\n" +
                   "\\caption{"+caption+"}\n" +
                   "\\label{"+label+"}\n" +
                   "\\end{table}\n")
