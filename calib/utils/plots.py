@@ -349,9 +349,18 @@ def df_to_heatmap(df, filename, title=None, figsize=None, annotate=True,
     plt.close(fig)
 
 def export_critical_difference(avranks, num_datasets, names, filename,
-                               title=None):
+                               title=None, test='bonferroni-dunn'):
+    '''
+        test: string in ['nemenyi', 'bonferroni-dunn']
+         - nemenyi two-tailed test (up to 20 methods)
+         - bonferroni-dunn one-tailed test (only up to 10 methods)
+
+    '''
+    if len(avranks) > 10:
+        print('Forcing Nemenyi Critical difference')
+        test = 'nemenyi'
     cd = Orange.evaluation.compute_CD(avranks, num_datasets, alpha='0.05',
-                                      test='bonferroni-dunn')
+                                      test=test)
     Orange.evaluation.graph_ranks(avranks, names, cd=cd, width=6,
                                   textspace=1.5)
     fig = plt.gcf()
@@ -417,10 +426,10 @@ def export_dataset_analysis(df, measure, filename, file_ext='.svg'):
         fig.suptitle(method)
         ax = fig.add_subplot(121)
         df[df['method'] == method].plot(kind='scatter', x='n_samples',
-                                        y=measure, ax=ax,
+                                        y=measure, ax=ax, logx=True,
                                         alpha=0.5)
         ax = fig.add_subplot(122)
         df[df['method'] == method].plot(kind='scatter', x='n_classes',
-                                        y=measure, ax=ax, alpha=0.5)
+                                        logx=True, y=measure, ax=ax, alpha=0.5)
         fig.savefig('{}_{}_{}.{}'.format(filename, method, measure, file_ext))
         plt.close(fig)
