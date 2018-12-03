@@ -23,7 +23,8 @@ def parse_arguments():
 def main(results_path, summary_path):
     df = load_all_csv(results_path, ".*raw_results.csv")
     summary_path = create_summary_path(summary_path, results_path)
-    generate_summaries(df, summary_path)
+    generate_summaries(df, summary_path, table_size='small',
+            hyperparameters=True, confusion_matrices=True)
 
     df = load_all_csv(results_path, ".*score_histogram.csv")
     del df['Unnamed: 0']
