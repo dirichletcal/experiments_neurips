@@ -23,6 +23,7 @@ from calib.utils.functions import beta_test
 from calib.utils.multiclass import OneVsRestCalibrator
 
 from dirichlet import DirichletCalibrator
+from dirichlet.calib.gendirichlet import GenerativeDirichletCalibrator
 from dirichlet.calib.multinomial import MultinomialRegression
 
 from mixture_of_dirichlet import MixDir
@@ -210,6 +211,7 @@ MAP_CALIBRATORS = {
     'ovr_dir_diag': OneVsRestCalibrator(DirichletCalibrator(matrix_type='diagonal')),
     'ovr_dir_fixd': OneVsRestCalibrator(DirichletCalibrator(matrix_type='fixed_diagonal')),
     'dirichlet_full': DirichletCalibrator(matrix_type='full'),
+    'dirichlet_full_gen': GenerativeDirichletCalibrator(),
     'dirichlet_full_prefixdiag': DirichletCalibrator(matrix_type='full',
                                                      initializer='preFixDiag'),
     'dirichlet_full_l2': DirichletCalibrator(matrix_type='full',
