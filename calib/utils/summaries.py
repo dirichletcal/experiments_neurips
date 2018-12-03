@@ -38,9 +38,9 @@ def load_all_csv(results_path, expression=".*.csv"):
                 df_list[-1]['classifier'] = classifier
                 df_list[-1]['filename'] = filename
             except pd.errors.EmptyDataError as e:
+                print(e)
                 print('Classifier = {}, filename = {}'.format(classifier,
                     filename))
-                print(e)
 
     df = pd.concat(df_list)
     return df
@@ -337,7 +337,8 @@ def summarise_hyperparameters(df, summary_path):
         fig.savefig(os.path.join(summary_path, 'heatmap_{}.svg'.format(key)))
 
 
-def generate_summaries(df, summary_path):
+def generate_summaries(df, summary_path, table_size='small',
+        hyperparameters=True, confusion_matrices=True):
     '''
     df:     pandas.DataFrame
         The dataframe needs at least the following columns
@@ -362,6 +363,12 @@ def generate_summaries(df, summary_path):
     # Shorten some names
     df['method'] = df['method'].replace(to_replace='dirichlet', value='dir',
                                         regex=True)
+    df['method'] = df['method'].replace(to_replace='binning', value='bin',
+                                        regex=True)
+    df['method'] = df['method'].replace(to_replace='logistic', value='mlr',
+                                        regex=True)
+    df['method'] = df['method'].replace(to_replace='uncalibrated', value='uncal',
+                                        regex=True)
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
@@ -383,11 +390,13 @@ def generate_summaries(df, summary_path):
         .sort_index()
         .to_latex(os.path.join(summary_path, 'datasets.tex')))
 
-    print('Generating summary of hyperparameters')
-    summarise_hyperparameters(df, summary_path)
+    if hyperparameters:
+        print('Generating summary of hyperparameters')
+        summarise_hyperparameters(df, summary_path)
 
-    print('Generating summary of confusion matrices')
-    summarise_confusion_matrices(df, summary_path)
+    if confusion_matrices:
+        print('Generating summary of confusion matrices')
+        summarise_confusion_matrices(df, summary_path)
 
     measures = (('acc', True), ('loss', False), ('brier', False),
                 ('train_acc', True), ('train_loss', False),
@@ -403,7 +412,7 @@ def generate_summaries(df, summary_path):
                                values=[measure], aggfunc=[np.mean, np.std])
 
         str_table = to_latex(classifiers, table, precision=2,
-                             table_size='small', max_is_better=max_is_better,
+                             table_size=table_size, max_is_better=max_is_better,
                              caption=('Ranking of calibration methods ' +
                                       'applied on different classifiers ' +
                                       'with the mean measure={}'
@@ -507,7 +516,7 @@ def generate_summaries(df, summary_path):
             print(ftest)
 
             str_table = to_latex(dataset_names, table, precision=2,
-                                 table_size='\\small',
+                                 table_size=table_size,
                                  max_is_better=max_is_better,
                                  caption=('Ranking of calibration methods ' +
                                           'applied on the classifier ' +
@@ -561,7 +570,7 @@ def generate_summaries(df, summary_path):
                                         columns=table.columns.levels[2])
         # TODO check that performing the ranking of the rankings is appropriate
         str_table = to_latex(classifiers, df_mean_rankings, precision=1,
-                             table_size='\\small',
+                             table_size=table_size,
                              max_is_better=False,
                              caption=('Ranking of calibration methods ' +
                                       'applied to each classifier ' +
