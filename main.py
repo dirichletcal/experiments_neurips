@@ -29,6 +29,7 @@ from calib.utils.functions import get_sets
 from calib.utils.functions import table_to_latex
 from calib.utils.functions import to_latex
 from calib.utils.functions import p_value
+from calib.utils.functions import serializable_or_string
 from calib.models.calibration import MAP_CALIBRATORS
 
 from calib.utils.summaries import create_summary_path
@@ -199,8 +200,10 @@ def compute_all(args):
                                   accs[method], losses[method], briers[method],
                                   cms[method], mean_probas[method], y_test,
                                   exec_time[method],
-                                  [c.calibrator.__dict__ for c in cl[method]]
+                                  [{key: serializable_or_string(value) for key, value in
+                                      c.calibrator.__dict__.items()} for c in cl[method]]
                                   ]])
+
         fold_id += 1
     return df
 
