@@ -272,8 +272,8 @@ def summarise_hyperparameters(df, summary_path):
         return matrices
 
     def weights_keras(string):
-        coeficients = re.findall("'weights': \[array(.*?)]]\)", string, flags=re.DOTALL)
-        intercepts = re.findall(", array\((.*?)]\)]", string, flags=re.DOTALL)
+        coeficients = re.findall("'weights': \[array(.*?)]]", string, flags=re.DOTALL)
+        intercepts = re.findall(", array\(\[(.*?)]", string, flags=re.DOTALL)
         matrices = []
         for coef, inter in zip(coeficients, intercepts):
             coef = np.fromstring(''.join(c for c in coef if c in
