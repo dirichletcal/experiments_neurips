@@ -115,7 +115,7 @@ class Dirichlet_NN(BaseEstimator):
         return model
 
     # Find the temperature
-    def fit(self, probs, true, weights=[], verbose=True, double_fit=None,
+    def fit(self, probs, true, weights=[], verbose=False, double_fit=None,
             batch_size=128, **kwargs):
         """
         Trains the model and finds optimal parameters
