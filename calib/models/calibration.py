@@ -212,7 +212,7 @@ MAP_CALIBRATORS = {
                                                  0.0])),
     'ovr_dir_diag': OneVsRestCalibrator(DirichletCalibrator(matrix_type='diagonal')),
     'ovr_dir_fixd': OneVsRestCalibrator(DirichletCalibrator(matrix_type='fixed_diagonal')),
-    'dirichlet_keras': Dirichlet_NN(),
+    'dirichlet_keras': Dirichlet_NN(l2=10, mu=0.0001),
     'dirichlet_full': DirichletCalibrator(matrix_type='full'),
     'dirichlet_full_gen': GenerativeDirichletCalibrator(),
     'dirichlet_full_prefixdiag': DirichletCalibrator(matrix_type='full',

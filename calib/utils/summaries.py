@@ -271,6 +271,21 @@ def summarise_hyperparameters(df, summary_path):
             matrices.append(x)
         return matrices
 
+    def weights_keras(string):
+        coeficients = re.findall("'weights': \[array(.*?)]]\)", string, flags=re.DOTALL)
+        intercepts = re.findall(", array\((.*?)]\)]", string, flags=re.DOTALL)
+        matrices = []
+        for coef, inter in zip(coeficients, intercepts):
+            coef = np.fromstring(''.join(c for c in coef if c in
+                                                  '0123456789.-e+,'), sep=',')
+            coef = coef.reshape(int(np.floor(np.sqrt(len(coef)))), -1)
+
+            inter = np.fromstring(''.join(c for c in inter if c in
+                                                  '0123456789.-e+,'), sep=',')
+            x = np.vstack((coef.T, inter)).T
+            matrices.append(x)
+        return matrices
+
     def coef_intercept_matrix(string):
         coeficients = re.findall("'coef_': array(.*?)]]\)", string, flags=re.DOTALL)
         intercepts = re.findall("'intercept_': array(.*?)]\)", string, flags=re.DOTALL)
@@ -287,6 +302,7 @@ def summarise_hyperparameters(df, summary_path):
         return matrices
 
     MAP_METHOD = {'dir_full_l2': weight_matrix,
+                  'dir_keras': weights_keras,
                   'dir_full_gen': weight_matrix,
                   'dir_full_comp_l2': weight_matrix,
                   'dirichlet_full_prefixdiag_l2': weight_matrix,
