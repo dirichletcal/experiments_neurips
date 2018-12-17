@@ -75,15 +75,16 @@ def log_encode(x):
     return np.log(x)
 
 class LogisticCalibration(LogisticRegression):
-    def __init__(self, C=1.0, solver='lbfgs', multi_class='ovr',
+    def __init__(self, C=1.0, solver='lbfgs', multi_class='multinomial',
                  log_transform=True):
         self.C_grid = C
-        self.C = C
+        self.C = C if isinstance(C, float) else C[0]
         self.solver = solver
         self.log_transform = log_transform
         self.encode = log_encode if  log_transform else logit
+        self.multiclass=multi_class
         super(LogisticCalibration, self).__init__(C=C, solver=solver,
-                                                  multi_class='ovr')
+                                                  multi_class=multi_class)
 
     def fit(self, scores, y, X_val=None, y_val=None, *args, **kwargs):
         if isinstance(self.C_grid, list):
@@ -186,12 +187,22 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         return self.predictions[s_binned]
 
 
+l2_list = [1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
+C_list = list(np.true_divide(1, l2_list))
 
 MAP_CALIBRATORS = {
-    'logistic_log': LogisticCalibration(C=[1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
-                                        log_transform=True),
-    'logistic_logit': LogisticCalibration(C=[1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5],
-                                          log_transform=False),
+    'ovr_logistic_log': LogisticCalibration(C=C_list,
+                                            log_transform=True,
+                                            multi_class='ovr'),
+    'ovr_logistic_logit': LogisticCalibration(C=C_list,
+                                              log_transform=False,
+                                              multi_class='ovr'),
+    'logistic_log': LogisticCalibration(C=C_list,
+                                        log_transform=True,
+                                        multi_class='multinomial'),
+    'logistic_logit': LogisticCalibration(C=C_list,
+                                          log_transform=False,
+                                          multi_class='multinomial'),
     'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform',
                                                            n_bins=[5, 10, 15,
                                                                    20, 25, 30])),
@@ -208,8 +219,7 @@ MAP_CALIBRATORS = {
     'ovr_dir_full': OneVsRestCalibrator(DirichletCalibrator(matrix_type='full',
                                                            comp_l2=False)),
     'ovr_dir_full_l2': OneVsRestCalibrator(DirichletCalibrator(matrix_type='full',
-                                             l2=[1e0, 1e-1, 1e-2, 1e-3, 1e-4,
-                                                 0.0])),
+                                             l2=l2_list)),
     'ovr_dir_diag': OneVsRestCalibrator(DirichletCalibrator(matrix_type='diagonal')),
     'ovr_dir_fixd': OneVsRestCalibrator(DirichletCalibrator(matrix_type='fixed_diagonal')),
     'dirichlet_keras': Dirichlet_NN(l2=10, mu=0.0001),
@@ -219,20 +229,16 @@ MAP_CALIBRATORS = {
                                                      initializer='preFixDiag'),
     'dirichlet_full_l2': DirichletCalibrator(matrix_type='full',
                                              comp_l2=False,
-                                             l2=[1e0, 1e-1, 1e-2, 1e-3, 1e-4,
-                                                 0.0]),
+                                             l2=l2_list),
     'dirichlet_full_comp_l2': DirichletCalibrator(matrix_type='full',
                                                   comp_l2=True,
-                                             l2=[1e0, 1e-1, 1e-2, 1e-3, 1e-4,
-                                                 0.0]),
+                                             l2=l2_list),
     'dirichlet_full_prefixdiag_l2': DirichletCalibrator(matrix_type='full',
-                                                        l2=[1e0, 1e-1, 1e-2,
-                                                            1e-3, 1e-4, 0.0],
+                                                        l2=l2_list,
                                                         initializer='preFixDiag'),
     'dirichlet_full_prefixdiag_comp_l2': DirichletCalibrator(matrix_type='full',
                                                              comp_l2=True,
-                                                             l2=[1e0, 1e-1, 1e-2,
-                                                            1e-3, 1e-4, 0.0],
+                                                             l2=l2_list,
                                                              initializer='preFixDiag'),
     'dirichlet_full_l2_01': DirichletCalibrator(matrix_type='full', l2=0.1),
     'dirichlet_full_l2_001': DirichletCalibrator(matrix_type='full', l2=0.01),
