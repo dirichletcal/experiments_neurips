@@ -153,7 +153,7 @@ def summarise_confusion_matrices(df, summary_path):
         else:
             return T[0]
     def confusion_matrix(string):
-        cm = np.fromstring(''.join(c for c in string if c in '0123456789.-e+, '), sep=' ')
+        cm = np.fromstring(''.join(c for c in string if c in '0123456789 '), sep=' ')
         cm = cm.reshape(int(np.sqrt(len(cm))), -1)
         return cm
     df['confusion_matrix'] = df['confusion_matrix'].apply(confusion_matrix)
@@ -208,9 +208,13 @@ def summarise_hyperparameters(df, summary_path):
     # Histograms of parameters
     MAP_METHOD = {'binning_freq': 'n_bins=(?P<bins>\w+), ',
                   'binning_width': 'n_bins=(?P<bins>\w+), ',
-                  'dir_full_l2': ' l2=(?P<l2>\d+\.\d+)',
-                  'dir_full_comp_l2': ' l2=(?P<l2>\d+\.\d+)',
-                  'dirichlet_full_prefixdiag_l2': ' l2=(?P<l2>\d+\.\d+)'
+                  'dir_full_l2': " 'l2': ([0-9\.\-e]+),",
+                  'dir_full_comp_l2': " 'l2': ([0-9\.\-e]+),",
+                  'dirichlet_full_prefixdiag_l2': " 'l2': ([0-9\.\-e]+),",
+                  'mlr_log': " 'C': ([0-9\.\-e]+),",
+                  'mlr_logit': " 'C': ([0-9\.\-e]+),",
+                  'ovr_mlr_log': " 'C': ([0-9\.\-e]+),",
+                  'ovr_mlr_logit': " 'C': ([0-9\.\-e]+),",
                  }
     for key, regex in MAP_METHOD.items():
         df_aux = df[df['method'] == key][['dataset', 'classifier', 'calibrators']]
@@ -249,11 +253,12 @@ def summarise_hyperparameters(df, summary_path):
                 uniq = np.concatenate((uniq, missing_uniq))
                 counts = np.concatenate((counts, missing_counts))
                 sorted_idx = np.argsort(uniq)
-                uniq = uniq[sorted_idx].astype(str)
+                uniq = [np.format_float_scientific(x, precision=2) for x in uniq[sorted_idx]]
                 counts = counts[sorted_idx]
                 ax.bar(uniq, counts)
+                ax.set_xticklabels(uniq, rotation=45, ha='right')
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-        fig.savefig(os.path.join(summary_path, '{}.svg'.format(key)))
+        fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_{}.svg'.format(key)))
 
     # heatmaps of parameters
     # FIXME change MAP method as it is not being used
@@ -351,7 +356,7 @@ def summarise_hyperparameters(df, summary_path):
                                  )
                 ax.invert_yaxis()
         fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-        fig.savefig(os.path.join(summary_path, 'heatmap_{}.svg'.format(key)))
+        fig.savefig(os.path.join(summary_path, 'heatmap_weights_{}.svg'.format(key)))
 
 
 def generate_summaries(df, summary_path, table_size='small',
