@@ -262,19 +262,22 @@ def summarise_hyperparameters(df, summary_path):
 
     # heatmaps of parameters
     # FIXME change MAP method as it is not being used
-    def weight_matrix(string):
+    def weight_matrix(string, restore_last_class=False):
         solution = re.findall("'weights_': array(.*?)]]\)", string, flags=re.DOTALL)
         matrices = []
         for s in solution:
             x = np.fromstring(''.join(c for c in s if c in
                                                   '0123456789.-e+,'), sep=',')
             x = x.reshape(int(np.floor(np.sqrt(len(x)))), -1)
-            col_sums = np.sum(x,axis=0)
-            amount_to_shift = ( col_sums[:-1] - np.diag(x) ) / (x.shape[0]-1)
-            x = x - np.concatenate((amount_to_shift,[0]))
-            x[:,-1] = x[:,-1] - col_sums[-1] / x.shape[0]
+            if restore_last_class:
+                col_sums = np.sum(x,axis=0)
+                amount_to_shift = ( col_sums[:-1] - np.diag(x) ) / (x.shape[0]-1)
+                x = x - np.concatenate((amount_to_shift,[0]))
+                x[:,-1] = x[:,-1] - col_sums[-1] / x.shape[0]
             matrices.append(x)
         return matrices
+
+    weight_matrix_rlc = partial(weight_matrix, restore_last_class=True)
 
     def weights_keras(string):
         coeficients = re.findall("'weights': \[array(.*?)]]", string, flags=re.DOTALL)
@@ -306,13 +309,16 @@ def summarise_hyperparameters(df, summary_path):
             matrices.append(x)
         return matrices
 
-    MAP_METHOD = {'dir_full_l2': weight_matrix,
+    MAP_METHOD = {'dir_full_l2': weight_matrix_rlc,
                   'dir_keras': weights_keras,
                   'dir_full_gen': weight_matrix,
-                  'dir_full_comp_l2': weight_matrix,
-                  'dirichlet_full_prefixdiag_l2': weight_matrix,
-                  'logistic_log': coef_intercept_matrix,
-                  'logistic_logit': coef_intercept_matrix
+                  'dir_full_comp_l2': weight_matrix_rlc,
+                  'ovr_dir_full_l2': weight_matrix,
+                  'dirichlet_full_prefixdiag_l2': weight_matrix_rlc,
+                  'mlr_log': coef_intercept_matrix,
+                  'mlr_logit': coef_intercept_matrix,
+                  'ovr_mlr_log': coef_intercept_matrix,
+                  'ovr_mlr_logit': coef_intercept_matrix
                  }
 
     for key, function in MAP_METHOD.items():
