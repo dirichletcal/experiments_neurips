@@ -5,7 +5,7 @@ import numpy as np
 
 from functools import partial
 
-from calib.utils.functions import to_latex
+from calib.utils.functions import rankings_to_latex
 
 # Visualisations
 from calib.utils.plots import df_to_heatmap
@@ -439,7 +439,7 @@ def generate_summaries(df, summary_path, table_size='small',
         table = df.pivot_table(index=['classifier'], columns=['method'],
                                values=[measure], aggfunc=[np.mean, np.std])
 
-        str_table = to_latex(classifiers, table, precision=2,
+        str_table = rankings_to_latex(classifiers, table, precision=2,
                              table_size=table_size, max_is_better=max_is_better,
                              caption=('Ranking of calibration methods ' +
                                       'applied on different classifiers ' +
@@ -543,7 +543,7 @@ def generate_summaries(df, summary_path, table_size='small',
             ftest = compute_friedmanchisquare(table['mean'])
             print(ftest)
 
-            str_table = to_latex(dataset_names, table, precision=2,
+            str_table = rankings_to_latex(dataset_names, table, precision=2,
                                  table_size=table_size,
                                  max_is_better=max_is_better,
                                  caption=('Ranking of calibration methods ' +
@@ -593,25 +593,6 @@ def generate_summaries(df, summary_path, table_size='small',
                                        filename=filename,
                                        title='(p-value = {:.2e}, #D = {})'.format(ftest.pvalue, table.shape[0]))
 
-        ## Export the summary of all rankings
-        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
-                                        columns=table.columns.levels[2])
-        # TODO check that performing the ranking of the rankings is appropriate
-        str_table = to_latex(classifiers, df_mean_rankings, precision=1,
-                             table_size=table_size,
-                             max_is_better=False,
-                             caption=('Ranking of calibration methods ' +
-                                      'applied to each classifier ' +
-                                      'with the measure={}'
-                                      ).format(measure),
-                             label='table:{}'.format(measure),
-                             add_std=False,
-                             column_names=df_mean_rankings.columns)
-        file_basename = os.path.join(summary_path,
-                                     '{}_rankings'.format(measure))
-        with open(file_basename + '.tex', "w") as text_file:
-            text_file.write(str_table)
-
         ## --------------------------------------------------------------##
         ## Version 2 for the aggregated rankings
         # Perform rankings of dataset+classifier vs calibration method
@@ -639,6 +620,27 @@ def generate_summaries(df, summary_path, table_size='small',
                                    title='(p-value = {:.2e}, #D = {})'.format(ftest.pvalue, len(table)))
         ## End Version 2 for the aggregated rankings
         ## --------------------------------------------------------------##
+
+        ## Export the summary of all rankings
+        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
+                                        columns=table.columns.levels[2])
+        # TODO check that performing the ranking of the rankings is appropriate
+        str_table = rankings_to_latex(classifiers, df_mean_rankings, precision=1,
+                             table_size=table_size,
+                             max_is_better=False,
+                             caption=('Ranking of calibration methods ' +
+                                      'applied to each classifier ' +
+                                      'with the measure={}'
+                                      ).format(measure),
+                             label='table:{}'.format(measure),
+                             add_std=False,
+                             column_names=df_mean_rankings.columns,
+                             avg_ranks=ranking_table_all)
+        file_basename = os.path.join(summary_path,
+                                     '{}_rankings'.format(measure))
+        with open(file_basename + '.tex', "w") as text_file:
+            text_file.write(str_table)
+
 
 
     for classifier_name in classifiers:
