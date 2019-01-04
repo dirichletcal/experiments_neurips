@@ -26,7 +26,8 @@ def bc2xy(pvalues, corners):
     return np.dot(pvalues, corners)
 
 
-def draw_tri_samples(pvals, classes, labels=None, fig=None, ax=None, **kwargs):
+def draw_tri_samples(pvals, classes, labels=None, fig=None, ax=None,
+                     handles=None, **kwargs):
     corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])
     pvals = pvals[:,:3].copy()
 
@@ -45,6 +46,9 @@ def draw_tri_samples(pvals, classes, labels=None, fig=None, ax=None, **kwargs):
 
     xy = bc2xy(pvals, corners)
     ax.scatter(xy[:, 0], xy[:, 1], c=classes, **kwargs)
+
+    if handles is not None:
+        ax.legend(handles=handles)
 
     ax.axis('equal')
     ax.set_xlim(0, 1)
