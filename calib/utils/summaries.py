@@ -42,7 +42,10 @@ def load_all_csv(results_path, expression=".*.csv"):
                 print('Classifier = {}, filename = {}'.format(classifier,
                     filename))
 
-    df = pd.concat(df_list)
+    if df_list:
+        df = pd.concat(df_list)
+    else:
+        df = pd.DataFrame()
     return df
 
 
