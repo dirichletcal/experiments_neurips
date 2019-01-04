@@ -117,9 +117,10 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
 # table_to_latex that outputs on the stout
 # TODO should we make the replacements of underscores out of this function for
 # the column and row names?
-def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
+def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
              table_size="normalsize", caption="", label='table',
-             add_std=True, position='!H', column_names=None):
+             add_std=True, position='!H', column_names=None,
+             avg_ranks=None):
     if column_names is None:
         column_names = table.columns.levels[2]
     n_columns = len(column_names)
@@ -127,7 +128,8 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     n_rows = len(row_names)
 
     means = table.as_matrix()[:, :n_columns].copy()*scale
-    avg_ranks = np.zeros(n_columns)
+    if avg_ranks is None:
+        computed_avg_ranks = np.zeros(n_columns)
     stds = table.as_matrix()[:, n_columns:]*scale
     str_table = ("\\begin{table}[" + position + "]\n" +
                  "\\" + table_size + "\n" +
@@ -155,7 +157,7 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
             indices = n_columns + 1 - indices
         for j in np.arange(len(v)):
             idx = indices[j]
-            avg_ranks[j] += idx / n_rows
+            computed_avg_ranks[j] += idx / n_rows
             if idx == 1:
                 str_row_means += (" & $\\mathbf{{{0:.{1}f}".format(
                                     v[j], precision))
@@ -177,6 +179,8 @@ def to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
         str_table += str_row_means + "\\\\\n"
     str_table += "\\midrule\n"
     str_avg = "avg rank"
+    if avg_ranks is None:
+        avg_ranks = computed_avg_ranks
     for i in np.arange(n_columns):
         if avg_ranks[i] == min(avg_ranks):
             str_avg += " & \\bf{{{0:.2f}}}".format(avg_ranks[i])
