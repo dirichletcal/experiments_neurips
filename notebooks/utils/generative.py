@@ -44,6 +44,9 @@ class MixtureDistribution(object):
         likelihoods = np.array([d.pdf(x) for d in self.distributions])
         return np.dot(self.priors, likelihoods)
 
+    def likelihoods(self, x):
+        return np.array([d.pdf(x) for d in self.distributions]).T
+
     def __repr__(self):
         string = ''
         for p, d in zip(self.priors, self.distributions):
