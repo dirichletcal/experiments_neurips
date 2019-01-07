@@ -42,7 +42,10 @@ def load_all_csv(results_path, expression=".*.csv"):
                 print('Classifier = {}, filename = {}'.format(classifier,
                     filename))
 
-    df = pd.concat(df_list)
+    if df_list:
+        df = pd.concat(df_list)
+    else:
+        df = pd.DataFrame()
     return df
 
 
@@ -592,6 +595,9 @@ def generate_summaries(df, summary_path, table_size='small',
                                        names=table.columns.levels[2],
                                        filename=filename,
                                        title='(p-value = {:.2e}, #D = {})'.format(ftest.pvalue, table.shape[0]))
+        ## 1.1. Export the summary of all rankings
+        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
+                                        columns=table.columns.levels[2])
 
         ## --------------------------------------------------------------##
         ## Version 2 for the aggregated rankings
@@ -621,10 +627,10 @@ def generate_summaries(df, summary_path, table_size='small',
         ## End Version 2 for the aggregated rankings
         ## --------------------------------------------------------------##
 
-        ## Export the summary of all rankings
-        df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
-                                        columns=table.columns.levels[2])
+        ## 1.2. Export the summary of all rankings
         # TODO check that performing the ranking of the rankings is appropriate
+        print('Average rankings shape = {}'.format(ranking_table_all.shape))
+        print('Average rankings = {}'.format(ranking_table_all))
         str_table = rankings_to_latex(classifiers, df_mean_rankings, precision=1,
                              table_size=table_size,
                              max_is_better=False,

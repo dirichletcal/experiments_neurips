@@ -23,11 +23,14 @@ def parse_arguments():
 def main(results_path, summary_path):
     df = load_all_csv(results_path, ".*raw_results.csv")
     summary_path = create_summary_path(summary_path, results_path)
+    print('Generating summaries of performance and hyperparameters')
     generate_summaries(df, summary_path, table_size='small',
             hyperparameters=True, confusion_matrices=True)
 
+    print('Generating Score histograms')
     df = load_all_csv(results_path, ".*score_histogram.csv")
-    del df['Unnamed: 0']
+    if 'Unnamed: 0' in df.columns:
+        del df['Unnamed: 0']
     del df['filename']
     df.set_index(['dataset', 'classifier', 'calibration'], inplace=True)
     generate_summary_hist(df, summary_path)

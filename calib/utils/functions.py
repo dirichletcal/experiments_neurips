@@ -128,8 +128,7 @@ def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     n_rows = len(row_names)
 
     means = table.as_matrix()[:, :n_columns].copy()*scale
-    if avg_ranks is None:
-        computed_avg_ranks = np.zeros(n_columns)
+    computed_avg_ranks = np.zeros(n_columns)
     stds = table.as_matrix()[:, n_columns:]*scale
     str_table = ("\\begin{table}[" + position + "]\n" +
                  "\\" + table_size + "\n" +
