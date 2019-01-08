@@ -26,8 +26,6 @@ from multiprocessing import cpu_count, Pool
 from calib.utils.calibration import cv_calibration
 from calib.utils.dataframe import MyDataFrame
 from calib.utils.functions import get_sets
-from calib.utils.functions import table_to_latex
-from calib.utils.functions import to_latex
 from calib.utils.functions import p_value
 from calib.utils.functions import serializable_or_string
 from calib.models.calibration import MAP_CALIBRATORS
