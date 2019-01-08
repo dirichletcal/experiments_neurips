@@ -187,8 +187,9 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         return self.predictions[s_binned]
 
 
-l2_list = [1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5]
+l2_list = [1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
 C_list = list(np.true_divide(1, l2_list))
+n_bins = [5, 10, 15, 20, 25, 30]
 
 MAP_CALIBRATORS = {
     'ovr_logistic_log': LogisticCalibration(C=C_list,
@@ -204,11 +205,9 @@ MAP_CALIBRATORS = {
                                           log_transform=False,
                                           multi_class='multinomial'),
     'binning_width' :OneVsRestCalibrator(BinningCalibration(strategy='uniform',
-                                                           n_bins=[5, 10, 15,
-                                                                   20, 25, 30])),
+                                                           n_bins=n_bins)),
     'binning_freq' :OneVsRestCalibrator(BinningCalibration(strategy='quantile',
-                                                           n_bins=[5, 10, 15,
-                                                                   20, 25, 30])),
+                                                           n_bins=n_bins)),
     'binning_kmeans' :OneVsRestCalibrator(BinningCalibration(strategy='kmeans')), # Not working yet
     'uncalibrated': _DummyCalibration(),
     'isotonic': OneVsRestCalibrator(IsotonicCalibration(out_of_bounds='clip')),
