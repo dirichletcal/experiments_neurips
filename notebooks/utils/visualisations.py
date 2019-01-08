@@ -2,6 +2,7 @@ import numpy as np
 import itertools
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 def plot_reliability_diagram(score, labels, linspace, scores_set, legend_set,
@@ -120,8 +121,15 @@ def plot_confusion_matrix(cm, classes,
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-    cs = ax.imshow(cm, interpolation='nearest', cmap=cmap)
-    fig.colorbar(cs)
+    im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
+
+    # create an axes on the right side of ax. The width of cax will be 5%
+    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+
+    fig.colorbar(im, cax=cax)
+
     tick_marks = np.arange(len(classes))
     ax.set_xticks(tick_marks)
     ax.set_xticklabels(classes, rotation=45)
@@ -139,28 +147,43 @@ def plot_confusion_matrix(cm, classes,
     ax.set_xlabel('Predicted label')
     fig.tight_layout()
 
-def plot_weight_matrix(weights, bias, classes,
-                          title='Weight matrix',
-                          cmap=plt.cm.Greens):
+def plot_weight_matrix(weights, bias, classes, title='Weight matrix',
+                       cmap=plt.cm.Greens, fig=None, ax=None):
     """
     This function prints and plots the weight matrix.
     """
+    if fig is None:
+        fig = plt.figure()
+
+    if ax is None:
+        ax = fig.add_subplot(111)
+
+    if title is not None:
+        ax.set_title(title)
 
     matrix = np.hstack((weights, bias.reshape(-1, 1)))
 
-    plt.imshow(matrix, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
+    im = ax.imshow(matrix, interpolation='nearest', cmap=cmap)
+
+    # create an axes on the right side of ax. The width of cax will be 5%
+    # of ax and the padding between cax and ax will be fixed at 0.05 inch.
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+
+    fig.colorbar(im, cax=cax)
+
     tick_marks = np.arange(len(classes))
-    plt.yticks(tick_marks, classes)
-    plt.xticks(np.append(tick_marks, len(classes)), np.append(classes, 'b'))
+    ax.set_yticks(tick_marks)
+    ax.set_yticklabels(classes)
+    ax.set_xticks(np.append(tick_marks, len(classes)))
+    ax.set_xticklabels(np.append(classes, 'b'))
 
     fmt = '.2f'
     thresh = matrix.max() / 2.
     for i, j in itertools.product(range(matrix.shape[0]), range(matrix.shape[1])):
-        plt.text(j, i, format(matrix[i, j], fmt),
+        ax.text(j, i, format(matrix[i, j], fmt),
                  horizontalalignment="center",
                  color="white" if matrix[i, j] > thresh else "black")
 
-    plt.ylabel('Class')
-    plt.tight_layout()
+    ax.set_ylabel('Class')
+    fig.tight_layout()
