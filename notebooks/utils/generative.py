@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import multivariate_normal
+from scipy.stats import dirichlet
 
 class Gaussian(object):
     def __init__(self, mean=[0], cov=[1]):
@@ -55,3 +56,18 @@ class MixtureDistribution(object):
             string += '\n'
         return string
 
+class Dirichlet(object):
+    def __init__(self, alphas=[1, 1]):
+        self.alphas = np.array(alphas)
+        self.rv = dirichlet(self.alphas)
+        self.n_features = len(alphas)
+
+    def pdf(self, x):
+        '''Returns pdf value for `x`.'''
+        return np.array([self.rv.pdf(x_i) for x_i in x])
+
+    def sample(self, size=None, **kwargs):
+        return self.rv.rvs(size)
+
+    def __str__(self):
+        return 'Dirichlet(alphas = {})'.format(self.alphas)
