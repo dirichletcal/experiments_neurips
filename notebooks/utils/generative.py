@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.stats import multivariate_normal
 from scipy.stats import dirichlet
+from math import gamma
+from operator import mul
+from functools import reduce
 
 class Gaussian(object):
     def __init__(self, mean=[0], cov=[1]):
@@ -56,18 +59,27 @@ class MixtureDistribution(object):
             string += '\n'
         return string
 
-class Dirichlet(object):
-    def __init__(self, alphas=[1, 1]):
-        self.alphas = np.array(alphas)
-        self.rv = dirichlet(self.alphas)
-        self.n_features = len(alphas)
 
+class Dirichlet(object):
+    '''
+    Based on http://blog.bogatron.net/blog/2014/02/02/visualizing-dirichlet-distributions/
+    '''
+    def __init__(self, alpha):
+        self._alpha = np.array(alpha)
+        self._coef = gamma(np.sum(self._alpha)) / \
+                     reduce(mul, [gamma(a) for a in self._alpha])
     def pdf(self, x):
         '''Returns pdf value for `x`.'''
-        return np.array([self.rv.pdf(x_i) for x_i in x])
+        return self._coef * reduce(mul, [xx ** (aa - 1)
+                                         for (xx, aa)in zip(x, self._alpha)])
 
     def sample(self, size=None, **kwargs):
-        return self.rv.rvs(size)
+        return np.random.dirichlet(self._alpha, size=size, **kwargs)
 
     def __str__(self):
-        return 'Dirichlet(alphas = {})'.format(self.alphas)
+        return self.__repr__()
+
+    def __repr__(self):
+        return 'Dirichlet(alphas = {})'.format(np.array2string(self._alpha, separator=',', precision=2))
+
+
