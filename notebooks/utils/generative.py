@@ -83,3 +83,19 @@ class Dirichlet(object):
         return 'Dirichlet(alphas = {})'.format(np.array2string(self._alpha, separator=',', precision=2))
 
 
+class Dirichlet_skl(object):
+    def __init__(self, *args, **kwargs):
+        self.model = dirichlet(*args, **kwargs)
+
+    def sample(self, *args, **kwargs):
+        return self.model.rvs(*args, **kwargs)
+
+    def pdf(self, x, *args, **kwargs):
+        x_norm = np.divide(x, x.sum())
+        return self.model.pdf(x_norm, *args, **kwargs)
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return 'Dirichlet(alphas = {})'.format(np.array2string(self.model.alpha, separator=',', precision=2))
