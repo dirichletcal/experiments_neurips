@@ -187,3 +187,25 @@ def plot_weight_matrix(weights, bias, classes, title='Weight matrix',
 
     ax.set_ylabel('Class')
     fig.tight_layout()
+
+
+def plot_individual_pdfs(class_dist, x_grid=None, y_grid=None,
+                         grid_levels = 200):
+    fig = plt.figure()
+    if x_grid is None:
+        x_grid = np.linspace(-8, 8, grid_levels)
+    if y_grid is None:
+        y_grid = np.linspace(-8, 8, grid_levels)
+
+    xx, yy = np.meshgrid(x_grid, y_grid)
+
+    for i, (p, d) in enumerate(zip(class_dist.priors, class_dist.distributions)):
+        print(xx.flatten())
+        print(yy.flatten())
+        print(d)
+        z = d.pdf(np.vstack([xx.flatten(), yy.flatten()]).T)
+
+        ax = fig.add_subplot(1, len(class_dist.distributions), i+1)
+        ax.set_title('$P(Y={})={:.2f}$\n{}'.format(i+1, p, str(d)), loc='left')
+        contour = ax.contourf(xx, yy, z.reshape(grid_levels,grid_levels))
+        fig.colorbar(contour)
