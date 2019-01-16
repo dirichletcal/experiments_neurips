@@ -13,6 +13,8 @@ from calib.models.calibration import CalibratedModel
 from .functions import cross_entropy
 from .functions import brier_score
 from .functions import beta_test
+from .functions import ECE
+from .functions import MCE
 from betacal import BetaCalibration
 from calib.utils.functions import beta_test
 from calib.utils.functions import fit_beta_moments
@@ -93,6 +95,8 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     train_acc = {method: 0 for method in methods}
     train_loss = {method: 0 for method in methods}
     train_brier = {method: 0 for method in methods}
+    train_ece = {method: 0 for method in methods}
+    train_mce = {method: 0 for method in methods}
 
     skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
     for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
@@ -122,6 +126,8 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             train_acc[method] += np.mean(predicted_proba.argmax(axis=1) == y_train[cali])/cv
             train_loss[method] += cross_entropy(predicted_proba, y_train_bin[cali])/cv
             train_brier[method] += brier_score(predicted_proba, y_train_bin[cali])/cv
+            train_ece[method] += ECE(predicted_proba, y_train_bin[cali])/cv
+            train_mce[method] += MCE(predicted_proba, y_train_bin[cali])/cv
 
     y_test_bin = binarizer.transform(y_test)
     if y_test_bin.shape[1] == 1:
@@ -137,8 +143,10 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
               in methods}
     cms = {method: confusion_matrix(y_test, mean_probas[method].argmax(axis=1)) for method
               in methods}
+    eces = {method: ECE(mean_probas[method], y_test) for method in methods}
+    mces = {method: MCE(mean_probas[method], y_test) for method in methods}
     mean_time = {method: np.mean(exec_time[method]) for method in methods}
-    return train_acc, train_loss, train_brier, accs, losses, briers, cms, mean_probas, classifiers, mean_time
+    return train_acc, train_loss, train_brier, train_ece, train_mce, accs, losses, briers, eces, mces, cms, mean_probas, classifiers, mean_time
 
 
 def cv_calibration_map_differences(base_classifier, x_train, y_train, cv=3,

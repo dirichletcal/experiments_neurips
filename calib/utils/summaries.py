@@ -383,29 +383,40 @@ def generate_summaries(df, summary_path, table_size='small',
         - 'train_acc': Training Accuracy
         - 'train_loss': Training log-loss
         - 'train_brier': Training Brier score
+        - 'train_ece': Training ECE score
+        - 'train_mce': Training MCE score
         - 'acc': Accuracy
         - 'loss': log-loss
         - 'brier': Brier score
+        - 'ece': ECE score
+        - 'mce': MCE score
         - 'exec_time': Mean execution time
         - 'classifier': Original classifier used to train
         - 'calibrators': List of calibrators with their parameters
 
     '''
     # Shorten some names
-    df['method'] = df['method'].replace(to_replace='dirichlet', value='dir',
+    shorten = dict(dirichlet='dir', binning='bin', logistic='mlr',
+                   uncalibrated='uncal')
+    for key, value in shorten.items():
+        df['method'] = df['method'].replace(to_replace=key, value=value,
                                         regex=True)
-    df['method'] = df['method'].replace(to_replace='binning', value='bin',
-                                        regex=True)
-    df['method'] = df['method'].replace(to_replace='logistic', value='mlr',
-                                        regex=True)
-    df['method'] = df['method'].replace(to_replace='uncalibrated', value='uncal',
-                                        regex=True)
+    # Names for final version
+    final_names = dict(dir_fix_diag='Temp_Scaling', uncal='Uncalibrated',
+                       ovr_dir_full='OvR_Beta', bin_freq='OvR_Freq_Bin',
+                       bin_width='OvR_Width_Bin', dir_full_l2='Dirichlet_L2',
+                       isotonic='OvR_Isotonic', dir_full='Dirichlet')
+    for key, value in final_names.items():
+        df['method'] = df['method'].replace(to_replace=key, value=value,
+                                        regex=False)
+
+
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
     # Assert that all experiments have finished
     for column in ['method', 'classifier']:
-        for measure in ['acc', 'loss', 'brier']:
+        for measure in ['acc', 'loss', 'brier', 'ece', 'mce']:
             df_count = df.pivot_table(index=['dataset'], columns=[column],
                                       values=[measure], aggfunc='count')
             file_basename = os.path.join(summary_path,
@@ -430,8 +441,10 @@ def generate_summaries(df, summary_path, table_size='small',
         summarise_confusion_matrices(df, summary_path)
 
     measures = (('acc', True), ('loss', False), ('brier', False),
+                ('ece', False), ('mce', False),
                 ('train_acc', True), ('train_loss', False),
-                ('train_brier', False), ('exec_time', False))
+                ('train_brier', False), ('exec_time', False),
+                ('train_ece', False), ('train_mce', False), ('exec_time', False))
     for measure, max_is_better in measures:
         print('# Measure = {}'.format(measure))
         if 'train_' not in measure:
@@ -651,7 +664,9 @@ def generate_summaries(df, summary_path, table_size='small',
 
     for classifier_name in classifiers:
         table = df.pivot_table(values=['train_acc', 'train_loss',
-                                       'train_brier', 'acc', 'loss', 'brier'],
+                                       'train_brier', 'train_ece',
+                                       'train_mce',
+                                       'acc', 'loss', 'brier', 'ece', 'mce'],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
         table.to_csv(os.path.join(summary_path, classifier_name + '_main_results.csv'))
