@@ -27,7 +27,7 @@ def bc2xy(pvalues, corners):
 
 
 def draw_tri_samples(pvals, classes, labels=None, fig=None, ax=None,
-                     handles=None, **kwargs):
+                     handles=None, grid=True, **kwargs):
     corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])
     pvals = pvals[:,:3].copy()
 
@@ -59,6 +59,12 @@ def draw_tri_samples(pvals, classes, labels=None, fig=None, ax=None,
 
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
     plt.triplot(triangle, c='k', lw=0.5)
+
+    if grid:
+        refiner = tri.UniformTriRefiner(triangle)
+        trimesh = refiner.refine_triangulation(subdiv=4)
+        ax.triplot(trimesh, c='gray', lw=0.5)
+
 
 
 def get_func_mesh_values(func, subdiv=8):
@@ -94,7 +100,7 @@ def draw_pdf_contours(dist, **kwargs):
 
 
 def draw_func_contours(func, labels=None, nlevels=200, subdiv=8, fig=None,
-                       ax=None, **kwargs):
+                       ax=None, grid=True, **kwargs):
     '''
     Parameters:
     -----------
@@ -143,6 +149,14 @@ def draw_func_contours(func, labels=None, nlevels=200, subdiv=8, fig=None,
             text_x, text_y = corner - (center - corner)*0.1
             ax.text(text_x, text_y, labels[i], verticalalignment='center',
                     horizontalalignment='center')
+
+    triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
+    ax.triplot(triangle, c='k', lw=0.8)
+
+    if grid:
+        refiner = tri.UniformTriRefiner(triangle)
+        trimesh = refiner.refine_triangulation(subdiv=4)
+        ax.triplot(trimesh, c='gray', lw=0.5)
 
     # Axes options
     ax.set_xlim(xmin=0, xmax=1)
@@ -229,3 +243,47 @@ def get_converging_lines(num_lines, mesh_precision=10, class_index=0, tol=1e-6):
         lines = [line[:, np.roll(indices, class_index)] for i, line in
                  enumerate(lines)]
     return np.clip(lines, tol, 1.0 - tol)
+
+
+def draw_calibration_map(original_p, calibrated_p, labels=None, fig=None, ax=None,
+                     handles=None, subdiv=5, color=None, **kwargs):
+    corners = np.array([[0, 0], [1, 0], [0.5, 0.75**0.5]])
+    original_p = original_p[:,:3].copy()
+    calibrated_p = calibrated_p[:,:3].copy()
+
+    if fig is None:
+        fig = plt.figure()
+    if ax is None:
+        ax = fig.add_subplot(111)
+
+    if labels is None:
+        labels = [r'$C_{}$'.format(i+1) for i in range(len(corners))]
+    center = corners.mean(axis=0)
+    for i, corner in enumerate(corners):
+        text_x, text_y = corner - (center - corner)*0.1
+        ax.text(text_x, text_y, labels[i], verticalalignment='center',
+                horizontalalignment='center')
+
+    o_xy = bc2xy(original_p, corners)
+    c_xy = bc2xy(calibrated_p, corners) - o_xy
+    #ax.scatter(xy[:, 0], xy[:, 1], **kwargs)
+    ax.quiver(o_xy[:, 0], o_xy[:, 1], c_xy[:, 0], c_xy[:, 1], scale=1,
+              color=color, angles='xy', **kwargs)
+
+    if handles is not None:
+        ax.legend(handles=handles)
+
+    ax.axis('equal')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 0.75**0.5)
+    ax.set_xbound(lower=-0.01, upper=1.01)
+    ax.set_ybound(lower=-0.01, upper=(0.75**0.5)+0.01)
+    ax.axis('off')
+
+    triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
+    ax.triplot(triangle, c='k', lw=0.8)
+
+    refiner = tri.UniformTriRefiner(triangle)
+    trimesh = refiner.refine_triangulation(subdiv=subdiv)
+    ax.triplot(trimesh, c='gray', lw=0.5)
+    return fig
