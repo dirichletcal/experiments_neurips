@@ -414,9 +414,12 @@ def generate_summaries(df, summary_path, table_size='small',
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
+    measures_list = ['acc', 'loss', 'brier', 'ece', 'mce']
+    measures_list = [measure for measure in measures_list if measure in df.columns]
+
     # Assert that all experiments have finished
     for column in ['method', 'classifier']:
-        for measure in ['acc', 'loss', 'brier', 'ece', 'mce']:
+        for measure in measures_list:
             df_count = df.pivot_table(index=['dataset'], columns=[column],
                                       values=[measure], aggfunc='count')
             file_basename = os.path.join(summary_path,
@@ -440,12 +443,14 @@ def generate_summaries(df, summary_path, table_size='small',
         print('Generating summary of confusion matrices')
         summarise_confusion_matrices(df, summary_path)
 
-    measures = (('acc', True), ('loss', False), ('brier', False),
+    measures_list = (('acc', True), ('loss', False), ('brier', False),
                 ('ece', False), ('mce', False),
                 ('train_acc', True), ('train_loss', False),
                 ('train_brier', False), ('exec_time', False),
                 ('train_ece', False), ('train_mce', False), ('exec_time', False))
-    for measure, max_is_better in measures:
+    measures_list = [(key, value) for key, value in measures_list if key in
+        df.columns]
+    for measure, max_is_better in measures_list:
         print('# Measure = {}'.format(measure))
         if 'train_' not in measure:
             filename = os.path.join(summary_path,
@@ -488,7 +493,7 @@ def generate_summaries(df, summary_path, table_size='small',
             corr_test = table.reset_index(level=['n_classes', 'n_samples']).corr(method=method)
             print(corr_test)
 
-            if ('train_' + measure) in [m[0] for m in measures]:
+            if ('train_' + measure) in [m[0] for m in measures_list]:
                 table = df.pivot_table(index=['dataset', 'classifier', 'n_classes',
                                               'n_samples'],
                                        columns=['method'],
@@ -663,10 +668,7 @@ def generate_summaries(df, summary_path, table_size='small',
 
 
     for classifier_name in classifiers:
-        table = df.pivot_table(values=['train_acc', 'train_loss',
-                                       'train_brier', 'train_ece',
-                                       'train_mce',
-                                       'acc', 'loss', 'brier', 'ece', 'mce'],
+        table = df.pivot_table(values=[key for key, value in measures_list],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
         table.to_csv(os.path.join(summary_path, classifier_name + '_main_results.csv'))
