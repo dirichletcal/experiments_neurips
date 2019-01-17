@@ -463,7 +463,7 @@ def serializable_or_string(x):
 from sklearn.preprocessing import OneHotEncoder
 
 
-def ECE(probs, y_true, verbose = False, normalize = False, bins = 15, ece_full = True):
+def ECE(probs, y_true, normalize = False, bins = 15, ece_full = True):
 
     """
     Calculate ECE score based on model output probabilities and true labels
@@ -471,7 +471,6 @@ def ECE(probs, y_true, verbose = False, normalize = False, bins = 15, ece_full =
     Params:
         probs: a list containing probabilities for all the classes with a shape of (samples, classes)
         y_true: a list containing the actual class labels
-        verbose: (bool) are the scores printed out. (default = False)
         normalize: (bool) in case of 1-vs-K calibration, the probabilities need to be normalized. (default = False)
         bins: (int) - into how many bins are probabilities divided (default = 15)
         ece_full: (bool) - whether to use ECE-full or ECE-max.
@@ -530,10 +529,7 @@ def get_preds_all(y_probs, y_true, axis = 1, normalize = False, flatten = True):
     if normalize:
         y_probs /= np.sum(y_probs, axis=axis)
 
-    enc = OneHotEncoder(handle_unknown='ignore', sparse=False)
-    # TODO this may fail if y_preds does not contain all the classes
-    #enc.fit(y_preds)
-    # Changed for this
+    enc = OneHotEncoder(handle_unknown='error', sparse=False)  # Added error, then we know if anything wrong.
     enc.fit(y_true)
 
     y_preds = enc.transform(y_preds)
@@ -574,7 +570,7 @@ def ECE_helper(conf, pred, true, bin_size = 0.1, ece_full = False):
     return ece
 
 
-def compute_acc_bin(conf_thresh_lower, conf_thresh_upper, conf, pred, true, ece_full = False):
+def compute_acc_bin(conf_thresh_lower, conf_thresh_upper, conf, pred, true, ece_full = True):
     """
     # Computes accuracy and average confidence for bin
 
@@ -607,7 +603,7 @@ def compute_acc_bin(conf_thresh_lower, conf_thresh_upper, conf, pred, true, ece_
     return accuracy, avg_conf, len_bin
 
 
-def MCE_helper(conf, pred, true, bin_size = 0.1):
+def MCE_helper(conf, pred, true, bin_size = 0.1, mce_full = True):
 
     """
     Maximal Calibration Error
@@ -617,6 +613,7 @@ def MCE_helper(conf, pred, true, bin_size = 0.1):
         pred (numpy.ndarray): list of predictions
         true (numpy.ndarray): list of true labels
         bin_size: (float): size of one bin (0,1)  # TODO should convert to number of bins?
+        mce_full: (bool) - whether to use ECE-full or ECE-max for bin calculation
 
     Returns:
         mce: maximum calibration error
@@ -627,13 +624,13 @@ def MCE_helper(conf, pred, true, bin_size = 0.1):
     cal_errors = []
 
     for conf_thresh in upper_bounds:
-        acc, avg_conf, _ = compute_acc_bin(conf_thresh-bin_size, conf_thresh, conf, pred, true)
+        acc, avg_conf, _ = compute_acc_bin(conf_thresh-bin_size, conf_thresh, conf, pred, true, mce_full)
         cal_errors.append(np.abs(acc-avg_conf))
 
     return max(cal_errors)
 
 
-def MCE(probs, y_true, verbose = False, normalize = False, bins = 15):
+def MCE(probs, y_true, normalize = False, bins = 15, mce_full = True):
 
     """
     Calculate MCE score based on model output probabilities and true labels
@@ -641,9 +638,9 @@ def MCE(probs, y_true, verbose = False, normalize = False, bins = 15):
     Params:
         probs: a list containing probabilities for all the classes with a shape of (samples, classes)
         y_true: a list containing the actual class labels
-        verbose: (bool) are the scores printed out. (default = False)
         normalize: (bool) in case of 1-vs-K calibration, the probabilities need to be normalized. (default = False)
         bins: (int) - into how many bins are probabilities divided (default = 15)
+        mce_full: (bool) - whether to use ECE-full or ECE-max for calculation MCE.
 
     Returns:
         mce: maximum calibration error
@@ -653,9 +650,19 @@ def MCE(probs, y_true, verbose = False, normalize = False, bins = 15):
     y_true = np.array(y_true)
 
     # Prepare predictions, confidences and true labels for MCE calculation
-    preds, confs, y_true = get_preds_all(probs, y_true, normalize=normalize, flatten=True)
+    if mce_full:
+        preds, confs, y_true = get_preds_all(probs, y_true, normalize=normalize, flatten=True)
 
+    else:
+        preds = np.argmax(probs, axis=1)  # Take maximum confidence as prediction
+
+        if normalize:
+            confs = np.max(probs, axis=1)/np.sum(probs, axis=1)
+            # Check if everything below or equal to 1?
+        else:
+            confs = np.max(probs, axis=1)  # Take only maximum confidence
+            
     # Calculate MCE
-    mce = MCE_helper(confs, preds, y_true, bin_size = 1/bins)
+    mce = MCE_helper(confs, preds, y_true, bin_size = 1/bins, mce_full = mce_full)
 
     return mce
