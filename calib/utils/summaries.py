@@ -19,10 +19,6 @@ from scipy.stats import rankdata
 
 import matplotlib.pyplot as pyplot
 
-
-def sigmoid(x):
-  return 1 / (1 + np.exp(-x))
-
 pd.set_option('display.width', 1000)
 
 
@@ -297,7 +293,8 @@ def summarise_hyperparameters(df, summary_path):
             W = W[:,:-1]
             col_min = np.min(W,axis=0)
             A = W - col_min
-            c = sigmoid(np.dot(W, np.log(np.ones(len(b))/len(b))) + b)
+            softmax = lambda z:np.divide(np.exp(z), np.sum(np.exp(z)))
+            c = softmax(np.matmul(W, np.log(np.ones(len(b))/len(b))) + b)
 
             matrices.append(np.hstack((A, c.reshape(-1,1))))
         return matrices
