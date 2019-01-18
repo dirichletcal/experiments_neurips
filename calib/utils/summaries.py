@@ -19,6 +19,10 @@ from scipy.stats import rankdata
 
 import matplotlib.pyplot as pyplot
 
+
+def sigmoid(x):
+  return 1 / (1 + np.exp(-x))
+
 pd.set_option('display.width', 1000)
 
 
@@ -282,6 +286,22 @@ def summarise_hyperparameters(df, summary_path):
 
     weight_matrix_rlc = partial(weight_matrix, restore_last_class=True)
 
+    def weight_matrix_theorem5(string):
+        solution = re.findall("'weights_': array(.*?)]]\)", string, flags=re.DOTALL)
+        matrices = []
+        for s in solution:
+            W = np.fromstring(''.join(c for c in s if c in
+                                                  '0123456789.-e+,'), sep=',')
+            W = W.reshape(int(np.floor(np.sqrt(len(W)))), -1)
+            b = W[:, -1]
+            W = W[:,:-1]
+            col_min = np.min(W,axis=0)
+            A = W - col_min
+            c = sigmoid(np.dot(W, np.log(np.ones(len(b))/len(b))) + b)
+
+            matrices.append(np.hstack((A, c.reshape(-1,1))))
+        return matrices
+
     def weights_keras(string):
         coeficients = re.findall("'weights': \[array(.*?)]]", string, flags=re.DOTALL)
         intercepts = re.findall(", array\(\[(.*?)]", string, flags=re.DOTALL)
@@ -312,12 +332,12 @@ def summarise_hyperparameters(df, summary_path):
             matrices.append(x)
         return matrices
 
-    MAP_METHOD = {'Dirichlet_L2': weight_matrix_rlc,
+    MAP_METHOD = {'Dirichlet_L2': weight_matrix_theorem5,
                   'dir_keras': weights_keras,
                   'dir_full_gen': weight_matrix,
-                  'dir_full_comp_l2': weight_matrix_rlc,
+                  'dir_full_comp_l2': weight_matrix_theorem5,
                   'OvR_Beta': weight_matrix,
-                  'dirichlet_full_prefixdiag_l2': weight_matrix_rlc,
+                  'dirichlet_full_prefixdiag_l2': weight_matrix_theorem5,
                   'mlr_log': coef_intercept_matrix,
                   'mlr_logit': coef_intercept_matrix,
                   'ovr_mlr_log': coef_intercept_matrix,
