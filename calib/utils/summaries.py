@@ -368,6 +368,12 @@ def summarise_hyperparameters(df, summary_path):
                     continue
                 # Stacking (#iter x #crossval x #crossval) on first dimension
                 parameters = np.concatenate(values).mean(axis=0)
+                # Dirichlet Theorem5
+                if key in ['Dirichlet_L2', 'dir_full_comp_l2',
+                           'dirichlet_full_prefixdiag_l2']:
+                    col_min = np.min(parameters,axis=0)[:-1]
+                    parameters[:,:-1] = parameters[:,:-1] - col_min
+
                 # FIXME solve problem here, it seems that values is always
                 # empty?
                 if isinstance(parameters, np.float):
