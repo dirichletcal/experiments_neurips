@@ -25,6 +25,7 @@ from calib.utils.multiclass import OneVsRestCalibrator
 from dirichlet import DirichletCalibrator
 from dirichlet.calib.gendirichlet import GenerativeDirichletCalibrator
 from dirichlet.calib.multinomial import MultinomialRegression
+from dirichlet.calib.fixeddirichlet import FixedDiagonalDirichletCalibrator
 
 from mixture_of_dirichlet import MixDir
 
@@ -244,7 +245,8 @@ MAP_CALIBRATORS = {
     'dirichlet_full_l2_0001': DirichletCalibrator(matrix_type='full', l2=0.001),
     'dirichlet_full_l2_00001': DirichletCalibrator(matrix_type='full', l2=0.0001),
     'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
-    'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
+    #'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
+    'dirichlet_fix_diag': FixedDiagonalDirichletCalibrator(),
     'dirichlet_mixture': MixDir()
 }
 
