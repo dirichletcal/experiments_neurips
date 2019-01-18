@@ -209,9 +209,9 @@ def summarise_hyperparameters(df, summary_path):
             return T[0]
 
     # Histograms of parameters
-    MAP_METHOD = {'binning_freq': 'n_bins=(?P<bins>\w+), ',
-                  'binning_width': 'n_bins=(?P<bins>\w+), ',
-                  'dir_full_l2': " 'l2': ([0-9\.\-e]+),",
+    MAP_METHOD = {'OvR_Freq_Bin': 'n_bins=(?P<bins>\w+), ',
+                  'OvR_Width_Bin': 'n_bins=(?P<bins>\w+), ',
+                  'Dirichlet_L2': " 'l2': ([0-9\.\-e]+),",
                   'dir_full_comp_l2': " 'l2': ([0-9\.\-e]+),",
                   'dirichlet_full_prefixdiag_l2': " 'l2': ([0-9\.\-e]+),",
                   'mlr_log': " 'C': ([0-9\.\-e]+),",
@@ -312,11 +312,11 @@ def summarise_hyperparameters(df, summary_path):
             matrices.append(x)
         return matrices
 
-    MAP_METHOD = {'dir_full_l2': weight_matrix_rlc,
+    MAP_METHOD = {'Dirichlet_L2': weight_matrix_rlc,
                   'dir_keras': weights_keras,
                   'dir_full_gen': weight_matrix,
                   'dir_full_comp_l2': weight_matrix_rlc,
-                  'ovr_dir_full_l2': weight_matrix,
+                  'OvR_Beta': weight_matrix,
                   'dirichlet_full_prefixdiag_l2': weight_matrix_rlc,
                   'mlr_log': coef_intercept_matrix,
                   'mlr_logit': coef_intercept_matrix,
