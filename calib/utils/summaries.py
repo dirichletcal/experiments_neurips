@@ -181,12 +181,17 @@ def summarise_confusion_matrices(df, summary_path, set_title=False,
                 values = df_aux.loc[dat, ('confusion_matrix', cla)]
                 ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
                 if j == 0:
-                    ax.set_ylabel(dat)
+                    ax.set_ylabel(dat[:10])
                 if i == 0:
                     ax.set_title(cla)
                 ij += 1
                 if values is None:
+                    print('There are no confusion matrices for {}, {}, {}'.format(
+                          calibrator, dat, cla))
+                    ax.set_xticklabels([])
+                    ax.set_yticklabels([])
                     continue
+
                 cms = np.stack(values).mean(axis=0)
                 # FIXME solve problem here, it seems that values is always
                 # empty?
@@ -204,14 +209,14 @@ def summarise_confusion_matrices(df, summary_path, set_title=False,
                                  color=color, fontsize=fontsize
                                  )
                 ax.invert_yaxis()
-        #fig.tight_layout(rect=[0, 0.03, 1, 0.95])
-        fig.tight_layout() #rect=[0, 0.03, 1, 0.95])
+        fig.subplots_adjust(hspace = 0.0)
+        fig.tight_layout()
         fig.savefig(os.path.join(summary_path,
-            'confusion_matrices_{}.svg'.format(calibrator)))
+            'confusion_matrices_{}.pdf'.format(calibrator)))
 
 
 def summarise_hyperparameters(df, summary_path, set_title=False,
-        figsize=(16.5, 23.4)):
+                              figsize=(16.5, 23.4)):
     '''
     figsize
         - (8.27, 11.69) for an A4
@@ -229,11 +234,12 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
     MAP_METHOD = {'OvR_Freq_Bin': 'n_bins=(?P<bins>\w+), ',
                   'OvR_Width_Bin': 'n_bins=(?P<bins>\w+), ',
                   'Dirichlet_L2': " 'l2': ([0-9\.\-e]+),",
+                  'OvR_Beta_L2': " 'l2': ([0-9\.\-e]+),",
                   'dir_full_comp_l2': " 'l2': ([0-9\.\-e]+),",
                   'dirichlet_full_prefixdiag_l2': " 'l2': ([0-9\.\-e]+),",
-                  'mlr_log': " 'C': ([0-9\.\-e]+),",
+                  'Log_Reg_L2': " 'C': ([0-9\.\-e]+),",
                   'mlr_logit': " 'C': ([0-9\.\-e]+),",
-                  'ovr_mlr_log': " 'C': ([0-9\.\-e]+),",
+                  'OvR_Log_Reg_L2': " 'C': ([0-9\.\-e]+),",
                   'ovr_mlr_logit': " 'C': ([0-9\.\-e]+),",
                  }
     for key, regex in MAP_METHOD.items():
@@ -294,10 +300,9 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                 uniq = [np.format_float_scientific(x, precision=2) for x in uniq[sorted_idx]]
                 counts = counts[sorted_idx]
                 ax.bar(uniq, counts)
-        #fig.tight_layout(rect=[0, 0.03, 1, 0.95])
         fig.subplots_adjust(hspace = 0.0)
-        fig.tight_layout() # rect=[0, 0.03, 1, 0.95])
-        fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_{}.svg'.format(key)))
+        fig.tight_layout()
+        fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_{}.pdf'.format(key)))
 
     # heatmaps of parameters
     # FIXME change MAP method as it is not being used
