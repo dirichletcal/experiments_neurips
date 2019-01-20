@@ -148,7 +148,15 @@ def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
         f.write(tex_table)
 
 
-def summarise_confusion_matrices(df, summary_path):
+def summarise_confusion_matrices(df, summary_path, set_title=False,
+        figsize=(16.5, 23.4)):
+    '''
+    figsize
+        - (8.27, 11.69) for an A4
+        - (11.69, 16.53) for an A3
+        - (16.5, 23.4) for an A2
+    '''
+
     def MakeList(x):
         T = tuple(x)
         if len(T) > 1:
@@ -164,8 +172,9 @@ def summarise_confusion_matrices(df, summary_path):
         df_aux = df[df['method'] == calibrator]
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['confusion_matrix'], aggfunc=MakeList)
-        fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
-        fig.suptitle(calibrator)
+        fig = pyplot.figure(figsize=figsize) # (df_aux.shape[1]*3, df_aux.shape[0]*3))
+        if set_title:
+            fig.suptitle(calibrator)
         ij = 1
         for i, dat in enumerate(df_aux.index):
             for j, cla in enumerate(df_aux.columns.levels[1]):
@@ -195,12 +204,20 @@ def summarise_confusion_matrices(df, summary_path):
                                  color=color, fontsize=fontsize
                                  )
                 ax.invert_yaxis()
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        #fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        fig.tight_layout() #rect=[0, 0.03, 1, 0.95])
         fig.savefig(os.path.join(summary_path,
             'confusion_matrices_{}.svg'.format(calibrator)))
 
 
-def summarise_hyperparameters(df, summary_path):
+def summarise_hyperparameters(df, summary_path, set_title=False,
+        figsize=(16.5, 23.4)):
+    '''
+    figsize
+        - (8.27, 11.69) for an A4
+        - (11.69, 16.53) for an A3
+        - (16.5, 23.4) for an A2
+    '''
     def MakeList(x):
         T = tuple(x)
         if len(T) > 1:
@@ -231,20 +248,38 @@ def summarise_hyperparameters(df, summary_path):
         all_unique = df_aux.values.flatten()
         all_unique = all_unique[all_unique != None]
         all_unique = np.unique(np.hstack(all_unique).flatten())
-        fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
-        fig.suptitle(key)
-        ij = 1
+        sorted_idx = np.argsort(all_unique)
+        xticklabels = [np.format_float_scientific(x, precision=2) for x in
+                       all_unique[sorted_idx]]
+        print('Unique hyperparameters')
+        print(all_unique)
+        #fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
+        fig = pyplot.figure(figsize=figsize)
+        if set_title:
+            fig.suptitle(key)
+        ij = 0
         for i, dat in enumerate(df_aux.index):
             for j, cla in enumerate(df_aux.columns.levels[1]):
+                ij += 1
+
                 values = df_aux.loc[dat, ('calibrators', cla)]
+
                 ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
+
                 if j == 0:
-                    ax.set_ylabel(dat)
+                    ax.set_ylabel(dat[:10])
                 if i == 0:
                     ax.set_title(cla)
-                ij += 1
+                if i == len(df_aux.index)-1:
+                    ax.set_xticklabels(xticklabels, rotation=45, ha='right')
+                else:
+                    ax.set_xticklabels([])
+
                 if values is None:
-                    continue
+                    print('There are no hyperparameters for {}, {}, {}'.format(
+                          key, dat, cla))
+                    values = [[]]
+
                 parameters = np.concatenate(values).flatten()
                 uniq, counts = np.unique(parameters, return_counts=True)
                 missing_uniq = []
@@ -259,8 +294,9 @@ def summarise_hyperparameters(df, summary_path):
                 uniq = [np.format_float_scientific(x, precision=2) for x in uniq[sorted_idx]]
                 counts = counts[sorted_idx]
                 ax.bar(uniq, counts)
-                ax.set_xticklabels(uniq, rotation=45, ha='right')
-        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        #fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+        fig.subplots_adjust(hspace = 0.0)
+        fig.tight_layout() # rect=[0, 0.03, 1, 0.95])
         fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_{}.svg'.format(key)))
 
     # heatmaps of parameters
@@ -428,7 +464,10 @@ def generate_summaries(df, summary_path, table_size='small',
     final_names = dict(dir_fix_diag='Temp_Scaling', uncal='Uncalibrated',
                        ovr_dir_full='OvR_Beta', bin_freq='OvR_Freq_Bin',
                        bin_width='OvR_Width_Bin', dir_full_l2='Dirichlet_L2',
-                       isotonic='OvR_Isotonic', dir_full='Dirichlet')
+                       isotonic='OvR_Isotonic', dir_full='Dirichlet',
+                       mlr_log='Log_Reg_L2', ovr_dir_full_l2='OvR_Beta_L2',
+                       ovr_mlr_log='OvR_Log_Reg_L2')
+
     for key, value in final_names.items():
         df['method'] = df['method'].replace(to_replace=key, value=value,
                                         regex=False)
