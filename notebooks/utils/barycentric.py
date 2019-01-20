@@ -264,6 +264,13 @@ def draw_calibration_map(original_p, calibrated_p, labels=None, fig=None, ax=Non
         ax.text(text_x, text_y, labels[i], verticalalignment='center',
                 horizontalalignment='center')
 
+    triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
+    ax.triplot(triangle, c='k', lw=0.8)
+
+    refiner = tri.UniformTriRefiner(triangle)
+    trimesh = refiner.refine_triangulation(subdiv=subdiv)
+    ax.triplot(trimesh, c='gray', lw=0.5)
+
     o_xy = bc2xy(original_p, corners)
     c_xy = bc2xy(calibrated_p, corners) - o_xy
     #ax.scatter(xy[:, 0], xy[:, 1], **kwargs)
@@ -280,10 +287,4 @@ def draw_calibration_map(original_p, calibrated_p, labels=None, fig=None, ax=Non
     ax.set_ybound(lower=-0.01, upper=(0.75**0.5)+0.01)
     ax.axis('off')
 
-    triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
-    ax.triplot(triangle, c='k', lw=0.8)
-
-    refiner = tri.UniformTriRefiner(triangle)
-    trimesh = refiner.refine_triangulation(subdiv=subdiv)
-    ax.triplot(trimesh, c='gray', lw=0.5)
     return fig
