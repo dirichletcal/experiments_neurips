@@ -58,12 +58,13 @@ def draw_tri_samples(pvals, classes, labels=None, fig=None, ax=None,
     ax.axis('off')
 
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
-    plt.triplot(triangle, c='k', lw=0.5)
 
     if grid:
         refiner = tri.UniformTriRefiner(triangle)
         trimesh = refiner.refine_triangulation(subdiv=4)
-        ax.triplot(trimesh, c='gray', lw=0.5)
+        ax.triplot(trimesh, c='gray', lw=0.2)
+
+    ax.triplot(triangle, c='k', lw=0.5)
 
 
 
@@ -151,12 +152,13 @@ def draw_func_contours(func, labels=None, nlevels=200, subdiv=8, fig=None,
                     horizontalalignment='center')
 
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
-    ax.triplot(triangle, c='k', lw=0.8)
 
     if grid:
         refiner = tri.UniformTriRefiner(triangle)
         trimesh = refiner.refine_triangulation(subdiv=4)
-        ax.triplot(trimesh, c='gray', lw=0.5)
+        ax.triplot(trimesh, c='gray', lw=0.2)
+
+    ax.triplot(triangle, c='k', lw=0.8)
 
     # Axes options
     ax.set_xlim(xmin=0, xmax=1)
@@ -205,10 +207,14 @@ def plot_converging_lines_pvalues(func, lines, i, ax):
 
     for j, line in enumerate(lines):
         pvalues = np.array([func(p) for p in line]).flatten()
-        ax.plot(line[:, i], pvalues,
-                label=r'$C_{} = {}/{}, C_{} = {}/{}$'.format(
-                    classes[1]+1, j, len(lines)-1,
-                    classes[2]+1, len(lines)-j-1, len(lines)-1))
+        if len(lines) == 1:
+            label = r'$C_{} = 1/2, C_{} = 1/2$'.format(
+                        classes[1]+1, classes[2]+1)
+        else:
+            label = r'$C_{} = {}/{}, C_{} = {}/{}$'.format(
+                        classes[1]+1, j, len(lines)-1,
+                        classes[2]+1, len(lines)-j-1, len(lines)-1)
+        ax.plot(line[:, i], pvalues, label=label)
     ax.legend()
 
 
@@ -236,7 +242,10 @@ def get_converging_lines(num_lines, mesh_precision=10, class_index=0, tol=1e-6):
     The lines always follow a clockwise order.
     '''
     p = np.linspace(0, 1, mesh_precision).reshape(-1, 1)
-    q = np.linspace(0, 1, num_lines).reshape(-1, 1)
+    if num_lines == 1:
+        q = [0.5]
+    else:
+        q = np.linspace(0, 1, num_lines).reshape(-1, 1)
     lines = [np.hstack((p, (1-p)*q[i], (1-p)*(1-q[i]))) for i in range(len(q))]
     if class_index > 0:
         indices = np.array([0, 1, 2])
@@ -265,17 +274,17 @@ def draw_calibration_map(original_p, calibrated_p, labels=None, fig=None, ax=Non
                 horizontalalignment='center')
 
     triangle = tri.Triangulation(corners[:, 0], corners[:, 1])
-    ax.triplot(triangle, c='k', lw=0.8)
+    ax.triplot(triangle, c='k', lw=0.8, zorder=2)
 
     refiner = tri.UniformTriRefiner(triangle)
     trimesh = refiner.refine_triangulation(subdiv=subdiv)
-    ax.triplot(trimesh, c='gray', lw=0.5)
+    ax.triplot(trimesh, c='gray', lw=0.2, zorder=1)
 
     o_xy = bc2xy(original_p, corners)
     c_xy = bc2xy(calibrated_p, corners) - o_xy
     #ax.scatter(xy[:, 0], xy[:, 1], **kwargs)
     ax.quiver(o_xy[:, 0], o_xy[:, 1], c_xy[:, 0], c_xy[:, 1], scale=1,
-              color=color, angles='xy', **kwargs)
+              color=color, angles='xy', zorder=3, **kwargs)
 
     if handles is not None:
         ax.legend(handles=handles)
