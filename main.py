@@ -3,8 +3,10 @@
 # Not parallelized (easier to debug):
 #   python main.py
 from __future__ import division
+import sys
 import argparse
 import os
+import pandas
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from sklearn.neural_network import MLPClassifier
@@ -15,6 +17,7 @@ import sklearn.ensemble as their
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.preprocessing import label_binarize
 
 # Parallelization
 import itertools
@@ -34,6 +37,7 @@ from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
 from calib.utils.summaries import generate_summary_hist
 from calib.utils.plots import export_boxplot
+from calib.utils.plots import plot_reliability_diagram_per_class
 
 # Our datasets module
 from data_wrappers.datasets import Data
@@ -113,10 +117,9 @@ def parse_arguments():
                         defined groups in the datasets package''')
     parser.add_argument('-m', '--methods', dest='methods',
                         type=comma_separated_strings,
-                        default=['uncalibrated', 'beta', 'beta_am', 'isotonic',
-                                 'dirichlet_full', 'dirichlet_full_l2',
-                                 'dirichlet_fix_diag', 'ovr_dir_full',
-                                 'binning_freq', 'binning_width'],
+                        default=['uncalibrated', 'isotonic', 'binning_freq',
+                                 'binning_width', 'ovr_dir_full',
+                                 'dirichlet_full_l2', 'dirichlet_fix_diag'],
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
                               ', '.join(MAP_CALIBRATORS.keys())))
@@ -278,22 +281,39 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
             os.makedirs(results_path)
 
         # Export score distributions for dataset + classifier + calibrator
-        df_scores = df.drop_duplicates(subset=['dataset', 'method'])
+        def MakeList(x):
+            T = tuple(x)
+            if len(T) > 1:
+                return T
+            else:
+                return T[0]
+        #df_scores = df.drop_duplicates(subset=['dataset', 'method'])
+        g = df.groupby(['dataset', 'method'])
+        df_scores = g.agg({'y_test': MakeList,
+                           'c_probas': MakeList,
+                           'n_classes': 'max',
+                           'method': 'first',
+                           'loss': 'mean',
+                           'brier': 'mean',
+                           'acc': 'mean',
+                           'ece': 'mean',
+                           'mce': 'mean'})
         for index, row in df_scores.iterrows():
             filename = os.path.join(results_path, '_'.join([classifier_name,
                                                             name,
                                                             row['method'],
                                                             'positive_scores']))
+            y_test = np.hstack(row['y_test'])
             title = (("{}, test samples = {}, {}\n"
                       "acc = {:.2f}, log-loss = {:.2e}, brier = {:.2e}, ece = {:.2e}, mce = {:.2e}")
-                       .format(name, len(row['y_test']),
+                       .format(name, len(y_test),
                                row['method'], row['acc'],
                                row['loss'], row['brier'], row['ece'],
                                row['mce']))
             try:
                 export_boxplot(method = row['method'],
-                               scores = row['c_probas'],
-                               y_test = row['y_test'],
+                               scores = np.vstack(row['c_probas']),
+                               y_test = y_test,
                                n_classes = row['n_classes'],
                                name_classes = dataset.names,
                                title = title,
@@ -302,8 +322,27 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                 print(e)
 
 
-            scores = [row['c_probas'][row['y_test'] == i].flatten() for i in
-                               range(row['n_classes'])]
+            #scores = [row['c_probas'][row['y_test'] == i].flatten() for i in
+            #                   range(row['n_classes'])]
+
+        # Export reliability diagrams per dataset + classifier + calibrator
+        g = df.groupby(['dataset', 'method'])
+        df_scores = g.agg({'y_test': MakeList,
+                           'c_probas': MakeList,
+                           'n_classes': 'max'})
+        for index, row in df_scores.iterrows():
+            filename = os.path.join(results_path, '_'.join([classifier_name,
+                                                            name,
+                                                            index[1],
+                                                            'rel_diagr']))
+            try:
+                fig = plot_reliability_diagram_per_class(
+                        y_true=label_binarize(np.hstack(row['y_test']),
+                                   classes=range(row['n_classes'])),
+                        p_pred=np.vstack(row['c_probas']))
+                fig.savefig(filename + '.svg')
+            except:
+                print("Unexpected error:" + sys.exc_info()[0])
 
         for method in methods:
             df[df['method'] == method][save_columns].to_csv(

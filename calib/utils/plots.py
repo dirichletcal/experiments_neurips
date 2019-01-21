@@ -433,3 +433,55 @@ def export_dataset_analysis(df, measure, filename, file_ext='.svg'):
                                         logx=True, y=measure, ax=ax, alpha=0.5)
         fig.savefig('{}_{}_{}.{}'.format(filename, method, measure, file_ext))
         plt.close(fig)
+
+
+def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
+                                        fig=None, ax=None):
+    if fig is None and ax is None:
+        fig = plt.figure()
+    if ax is None:
+        ax = fig.add_subplot(111)
+
+    if title is not None:
+        ax.set_title(title)
+
+    y_true = y_true.flatten()
+    p_pred = p_pred.flatten()
+
+    bin_size = 1/n_bins
+    centers = np.linspace(bin_size/2, 1.0 - bin_size/2, n_bins)
+    true_proportion = np.zeros(n_bins)
+    pred_mean = np.zeros(n_bins)
+    for i, center in enumerate(centers):
+        if i == 0:
+            # First bin include lower bound
+            bin_indices = np.where(np.logical_and(p_pred >= center - bin_size/2, p_pred <= center + bin_size/2))
+        else:
+            bin_indices = np.where(np.logical_and(p_pred > center - bin_size/2, p_pred <= center + bin_size/2))
+        true_proportion[i] = np.mean(y_true[bin_indices])
+        pred_mean[i] = np.mean(p_pred[bin_indices])
+
+    ax.bar(centers, true_proportion, width=bin_size, edgecolor = "black",
+           color = "blue", label='True class prop.')
+    ax.bar(centers, true_proportion - pred_mean,  bottom = pred_mean, width=bin_size/2,
+           edgecolor = "red", color = "#ffc8c6", alpha = 1, label='Gap pred. mean')
+    ax.legend()
+    ax.plot([0,1], [0,1], linestyle = "--")
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
+    return fig
+
+def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwargs):
+    n_classes = y_true.shape[1]
+
+    if fig is None and ax is None:
+        fig = plt.figure(figsize=(n_classes*4, 2))
+
+    if ax is None:
+        ax = [fig.add_subplot(1, n_classes, i+1) for i in range(n_classes)]
+    for i in range(n_classes):
+        plot_multiclass_reliability_diagram(y_true[:,i], p_pred[:,i],
+                                            title=r'$C_{}$'.format(i+1),
+                                            fig=fig, ax=ax[i], **kwargs)
+    return fig
+

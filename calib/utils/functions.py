@@ -460,7 +460,7 @@ def serializable_or_string(x):
 
 
 # Markus functions
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import label_binarize
 
 
 def ECE(probs, y_true, normalize = False, bins = 15, ece_full = True):
@@ -529,11 +529,9 @@ def get_preds_all(y_probs, y_true, axis = 1, normalize = False, flatten = True):
     if normalize:
         y_probs /= np.sum(y_probs, axis=axis)
 
-    enc = OneHotEncoder(handle_unknown='error', sparse=False)  # Added error, then we know if anything wrong.
-    enc.fit(y_true)
-
-    y_preds = enc.transform(y_preds)
-    y_true = enc.transform(y_true)
+    n_classes = y_probs.shape[1]
+    y_preds = label_binarize(y_preds, classes=range(n_classes))
+    y_true = label_binarize(y_true, classes=range(n_classes))
 
     if flatten:
         y_preds = y_preds.flatten()
