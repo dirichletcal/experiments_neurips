@@ -8,4 +8,5 @@ results_*/
 *.out
 .vscode
 .ipynb_checkpoints/test-checkpoint.ipynb
+notebooks/.ipynb_checkpoints/*
 test.ipynb
