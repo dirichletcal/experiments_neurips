@@ -38,6 +38,7 @@ from calib.utils.summaries import generate_summaries
 from calib.utils.summaries import generate_summary_hist
 from calib.utils.plots import export_boxplot
 from calib.utils.plots import plot_reliability_diagram_per_class
+from calib.utils.plots import plot_multiclass_reliability_diagram
 
 # Our datasets module
 from data_wrappers.datasets import Data
@@ -331,15 +332,24 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
                            'c_probas': MakeList,
                            'n_classes': 'max'})
         for index, row in df_scores.iterrows():
-            filename = os.path.join(results_path, '_'.join([classifier_name,
+            y_test = label_binarize(np.hstack(row['y_test']),
+                                    classes=range(row['n_classes']))
+            p_pred = np.vstack(row['c_probas'])
+            try:
+                filename = os.path.join(results_path, '_'.join([classifier_name,
+                                                            name,
+                                                            index[1],
+                                                            'rel_diagr_perclass']))
+                fig = plot_reliability_diagram_per_class(y_true=y_test,
+                                                         p_pred=p_pred)
+                fig.savefig(filename + '.svg')
+
+                filename = os.path.join(results_path, '_'.join([classifier_name,
                                                             name,
                                                             index[1],
                                                             'rel_diagr']))
-            try:
-                fig = plot_reliability_diagram_per_class(
-                        y_true=label_binarize(np.hstack(row['y_test']),
-                                   classes=range(row['n_classes'])),
-                        p_pred=np.vstack(row['c_probas']))
+                fig = plot_multiclass_reliability_diagram(y_true=y_test,
+                                                          p_pred=p_pred)
                 fig.savefig(filename + '.svg')
             except:
                 print("Unexpected error:" + sys.exc_info()[0])

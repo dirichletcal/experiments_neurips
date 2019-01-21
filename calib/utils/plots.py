@@ -438,7 +438,7 @@ def export_dataset_analysis(df, measure, filename, file_ext='.svg'):
 def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
                                         fig=None, ax=None):
     if fig is None and ax is None:
-        fig = plt.figure()
+        fig = plt.figure(figsize=(4, 2))
     if ax is None:
         ax = fig.add_subplot(111)
 
@@ -484,4 +484,3 @@ def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwar
                                             title=r'$C_{}$'.format(i+1),
                                             fig=fig, ax=ax[i], **kwargs)
     return fig
-
