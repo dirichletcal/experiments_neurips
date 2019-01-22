@@ -8,6 +8,8 @@ import argparse
 import os
 import pandas
 import numpy as np
+
+# Classifiers
 from sklearn.model_selection import StratifiedKFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB
@@ -16,6 +18,16 @@ from calib.models.classifiers import MockClassifier
 import sklearn.ensemble as their
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+
+
 from sklearn.svm import SVC
 from sklearn.preprocessing import label_binarize
 
@@ -50,21 +62,34 @@ classifiers = {
       'mock': MockClassifier(),
       'nbayes': GaussianNB(),
       'logistic': LogisticRegression(random_state=42),
-      'adao': our.AdaBoostClassifier(n_estimators=200),
+      #'adao': our.AdaBoostClassifier(n_estimators=200),
       'adas': their.AdaBoostClassifier(n_estimators=200, random_state=42),
       'forest': RandomForestClassifier(n_estimators=200, random_state=42),
       'mlp': MLPClassifier(random_state=42),
-      'svm': SVC(probability=True, random_state=42)
+      'svm': SVC(probability=True, random_state=42),
+      'knn': KNeighborsClassifier(3),
+      'svc_linear': SVC(kernel="linear", C=0.025, probability=True, random_state=42),
+      'svc_rbf': SVC(gamma=2, C=1, probability=True, random_state=42),
+      'gp': GaussianProcessClassifier(1.0 * RBF(1.0), random_state=42),
+      'tree': DecisionTreeClassifier(max_depth=5, random_state=42),
+      'qda': QuadraticDiscriminantAnalysis()
 }
+
 score_types = {
       'mock': 'predict_proba',
       'nbayes': 'predict_proba',
       'logistic': 'predict_proba',
-      'adao': 'predict_proba',
+      #'adao': 'predict_proba',
       'adas': 'predict_proba',
       'forest': 'predict_proba',
       'mlp': 'predict_proba',
-      'svm': 'sigmoid'
+      'svm': 'sigmoid',
+      'knn': 'predict_proba',
+      'svc_linear': 'predict_proba',
+      'svc_rbf': 'predict_proba',
+      'gp': 'predict_proba',
+      'tree': 'predict_proba',
+      'qda': 'predict_proba'
 }
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
@@ -88,9 +113,13 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description='''Runs all the experiments
                                      with the given arguments''',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-c', '--classifier', dest='classifier_name', type=str,
-                        default='nbayes',
-                        help='''Classifier to use for evaluation''')
+    parser.add_argument('-c', '--classifiers', dest='classifier_names',
+                        type=comma_separated_strings,
+                        default=['nbayes', 'logistic', 'adas',
+                                 'forest', 'mlp', 'svm', 'knn', 'svc_linear',
+                                 'svc_rbf', 'gp', 'tree', 'qda'],
+                        help='''Classifiers to use for evaluation in a comma
+                        separated list of strings''')
     parser.add_argument('-s', '--seed', dest='seed_num', type=int,
                         default=42,
                         help='Seed for the random number generator')
@@ -217,11 +246,10 @@ def compute_all(args):
 
 
 # FIXME seed_num is not being used at the moment
-def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
+def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
 		 verbose, datasets, inner_folds, methods, n_workers):
     logging.basicConfig(level=verbose)
     logging.info(locals())
-    results_path = os.path.join(results_path, classifier_name)
 
     dataset_names = datasets
     dataset_names.sort()
@@ -232,167 +260,172 @@ def main(seed_num, mc_iterations, n_folds, classifier_name, results_path,
     data = Data(dataset_names=dataset_names, shuffle=True,
                 random_state=seed_num)
 
-    for name, dataset in data.datasets.items():
-        df = MyDataFrame(columns=columns)
-        logging.info(dataset)
-        # Assert that every class has enough samples to perform the two
-        # cross-validataion steps (classifier + calibrator)
-        smaller_count = min(dataset.counts)
-        if (smaller_count < n_folds) or \
-           ((smaller_count*(n_folds-1)/n_folds) < inner_folds):
-            logging.warn(("At least one of the classes does not have enough "
-                         "samples for outer {} folds and inner {} folds"
-                        ).format(n_folds, inner_folds))
-            # TODO Remove problematic class instead
-            logging.warn("Removing dataset from experiments and skipping")
-            dataset_names = [aux for aux in dataset_names if aux != name]
-            continue
+    classifier_names.sort()
+    results_path_root = results_path
+    for classifier_name in classifier_names:
+        results_path = os.path.join(results_path_root, classifier_name)
 
-        mcs = np.arange(mc_iterations)
-        logging.info(dataset)
-        #shared.setConst(**{name: dataset})
-        # All the arguments as a list of lists
-        args = [[dataset], [n_folds], [inner_folds], mcs, [classifier_name],
-                methods, [verbose]]
-        args = list(itertools.product(*args))
+        for name, dataset in data.datasets.items():
+            df = MyDataFrame(columns=columns)
+            logging.info(dataset)
+            # Assert that every class has enough samples to perform the two
+            # cross-validataion steps (classifier + calibrator)
+            smaller_count = min(dataset.counts)
+            if (smaller_count < n_folds) or \
+               ((smaller_count*(n_folds-1)/n_folds) < inner_folds):
+                logging.warn(("At least one of the classes does not have enough "
+                             "samples for outer {} folds and inner {} folds"
+                            ).format(n_folds, inner_folds))
+                # TODO Remove problematic class instead
+                logging.warn("Removing dataset from experiments and skipping")
+                dataset_names = [aux for aux in dataset_names if aux != name]
+                continue
 
-        logging.info('There are ' + str(len(args)) + ' sets of arguments that need to be run')
-        logging.debug('The following is a list with all the arguments')
-        logging.debug(args)
+            mcs = np.arange(mc_iterations)
+            logging.info(dataset)
+            #shared.setConst(**{name: dataset})
+            # All the arguments as a list of lists
+            args = [[dataset], [n_folds], [inner_folds], mcs, [classifier_name],
+                    methods, [verbose]]
+            args = list(itertools.product(*args))
 
-        if n_workers == -1:
-            n_workers = cpu_count()
+            logging.info('There are ' + str(len(args)) + ' sets of arguments that need to be run')
+            logging.debug('The following is a list with all the arguments')
+            logging.debug(args)
 
-        if n_workers == 1:
-            map_f = map
-        else:
-            if n_workers > len(args):
-                n_workers = len(args)
+            if n_workers == -1:
+                n_workers = cpu_count()
 
-            p = Pool(n_workers)
-            map_f = p.map
-
-        logging.info('{} jobs will be deployed in {} workers'.format(
-            len(args), n_workers))
-        dfs = map_f(compute_all, args)
-
-        df = df.concat(dfs)
-
-        if not os.path.exists(results_path):
-            os.makedirs(results_path)
-
-        # Export score distributions for dataset + classifier + calibrator
-        def MakeList(x):
-            T = tuple(x)
-            if len(T) > 1:
-                return T
+            if n_workers == 1:
+                map_f = map
             else:
-                return T[0]
-        #df_scores = df.drop_duplicates(subset=['dataset', 'method'])
-        g = df.groupby(['dataset', 'method'])
-        df_scores = g.agg({'y_test': MakeList,
-                           'c_probas': MakeList,
-                           'n_classes': 'max',
-                           'method': 'first',
-                           'loss': 'mean',
-                           'brier': 'mean',
-                           'acc': 'mean',
-                           'ece': 'mean',
-                           'mce': 'mean'})
-        for index, row in df_scores.iterrows():
-            filename = os.path.join(results_path, '_'.join([classifier_name,
-                                                            name,
-                                                            row['method'],
-                                                            'positive_scores']))
-            y_test = np.hstack(row['y_test'])
-            title = (("{}, test samples = {}, {}\n"
-                      "acc = {:.2f}, log-loss = {:.2e}, brier = {:.2e}, ece = {:.2e}, mce = {:.2e}")
-                       .format(name, len(y_test),
-                               row['method'], row['acc'],
-                               row['loss'], row['brier'], row['ece'],
-                               row['mce']))
-            try:
-                export_boxplot(method = row['method'],
-                               scores = np.vstack(row['c_probas']),
-                               y_test = y_test,
-                               n_classes = row['n_classes'],
-                               name_classes = dataset.names,
-                               title = title,
-                               filename=filename, file_ext='.svg')
-            except Error as e:
-                print(e)
+                if n_workers > len(args):
+                    n_workers = len(args)
 
+                p = Pool(n_workers)
+                map_f = p.map
 
-            #scores = [row['c_probas'][row['y_test'] == i].flatten() for i in
-            #                   range(row['n_classes'])]
+            logging.info('{} jobs will be deployed in {} workers'.format(
+                len(args), n_workers))
+            dfs = map_f(compute_all, args)
 
-        # Export reliability diagrams per dataset + classifier + calibrator
-        g = df.groupby(['dataset', 'method'])
-        df_scores = g.agg({'y_test': MakeList,
-                           'c_probas': MakeList,
-                           'n_classes': 'max'})
-        for index, row in df_scores.iterrows():
-            y_test = label_binarize(np.hstack(row['y_test']),
-                                    classes=range(row['n_classes']))
-            p_pred = np.vstack(row['c_probas'])
-            try:
+            df = df.concat(dfs)
+
+            if not os.path.exists(results_path):
+                os.makedirs(results_path)
+
+            # Export score distributions for dataset + classifier + calibrator
+            def MakeList(x):
+                T = tuple(x)
+                if len(T) > 1:
+                    return T
+                else:
+                    return T[0]
+            #df_scores = df.drop_duplicates(subset=['dataset', 'method'])
+            g = df.groupby(['dataset', 'method'])
+            df_scores = g.agg({'y_test': MakeList,
+                               'c_probas': MakeList,
+                               'n_classes': 'max',
+                               'method': 'first',
+                               'loss': 'mean',
+                               'brier': 'mean',
+                               'acc': 'mean',
+                               'ece': 'mean',
+                               'mce': 'mean'})
+            for index, row in df_scores.iterrows():
                 filename = os.path.join(results_path, '_'.join([classifier_name,
-                                                            name,
-                                                            index[1],
-                                                            'rel_diagr_perclass']))
-                fig = plot_reliability_diagram_per_class(y_true=y_test,
-                                                         p_pred=p_pred)
-                fig.savefig(filename + '.svg')
-
-                filename = os.path.join(results_path, '_'.join([classifier_name,
-                                                            name,
-                                                            index[1],
-                                                            'rel_diagr']))
-                fig = plot_multiclass_reliability_diagram(y_true=y_test,
-                                                          p_pred=p_pred)
-                fig.savefig(filename + '.svg')
-            except:
-                print("Unexpected error:" + sys.exc_info()[0])
-
-        for method in methods:
-            df[df['method'] == method][save_columns].to_csv(
-                os.path.join(results_path, '_'.join([classifier_name, name,
-                                                     method,
-                                                     'raw_results.csv'])))
-
-        table = df[df.dataset == name].pivot_table(
-                    values=['train_acc', 'train_loss', 'train_brier',
-                            'train_ece', 'train_mce'],
-                    index=['method'], aggfunc=[np.mean, np.std])
-        logging.info(table)
-
-        table = df[df.dataset == name].pivot_table(
-                    values=['acc', 'loss', 'brier', 'ece', 'mce'],
-                    index=['method'], aggfunc=[np.mean, np.std])
-        logging.info(table)
-
-        logging.info('Histogram of all the scores')
-        for method in methods:
-            hist = np.histogram(np.concatenate(
-                        df[df.dataset == name][df.method ==
-                                               method]['c_probas'].values),
-                        range=(0.0, 1.0))
-            df_hist = MyDataFrame(data=[[classifier_name, name, method] +
-                                       hist[0].tolist()],
-                                  columns=columns_hist)
-            df_hist.to_csv(os.path.join(results_path, '_'.join(
-                [classifier_name, name, method, 'score_histogram.csv'])))
-            logging.info(df_hist)
-        logging.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+                                                                name,
+                                                                row['method'],
+                                                                'positive_scores']))
+                y_test = np.hstack(row['y_test'])
+                title = (("{}, test samples = {}, {}\n"
+                          "acc = {:.2f}, log-loss = {:.2e}, brier = {:.2e}, ece = {:.2e}, mce = {:.2e}")
+                           .format(name, len(y_test),
+                                   row['method'], row['acc'],
+                                   row['loss'], row['brier'], row['ece'],
+                                   row['mce']))
+                try:
+                    export_boxplot(method = row['method'],
+                                   scores = np.vstack(row['c_probas']),
+                                   y_test = y_test,
+                                   n_classes = row['n_classes'],
+                                   name_classes = dataset.names,
+                                   title = title,
+                                   filename=filename, file_ext='.svg')
+                except Error as e:
+                    print(e)
 
 
-    #df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
-    #df_all_hist = df_all_hist.set_index(['method', 'dataset'])
-    #df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
-    #df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
-    #generate_summary_hist(df_all_hist.astype(float), results_path)
+                #scores = [row['c_probas'][row['y_test'] == i].flatten() for i in
+                #                   range(row['n_classes'])]
 
-    #generate_summaries(df_all, results_path)
+            # Export reliability diagrams per dataset + classifier + calibrator
+            g = df.groupby(['dataset', 'method'])
+            df_scores = g.agg({'y_test': MakeList,
+                               'c_probas': MakeList,
+                               'n_classes': 'max'})
+            for index, row in df_scores.iterrows():
+                y_test = label_binarize(np.hstack(row['y_test']),
+                                        classes=range(row['n_classes']))
+                p_pred = np.vstack(row['c_probas'])
+                try:
+                    filename = os.path.join(results_path, '_'.join([classifier_name,
+                                                                name,
+                                                                index[1],
+                                                                'rel_diagr_perclass']))
+                    fig = plot_reliability_diagram_per_class(y_true=y_test,
+                                                             p_pred=p_pred)
+                    fig.savefig(filename + '.svg')
+
+                    filename = os.path.join(results_path, '_'.join([classifier_name,
+                                                                name,
+                                                                index[1],
+                                                                'rel_diagr']))
+                    fig = plot_multiclass_reliability_diagram(y_true=y_test,
+                                                              p_pred=p_pred)
+                    fig.savefig(filename + '.svg')
+                except:
+                    print("Unexpected error:" + sys.exc_info()[0])
+
+            for method in methods:
+                df[df['method'] == method][save_columns].to_csv(
+                    os.path.join(results_path, '_'.join([classifier_name, name,
+                                                         method,
+                                                         'raw_results.csv'])))
+
+            table = df[df.dataset == name].pivot_table(
+                        values=['train_acc', 'train_loss', 'train_brier',
+                                'train_ece', 'train_mce'],
+                        index=['method'], aggfunc=[np.mean, np.std])
+            logging.info(table)
+
+            table = df[df.dataset == name].pivot_table(
+                        values=['acc', 'loss', 'brier', 'ece', 'mce'],
+                        index=['method'], aggfunc=[np.mean, np.std])
+            logging.info(table)
+
+            logging.info('Histogram of all the scores')
+            for method in methods:
+                hist = np.histogram(np.concatenate(
+                            df[df.dataset == name][df.method ==
+                                                   method]['c_probas'].values),
+                            range=(0.0, 1.0))
+                df_hist = MyDataFrame(data=[[classifier_name, name, method] +
+                                           hist[0].tolist()],
+                                      columns=columns_hist)
+                df_hist.to_csv(os.path.join(results_path, '_'.join(
+                    [classifier_name, name, method, 'score_histogram.csv'])))
+                logging.info(df_hist)
+            logging.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
+
+
+        #df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
+        #df_all_hist = df_all_hist.set_index(['method', 'dataset'])
+        #df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
+        #df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
+        #generate_summary_hist(df_all_hist.astype(float), results_path)
+
+        #generate_summaries(df_all, results_path)
 
 
 if __name__ == '__main__':
