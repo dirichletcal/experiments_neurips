@@ -484,3 +484,7 @@ def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwar
                                             title=r'$C_{}$'.format(i+1),
                                             fig=fig, ax=ax[i], **kwargs)
     return fig
+
+def save_fig_close(fig, filename):
+    fig.savefig(filename)
+    plt.close(fig)

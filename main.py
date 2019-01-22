@@ -51,6 +51,7 @@ from calib.utils.summaries import generate_summary_hist
 from calib.utils.plots import export_boxplot
 from calib.utils.plots import plot_reliability_diagram_per_class
 from calib.utils.plots import plot_multiclass_reliability_diagram
+from calib.utils.plots import save_fig_close
 
 # Our datasets module
 from data_wrappers.datasets import Data
@@ -117,7 +118,7 @@ def parse_arguments():
                         type=comma_separated_strings,
                         default=['nbayes', 'logistic', 'adas',
                                  'forest', 'mlp', 'svm', 'knn', 'svc_linear',
-                                 'svc_rbf', 'gp', 'tree', 'qda'],
+                                 'svc_rbf', 'tree', 'qda'],
                         help='''Classifiers to use for evaluation in a comma
                         separated list of strings''')
     parser.add_argument('-s', '--seed', dest='seed_num', type=int,
@@ -253,7 +254,6 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
 
     dataset_names = datasets
     dataset_names.sort()
-    df_all = MyDataFrame(columns=columns)
     columns_hist = ['classifier', 'dataset', 'calibration'] + \
                    ['{}-{}'.format(i/10, (i+1)/10) for i in range(0,10)]
 
@@ -375,7 +375,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                                                 'rel_diagr_perclass']))
                     fig = plot_reliability_diagram_per_class(y_true=y_test,
                                                              p_pred=p_pred)
-                    fig.savefig(filename + '.svg')
+                    save_fig_close(fig, filename + '.svg')
 
                     filename = os.path.join(results_path, '_'.join([classifier_name,
                                                                 name,
@@ -383,7 +383,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                                                 'rel_diagr']))
                     fig = plot_multiclass_reliability_diagram(y_true=y_test,
                                                               p_pred=p_pred)
-                    fig.savefig(filename + '.svg')
+                    save_fig_close(fig, filename + '.svg')
                 except:
                     print("Unexpected error:" + sys.exc_info()[0])
 
@@ -417,15 +417,6 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                     [classifier_name, name, method, 'score_histogram.csv'])))
                 logging.info(df_hist)
             logging.info('-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-')
-
-
-        #df_all.to_csv(os.path.join(results_path, classifier_name + '_main_results_data_frame.csv'))
-        #df_all_hist = df_all_hist.set_index(['method', 'dataset'])
-        #df_all_hist.to_csv(os.path.join(results_path, classifier_name + '_score_histograms.csv'))
-        #df_all_hist.to_latex(os.path.join(results_path, classifier_name + '_score_histograms.tex'))
-        #generate_summary_hist(df_all_hist.astype(float), results_path)
-
-        #generate_summaries(df_all, results_path)
 
 
 if __name__ == '__main__':

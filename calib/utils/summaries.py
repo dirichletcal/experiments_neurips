@@ -253,7 +253,7 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                                     values=['calibrators'], aggfunc=MakeList)
         all_unique = df_aux.values.flatten()
         all_unique = all_unique[all_unique != None]
-        all_unique = np.unique(np.hstack(all_unique).flatten())
+        all_unique = np.unique(np.hstack(sum(all_unique, ())))
         sorted_idx = np.argsort(all_unique)
         xticklabels = [np.format_float_scientific(x, precision=2) for x in
                        all_unique[sorted_idx]]
