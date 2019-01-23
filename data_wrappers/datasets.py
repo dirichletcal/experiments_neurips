@@ -83,6 +83,10 @@ class Dataset(object):
         for i, name in enumerate(names):
             new_target[target==name] = i
         classes = range(len(names))
+        if type(names[0]) is np.ndarray:
+            names = [''.join(name) for name in names]
+        else:
+            names = [str(name) for name in names]
         return new_target, classes, names, counts
 
     def separate_sets(self, x, y, test_fold_id, test_folds):

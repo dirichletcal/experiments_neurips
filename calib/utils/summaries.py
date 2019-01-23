@@ -115,7 +115,7 @@ def paired_test(table, stats_func=ranksums):
 
 def export_statistic_to_latex(df_statistic, filename, threshold=0.005,
                               caption='', label='', fontsize='\\small',
-                              str_format='%.1f', position='!H'):
+                              str_format='%.1f', position='tph'):
     def pvalue_to_tex(s, p, threshold):
         s = str_format % s
         if p < threshold:

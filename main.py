@@ -248,7 +248,9 @@ def compute_all(args):
 
 # FIXME seed_num is not being used at the moment
 def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
-		 verbose, datasets, inner_folds, methods, n_workers):
+		 verbose, datasets, inner_folds, methods, n_workers, fig_titles=False):
+    if not fig_titles:
+        title = None
     logging.basicConfig(level=verbose)
     logging.info(locals())
 
@@ -338,8 +340,10 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                                                 row['method'],
                                                                 'positive_scores']))
                 y_test = np.hstack(row['y_test'])
-                title = (("{}, test samples = {}, {}\n"
-                          "acc = {:.2f}, log-loss = {:.2e}, brier = {:.2e}, ece = {:.2e}, mce = {:.2e}")
+                if fig_titles:
+                    title = (("{}, test samples = {}, {}\n"
+                          "acc = {:.2f}, log-loss = {:.2e},\n"
+                          "brier = {:.2e}, ece = {:.2e}, mce = {:.2e}")
                            .format(name, len(y_test),
                                    row['method'], row['acc'],
                                    row['loss'], row['brier'], row['ece'],
@@ -351,7 +355,19 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                    n_classes = row['n_classes'],
                                    name_classes = dataset.names,
                                    title = title,
+                                   per_class = False,
+                                   figsize=(int(row['n_classes']/2), 2),
                                    filename=filename, file_ext='.svg')
+
+                    export_boxplot(method = row['method'],
+                                   scores = np.vstack(row['c_probas']),
+                                   y_test = y_test,
+                                   n_classes = row['n_classes'],
+                                   name_classes = dataset.names,
+                                   title = title,
+                                   per_class = True,
+                                   figsize=(int(row['n_classes']/2), 1+row['n_classes']),
+                                   filename=filename + '_per_class', file_ext='.svg')
                 except Error as e:
                     print(e)
 

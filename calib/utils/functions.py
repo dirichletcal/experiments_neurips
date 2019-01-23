@@ -53,7 +53,7 @@ def get_sets(x, y, test_fold_id, test_folds):
 
 # TODO: MPN need to join *to_latex functions
 def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
-                   position='!H'):
+                   position='tph'):
     means = table.as_matrix()[:, :len(methods)]
     avg_ranks = np.zeros(len(methods))
     if max_is_better:
@@ -119,7 +119,7 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
 # the column and row names?
 def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
              table_size="normalsize", caption="", label='table',
-             add_std=True, position='!H', column_names=None,
+             add_std=True, position='tph', column_names=None,
              avg_ranks=None):
     if column_names is None:
         column_names = table.columns.levels[2]
