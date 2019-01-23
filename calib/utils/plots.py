@@ -442,7 +442,7 @@ def export_dataset_analysis(df, measure, filename, file_ext='.svg'):
 
 
 def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
-                                        fig=None, ax=None):
+                                        fig=None, ax=None, legend=True):
     if fig is None and ax is None:
         fig = plt.figure(figsize=(4, 2))
     if ax is None:
@@ -471,7 +471,8 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
            color = "blue", label='True class prop.')
     ax.bar(centers, true_proportion - pred_mean,  bottom = pred_mean, width=bin_size/2,
            edgecolor = "red", color = "#ffc8c6", alpha = 1, label='Gap pred. mean')
-    ax.legend()
+    if legend:
+        ax.legend()
     ax.plot([0,1], [0,1], linestyle = "--")
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
@@ -485,10 +486,13 @@ def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwar
 
     if ax is None:
         ax = [fig.add_subplot(1, n_classes, i+1) for i in range(n_classes)]
+    legend = True
     for i in range(n_classes):
         plot_multiclass_reliability_diagram(y_true[:,i], p_pred[:,i],
                                             title=r'$C_{}$'.format(i+1),
-                                            fig=fig, ax=ax[i], **kwargs)
+                                            fig=fig, ax=ax[i], legend=legend,
+                                            **kwargs)
+        legend = False
     return fig
 
 def save_fig_close(fig, filename):
