@@ -26,8 +26,9 @@ from dirichlet import DirichletCalibrator
 from dirichlet.calib.gendirichlet import GenerativeDirichletCalibrator
 from dirichlet.calib.multinomial import MultinomialRegression
 from dirichlet.calib.fixeddirichlet import FixedDiagonalDirichletCalibrator
+from dirichlet.calib.typeiidirichlet import TypeIIDirichletCalibrator
 
-from mixture_of_dirichlet import MixDir
+# from mixture_of_dirichlet import MixDir
 
 from .dirichlet_keras import Dirichlet_NN
 
@@ -247,7 +248,8 @@ MAP_CALIBRATORS = {
     'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
     #'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
     'dirichlet_fix_diag': FixedDiagonalDirichletCalibrator(),
-    'dirichlet_mixture': MixDir()
+    'dirichlet_full_t2': TypeIIDirichletCalibrator(),
+#    'dirichlet_mixture': MixDir()
 }
 
 
