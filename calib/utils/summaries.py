@@ -742,6 +742,106 @@ def generate_summaries(df, summary_path, table_size='small',
         table.to_latex(os.path.join(summary_path, classifier_name + '_main_results.tex'))
 
 
+def generate_classifier_summaries(df, summary_path, table_size='small'):
+    dataset_names = df['dataset'].unique()
+    classifiers = df['classifier'].unique()
+
+    df = df[df.method == 'uncalibrated']
+
+    measures_list = ['acc', 'loss', 'brier', 'ece', 'mce']
+    measures_list = [measure for measure in measures_list if measure in df.columns]
+
+    measures_list = (('acc', True), ('loss', False), ('brier', False),
+                ('ece', False), ('mce', False),
+                ('train_acc', True), ('train_loss', False),
+                ('train_brier', False), ('exec_time', False),
+                ('train_ece', False), ('train_mce', False), ('exec_time', False))
+    measures_list = [(key, value) for key, value in measures_list if key in
+        df.columns]
+    for measure, max_is_better in measures_list:
+        print('# Measure = {}'.format(measure))
+
+        table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
+                                      ], columns=['classifier'],
+                               values=[measure])
+
+        np.isfinite(table.values).mean(axis=0)
+
+        # Wilcoxon rank-sum test two-tailed
+        df_ranksums = compute_ranksums(table)
+
+        filename = os.path.join(summary_path,
+                                'classifiers_ranksum_pvalues_{}.tex'.format(measure))
+        threshold = 0.005
+        export_statistic_to_latex(df_ranksums, filename, threshold=threshold,
+                                 caption=('Wilcoxon rank-sum test statistic '
+                                          'for every paired uncalibrated '
+                                          'classifier for the '
+                                          'measure of {}. Statistic is bold '
+                                          'when p-value is smaller than '
+                                          '{}').format(measure, threshold),
+                                 label='tab:ranksum:{}'.format(measure)
+                                )
+
+        # Mann-Whitney rank test one-sided alternative is first is smaller than
+        df_mannwhitneyu = compute_mannwhitneyu(table)
+
+        filename = os.path.join(summary_path,
+                                'classifiers_mannwhitneyu_pvalues_{}.tex'.format(measure))
+        export_statistic_to_latex(df_mannwhitneyu, filename, threshold=threshold,
+                                  caption=('Mann-Whitney U test statistic '
+                                           'one sided with alternative '
+                                           'hypothesis the classifier in row i '
+                                           'is less than the classifier in column j '
+                                           'for every pair of uncalibrated '
+                                           'classifiers for the '
+                                           'measure of {}. Statistic is bold '
+                                           'when the p-value is smaller than '
+                                           '{}').format(measure, threshold),
+                                  label='tab:mannwhitney:{}'.format(measure),
+                                  str_format='%1.1e'
+                                )
+
+        table = df.pivot_table(index=['dataset'], columns=['classifier'],
+                               values=[measure], aggfunc=[np.mean, np.std])
+        table = table[~table.isna().any(axis=1)]
+        ftest = compute_friedmanchisquare(table['mean'])
+        print(ftest)
+        str_table = rankings_to_latex(dataset_names, table, precision=2,
+                             table_size=table_size,
+                             max_is_better=max_is_better,
+                             caption=('Ranking of uncalibrated classifiers ' +
+                                      'with the measure={}' +
+                                      '(Friedman statistic test ' +
+                                      '= {:.2E}, p-value = {:.2E})'
+                                      ).format(measure,
+                                              ftest.statistic, ftest.pvalue),
+                             label='table:{}:{}'.format('uncal', measure),
+                             add_std=False)
+        file_basename = os.path.join(summary_path,
+                                     'dataset_vs_classifier_' + measure)
+        with open(file_basename + '.tex', "w") as text_file:
+            text_file.write(str_table)
+
+        if max_is_better:
+            table *= -1
+        ranking_table = table['mean'].apply(rankdata, axis=1).mean()
+
+        filename = os.path.join(summary_path, 'crit_diff_' +
+                                'uncal_classifiers' + '_' +
+                                measure + '.pdf')
+
+        print(('Critical Difference computed with avranks of shape {} ' +
+               'for {} datasets').format(np.shape(ranking_table),
+                                     table.shape[0]))
+        export_critical_difference(avranks=ranking_table,
+                                   num_datasets=table.shape[0],
+                                   names=table.columns.levels[2],
+                                   filename=filename,
+                                   title='(p-value = {:.2e}, #D = {})'.format(
+                                       ftest.pvalue, table.shape[0]))
+
+
 def generate_summary_hist(df, summary_path):
     file_basename = os.path.join(summary_path, 'scores_histogram')
     df = df.sort_index()

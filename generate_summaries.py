@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 from calib.utils.summaries import load_all_csv
 from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
+from calib.utils.summaries import generate_classifier_summaries
 from calib.utils.summaries import generate_summary_hist
 
 
@@ -23,6 +24,10 @@ def parse_arguments():
 def main(results_path, summary_path):
     df = load_all_csv(results_path, ".*raw_results.csv")
     summary_path = create_summary_path(summary_path, results_path)
+
+    print('Generating summaries of performance for uncalibrated classifiers')
+    generate_classifier_summaries(df, summary_path, table_size='small')
+
     print('Generating summaries of performance and hyperparameters')
     generate_summaries(df, summary_path, table_size='small',
             hyperparameters=True, confusion_matrices=True)
