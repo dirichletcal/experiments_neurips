@@ -26,6 +26,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
 from sklearn.svm import SVC
@@ -73,7 +74,8 @@ classifiers = {
       'svc_rbf': SVC(gamma=2, C=1, probability=True, random_state=42),
       'gp': GaussianProcessClassifier(1.0 * RBF(1.0), random_state=42),
       'tree': DecisionTreeClassifier(max_depth=5, random_state=42),
-      'qda': QuadraticDiscriminantAnalysis()
+      'qda': QuadraticDiscriminantAnalysis(),
+      'lda': LinearDiscriminantAnalysis()
 }
 
 score_types = {
@@ -90,7 +92,8 @@ score_types = {
       'svc_rbf': 'predict_proba',
       'gp': 'predict_proba',
       'tree': 'predict_proba',
-      'qda': 'predict_proba'
+      'qda': 'predict_proba',
+      'lda': 'predict_proba'
 }
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
