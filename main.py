@@ -119,11 +119,10 @@ def parse_arguments():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--classifiers', dest='classifier_names',
                         type=comma_separated_strings,
-                        default=['nbayes', 'logistic', 'adas',
-                                 'forest', 'mlp', 'svm', 'knn', 'svc_linear',
-                                 'svc_rbf', 'tree', 'qda'],
+                        default=['logistic', 'forest'],
                         help='''Classifiers to use for evaluation in a comma
-                        separated list of strings''')
+                        separated list of strings. From the following
+                        options: ''' + ', '.join(classifiers.keys()))
     parser.add_argument('-s', '--seed', dest='seed_num', type=int,
                         default=42,
                         help='Seed for the random number generator')
@@ -151,9 +150,7 @@ def parse_arguments():
                         defined groups in the datasets package''')
     parser.add_argument('-m', '--methods', dest='methods',
                         type=comma_separated_strings,
-                        default=['uncalibrated', 'isotonic', 'binning_freq',
-                                 'binning_width', 'ovr_dir_full',
-                                 'dirichlet_full_l2', 'dirichlet_fix_diag'],
+                        default=['uncalibrated', 'isotonic'],
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
                               ', '.join(MAP_CALIBRATORS.keys())))
