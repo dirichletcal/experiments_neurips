@@ -447,12 +447,16 @@ def generate_summaries(df, summary_path, table_size='small',
         - 'train_acc': Training Accuracy
         - 'train_loss': Training log-loss
         - 'train_brier': Training Brier score
-        - 'train_ece': Training ECE score
+        - 'train_bin-ece': Training binary ECE score
+        - 'train_cla-ece': Training classwise ECE score
+        - 'train_full-ece': Training full ECE score
         - 'train_mce': Training MCE score
         - 'acc': Accuracy
         - 'loss': log-loss
         - 'brier': Brier score
-        - 'ece': ECE score
+        - 'bin-ece': Binary ECE score
+        - 'cla-ece': Classwise ECE score
+        - 'full-ece': Full ECE score
         - 'mce': MCE score
         - 'exec_time': Mean execution time
         - 'classifier': Original classifier used to train
@@ -481,7 +485,7 @@ def generate_summaries(df, summary_path, table_size='small',
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
-    measures_list = ['acc', 'loss', 'brier', 'ece', 'mce']
+    measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     # Assert that all experiments have finished
@@ -511,10 +515,12 @@ def generate_summaries(df, summary_path, table_size='small',
         summarise_confusion_matrices(df, summary_path)
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
-                ('ece', False), ('mce', False),
-                ('train_acc', True), ('train_loss', False),
-                ('train_brier', False), ('exec_time', False),
-                ('train_ece', False), ('train_mce', False), ('exec_time', False))
+                     ('bin-ece', False), ('cla-ece', False),
+                     ('full-ece', False), ('mce', False), ('train_acc', True),
+                     ('train_loss', False), ('train_brier', False),
+                     ('exec_time', False), ('train_bin-ece', False),
+                     ('train_cla-ece', False), ('train_full-ece', False),
+                     ('train_mce', False), ('exec_time', False))
     measures_list = [(key, value) for key, value in measures_list if key in
         df.columns]
     for measure, max_is_better in measures_list:
@@ -748,14 +754,16 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
 
     df = df[df.method == 'uncalibrated']
 
-    measures_list = ['acc', 'loss', 'brier', 'ece', 'mce']
+    measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
-                ('ece', False), ('mce', False),
-                ('train_acc', True), ('train_loss', False),
-                ('train_brier', False), ('exec_time', False),
-                ('train_ece', False), ('train_mce', False), ('exec_time', False))
+                     ('bin-ece', False), ('cla-ece', False),
+                     ('full-ece', False), ('mce', False), ('train_acc', True),
+                     ('train_loss', False), ('train_brier', False),
+                     ('exec_time', False), ('train_bin-ece', False),
+                     ('train_cla-ece', False), ('train_full-ece', False),
+                     ('train_mce', False), ('exec_time', False))
     measures_list = [(key, value) for key, value in measures_list if key in
         df.columns]
     for measure, max_is_better in measures_list:

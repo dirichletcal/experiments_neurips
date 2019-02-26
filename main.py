@@ -97,8 +97,9 @@ score_types = {
 }
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
-           'test_fold', 'train_acc', 'train_loss', 'train_brier', 'train_ece',
-           'train_mce', 'acc', 'loss', 'brier', 'ece', 'mce',
+           'test_fold', 'train_acc', 'train_loss', 'train_brier',
+           'train_bin-ece', 'train_cla-ece', 'train_full-ece', 'train_mce',
+           'acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece', 'mce',
            'confusion_matrix', 'c_probas', 'y_test', 'exec_time',
            'calibrators']
 
@@ -225,17 +226,20 @@ def compute_all(args):
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
                                  verbose=verbose, seed=mc)
-        (train_acc, train_loss, train_brier, train_ece, train_mce, accs,
-         losses, briers, eces, mces, cms, mean_probas, cl, exec_time) = results
+        (train_acc, train_loss, train_brier, train_bin_ece, train_cla_ece,
+         train_full_ece, train_mce, accs, losses, briers, bin_eces, cla_eces,
+         full_eces, mces, cms, mean_probas, cl, exec_time) = results
 
         for method in methods:
             df = df.append_rows([[dataset.name, dataset.n_classes,
                                   dataset.n_features, dataset.n_samples,
                                   method, mc, fold_id, train_acc[method],
                                   train_loss[method], train_brier[method],
-                                  train_ece[method], train_mce[method], accs[method],
-                                  losses[method], briers[method], eces[method],
-                                  mces[method], cms[method],
+                                  train_bin_ece[method], train_cla_ece[method],
+                                  train_full_ece[method], train_mce[method],
+                                  accs[method], losses[method], briers[method],
+                                  bin_eces[method], cla_eces[method],
+                                  full_eces[method], mces[method], cms[method],
                                   mean_probas[method], y_test,
                                   exec_time[method],
                                   [{key: serializable_or_string(value) for key, value in
@@ -332,7 +336,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                'loss': 'mean',
                                'brier': 'mean',
                                'acc': 'mean',
-                               'ece': 'mean',
+                               'bin-ece': 'mean',
+                               'cla-ece': 'mean',
+                               'full-ece': 'mean',
                                'mce': 'mean'})
             for index, row in df_scores.iterrows():
                 filename = os.path.join(results_path, '_'.join([classifier_name,
@@ -343,10 +349,10 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                 if fig_titles:
                     title = (("{}, test samples = {}, {}\n"
                           "acc = {:.2f}, log-loss = {:.2e},\n"
-                          "brier = {:.2e}, ece = {:.2e}, mce = {:.2e}")
+                          "brier = {:.2e}, full-ece = {:.2e}, mce = {:.2e}")
                            .format(name, len(y_test),
                                    row['method'], row['acc'],
-                                   row['loss'], row['brier'], row['ece'],
+                                   row['loss'], row['brier'], row['full-ece'],
                                    row['mce']))
                 try:
                     export_boxplot(method = row['method'],
@@ -411,12 +417,14 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
 
             table = df[df.dataset == name].pivot_table(
                         values=['train_acc', 'train_loss', 'train_brier',
-                                'train_ece', 'train_mce'],
+                                'train_bin-ece', 'train_cla-ece',
+                                'train_full-ece', 'train_mce'],
                         index=['method'], aggfunc=[np.mean, np.std])
             logging.info(table)
 
             table = df[df.dataset == name].pivot_table(
-                        values=['acc', 'loss', 'brier', 'ece', 'mce'],
+                        values=['acc', 'loss', 'brier', 'bin-ece', 'cla-ece',
+                                'full-ece', 'mce'],
                         index=['method'], aggfunc=[np.mean, np.std])
             logging.info(table)
 
