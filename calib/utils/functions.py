@@ -676,14 +676,14 @@ def binary_ECE(probs, y_true, power = 1, bins = 15):
 def classwise_ECE(probs, y_true, power = 1, bins = 15):
 
     probs = np.array(probs)
-    y_true = np.array(y_true)
-
+    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+    
     n_classes = probs.shape[1]
 
     return np.sum(
         [
             binary_ECE(
-                probs[:, c], (y_true == c).astype(float), power = power, bins = bins
+                probs[:, c], y_true[:, c].astype(float), power = power, bins = bins
             ) for c in range(n_classes)
         ]
     )
@@ -691,23 +691,9 @@ def classwise_ECE(probs, y_true, power = 1, bins = 15):
 
 def simplex_binning(probs, y_true, bins=15):
 
-    """
-    Calculate ECE score based on model output probabilities and true labels
-
-    Params:
-        probs: a list containing probabilities for all the classes with a shape of (samples, classes)
-        y_true: a list containing the actual class labels
-        normalize: (bool) in case of 1-vs-K calibration, the probabilities need to be normalized. (default = False)
-        bins: (int) - into how many bins are probabilities divided (default = 15)
-        ece_full: (bool) - whether to use ECE-full or ECE-max.
-
-    Returns:
-        bins - bins in the simplex
-    """
-
     probs = np.array(probs)
     y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
-
+    
     idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
 
     prob_bins = {}
@@ -738,3 +724,18 @@ def full_ECE(probs, y_true, bins=15, power=1):
     n = len(probs)
     bins = simplex_binning(probs, y_true, bins=bins)
     return np.sum([(l/n) * (np.abs(prob - lab)**power).sum() for [l, prob, lab] in bins])
+
+
+
+if __name__ == "__main__":
+    print(classwise_ECE(np.array([
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2],
+[0.6, 0.2, 0.2]]), np.array([0, 0, 0, 0, 0, 0, 1, 1, 2, 2]), power = 1, bins = 15))
