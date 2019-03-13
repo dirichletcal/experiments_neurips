@@ -10,6 +10,7 @@ import scipy.integrate as integrate
 from betacal import BetaCalibration
 from scipy.special import gamma as gamma_func
 from scipy.stats import gamma
+from scipy.stats import percentileofscore
 
 #from sklearn.metrics import brier_score_loss # Only for one-class
 from sklearn.metrics import mean_squared_error
@@ -689,7 +690,7 @@ def classwise_ECE(probs, y_true, power = 1, bins = 15):
     )
 
 
-def simplex_binning(probs, y_true, bins=15):
+def simplex_binning(probs, y_true, bins = 15):
 
     probs = np.array(probs)
     y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
@@ -720,22 +721,42 @@ def simplex_binning(probs, y_true, bins=15):
     return bins
 
 
-def full_ECE(probs, y_true, bins=15, power=1):
+def full_ECE(probs, y_true, bins = 15, power = 1):
     n = len(probs)
     bins = simplex_binning(probs, y_true, bins=bins)
     return np.sum([(l/n) * (np.abs(prob - lab)**power).sum() for [l, prob, lab] in bins])
 
 
+def label_resampling(probs):
+    return label_binarize(
+        [
+            np.random.choice(range(probs.shape[1]), p=p) for p in probs
+        ],
+        classes=range(probs.shape[1])
+    )
 
-if __name__ == "__main__":
-    print(classwise_ECE(np.array([
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2],
-[0.6, 0.2, 0.2]]), np.array([0, 0, 0, 0, 0, 0, 1, 1, 2, 2]), power = 1, bins = 15))
+
+def score_sampling(probs, samples = 10000, ece_function = None):
+
+    probs = np.array(probs)
+
+    return np.array(
+        [
+            ece_function(probs, label_resampling(probs)) for sample in range(samples)
+        ]
+    )
+
+
+def pECE(probs, y_true, samples = 10000, ece_function = None):
+
+    probs = np.array(probs)
+    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+
+    return percentileofscore(
+        score_sampling(
+            probs,
+            samples=samples,
+            ece_function=ece_function
+        ),
+        ece_function(probs, y_true)
+    ) / 100
