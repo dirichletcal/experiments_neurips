@@ -747,7 +747,7 @@ def score_sampling(probs, samples = 10000, ece_function = None):
     )
 
 
-def pECE(probs, y_true, samples = 10000, ece_function = None):
+def pECE(probs, y_true, samples = 10000, ece_function = full_ECE):
 
     probs = np.array(probs)
     y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
