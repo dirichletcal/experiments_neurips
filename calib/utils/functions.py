@@ -723,15 +723,39 @@ def simplex_binning(probs, y_true, bins = 15):
 
 def full_ECE(probs, y_true, bins = 15, power = 1):
     n = len(probs)
-    bins = simplex_binning(probs, y_true, bins=bins)
-    return np.sum([(l/n) * (np.abs(prob - lab)**power).sum() for [l, prob, lab] in bins])
+    
+    probs = np.array(probs)
+    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+    
+    idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
+
+    prob_bins = {}
+    label_bins = {}
+
+    for i, row in enumerate(idx):
+        try:
+           prob_bins[','.join([str(r) for r in row])].append(probs[i])
+           label_bins[','.join([str(r) for r in row])].append(y_true[i])
+        except KeyError:
+           prob_bins[','.join([str(r) for r in row])] = [probs[i]]
+           label_bins[','.join([str(r) for r in row])] = [y_true[i]]
+    
+    s = 0
+    for key in prob_bins:
+        s += (len(prob_bins[key])/n) * (
+            np.abs(np.mean(np.array(prob_bins[key]), axis=0) - np.mean(np.array(label_bins[key]), axis=0))**power
+        ).sum()
+        
+
+    return s
 
 
 def label_resampling(probs):
+    c = probs.cumsum(axis=1)
+    u = np.random.rand(len(c), 1)
+    choices = (u < c).argmax(axis=1)
     return label_binarize(
-        [
-            np.random.choice(range(probs.shape[1]), p=p) for p in probs
-        ],
+        choices,
         classes=range(probs.shape[1])
     )
 
