@@ -677,7 +677,8 @@ def binary_ECE(probs, y_true, power = 1, bins = 15):
 def classwise_ECE(probs, y_true, power = 1, bins = 15):
 
     probs = np.array(probs)
-    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+    if not np.array_equal(probs.shape, y_true.shape):
+        y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
     
     n_classes = probs.shape[1]
 
@@ -693,7 +694,8 @@ def classwise_ECE(probs, y_true, power = 1, bins = 15):
 def simplex_binning(probs, y_true, bins = 15):
 
     probs = np.array(probs)
-    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+    if not np.array_equal(probs.shape, y_true.shape):
+        y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
     
     idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
 
@@ -725,27 +727,24 @@ def full_ECE(probs, y_true, bins = 15, power = 1):
     n = len(probs)
     
     probs = np.array(probs)
-    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
-    
+    if not np.array_equal(probs.shape, y_true.shape):
+        y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+      
     idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
 
-    prob_bins = {}
-    label_bins = {}
+    filled_bins = np.unique(idx, axis=0)
 
-    for i, row in enumerate(idx):
-        try:
-           prob_bins[','.join([str(r) for r in row])].append(probs[i])
-           label_bins[','.join([str(r) for r in row])].append(y_true[i])
-        except KeyError:
-           prob_bins[','.join([str(r) for r in row])] = [probs[i]]
-           label_bins[','.join([str(r) for r in row])] = [y_true[i]]
-    
     s = 0
-    for key in prob_bins:
-        s += (len(prob_bins[key])/n) * (
-            np.abs(np.mean(np.array(prob_bins[key]), axis=0) - np.mean(np.array(label_bins[key]), axis=0))**power
-        ).sum()
-        
+    for bin in filled_bins:
+        i = np.where((idx == bin).all(axis=1))[0]
+        if power == 1:
+            s += (len(i)/n) * (
+                np.mean(np.abs(probs[i] - y_true[i]), axis=0)
+            ).sum()
+        else:
+            s += (len(i)/n) * (
+                np.abs(np.mean(probs[i], axis=0) - np.mean(y_true[i], axis=0))**power
+            ).sum()        
 
     return s
 
@@ -774,7 +773,8 @@ def score_sampling(probs, samples = 10000, ece_function = None):
 def pECE(probs, y_true, samples = 10000, ece_function = full_ECE):
 
     probs = np.array(probs)
-    y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
+    if not np.array_equal(probs.shape, y_true.shape):
+        y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
 
     return percentileofscore(
         score_sampling(
