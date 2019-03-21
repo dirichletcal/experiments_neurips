@@ -753,10 +753,9 @@ def label_resampling(probs):
     c = probs.cumsum(axis=1)
     u = np.random.rand(len(c), 1)
     choices = (u < c).argmax(axis=1)
-    return label_binarize(
-        choices,
-        classes=range(probs.shape[1])
-    )
+    y = np.zeros_like(probs)
+    y[range(len(probs)), choices] = 1
+    return y
 
 
 def score_sampling(probs, samples = 10000, ece_function = None):
