@@ -737,14 +737,9 @@ def full_ECE(probs, y_true, bins = 15, power = 1):
     s = 0
     for bin in filled_bins:
         i = np.where((idx == bin).all(axis=1))[0]
-        if power == 1:
-            s += (len(i)/n) * (
-                np.mean(np.abs(probs[i] - y_true[i]), axis=0)
-            ).sum()
-        else:
-            s += (len(i)/n) * (
-                np.abs(np.mean(probs[i], axis=0) - np.mean(y_true[i], axis=0))**power
-            ).sum()        
+        s += (len(i)/n) * (
+            np.abs(np.mean(probs[i], axis=0) - np.mean(y_true[i], axis=0))**power
+        ).sum()        
 
     return s
 
