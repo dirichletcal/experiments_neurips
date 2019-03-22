@@ -764,7 +764,7 @@ def score_sampling(probs, samples = 10000, ece_function = None):
     )
 
 
-def pECE(probs, y_true, samples = 10000, ece_function = full_ECE):
+def pECE(probs, y_true, samples = 1000, ece_function = full_ECE):
 
     probs = np.array(probs)
     if not np.array_equal(probs.shape, y_true.shape):
