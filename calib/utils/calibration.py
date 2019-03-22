@@ -13,7 +13,7 @@ from calib.models.calibration import CalibratedModel
 from .functions import cross_entropy
 from .functions import brier_score
 from .functions import beta_test
-from .functions import ECE, classwise_ECE, full_ECE
+from .functions import ECE, classwise_ECE, full_ECE, pECE
 from .functions import MCE
 from betacal import BetaCalibration
 from calib.utils.functions import beta_test
@@ -102,6 +102,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
 
     skf = StratifiedKFold(n_splits=cv, shuffle=True, random_state=seed)
     for i, (train, cali) in enumerate(skf.split(X=x_train, y=y_train)):
+        print('Evaluation of split {} of {}'.format(i+1, cv))
         x_t = x_train[train]
         y_t = y_train[train]
         x_c = x_train[cali]
@@ -139,22 +140,32 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     # TODO we are doing a bootstrap of calibration methods... Shouldn't we
     # asses the performance of each individual calibrator and then compute the
     # mean? Is this the same?
+    print('Computing Log-loss')
     losses = {method: cross_entropy(mean_probas[method], y_test_bin) for method
               in methods}
+    print('Computing Accuracy')
     accs = {method: np.mean((mean_probas[method].argmax(axis=1)) == y_test) for method
             in methods}
+    print('Computing Brier score')
     briers = {method: brier_score(mean_probas[method], y_test_bin) for method
               in methods}
+    print('Computing confusion matrix')
     cms = {method: confusion_matrix(y_test, mean_probas[method].argmax(axis=1)) for method
               in methods}
+    print('Computing binary ECE')
     bin_eces = {method: ECE(mean_probas[method], y_test_bin) for method in methods}
+    print('Computing classwise ECE')
     cla_eces = {method: classwise_ECE(mean_probas[method], y_test_bin) for method in methods}
+    print('Computing full ECE')
     full_eces = {method: full_ECE(mean_probas[method], y_test_bin) for method in methods}
+    print('Computing p-test full ECE')
+    p_full_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000) for method in methods}
+    print('Computing MCE')
     mces = {method: MCE(mean_probas[method], y_test) for method in methods}
     mean_time = {method: np.mean(exec_time[method]) for method in methods}
     return (train_acc, train_loss, train_brier, train_bin_ece, train_cla_ece,
             train_full_ece, train_mce, accs, losses, briers, bin_eces,
-            cla_eces, full_eces, mces, cms,
+            cla_eces, full_eces, p_full_eces, mces, cms,
             mean_probas, classifiers, mean_time)
 
 

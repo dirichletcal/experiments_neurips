@@ -457,6 +457,7 @@ def generate_summaries(df, summary_path, table_size='small',
         - 'bin-ece': Binary ECE score
         - 'cla-ece': Classwise ECE score
         - 'full-ece': Full ECE score
+        - 'p-full-ece': p-value Full ECE score
         - 'mce': MCE score
         - 'exec_time': Mean execution time
         - 'classifier': Original classifier used to train
@@ -485,7 +486,8 @@ def generate_summaries(df, summary_path, table_size='small',
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
-    measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece', 'mce']
+    measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece',
+                     'p-full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     # Assert that all experiments have finished
@@ -516,7 +518,8 @@ def generate_summaries(df, summary_path, table_size='small',
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
                      ('bin-ece', False), ('cla-ece', False),
-                     ('full-ece', False), ('mce', False), ('train_acc', True),
+                     ('full-ece', False), ('p-full-ece', False),
+                     ('mce', False), ('train_acc', True),
                      ('train_loss', False), ('train_brier', False),
                      ('exec_time', False), ('train_bin-ece', False),
                      ('train_cla-ece', False), ('train_full-ece', False),
@@ -754,12 +757,14 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
 
     df = df[df.method == 'uncalibrated']
 
-    measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece', 'mce']
+    measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece',
+                     'p-full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
                      ('bin-ece', False), ('cla-ece', False),
-                     ('full-ece', False), ('mce', False), ('train_acc', True),
+                     ('full-ece', False), ('p-full-ece', False),
+                     ('mce', False), ('train_acc', True),
                      ('train_loss', False), ('train_brier', False),
                      ('exec_time', False), ('train_bin-ece', False),
                      ('train_cla-ece', False), ('train_full-ece', False),
