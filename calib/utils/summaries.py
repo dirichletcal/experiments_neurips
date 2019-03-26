@@ -587,7 +587,26 @@ def generate_summaries(df, summary_path, table_size='small',
                                       'classifier'], columns=['method'],
                                values=[measure])
 
-        np.isfinite(table.values).mean(axis=0)
+        if measure.startswith('p-'):
+            _p_table_nonan = table.dropna(axis=0)
+            _p_table = (_p_table_nonan < 0.95).mean(axis=0)
+            _p_table.sort_values(ascending=True, inplace=True)
+            _p_table.reset_index(level=0, drop=True, inplace=True)
+            filename = os.path.join(summary_path,
+                                    'p_table_calibrators_{}'.format(measure))
+            _p_table.to_latex(filename + '.tex')
+            fig = pyplot.figure(figsize=(4, 3))
+            ax = fig.add_subplot(111)
+            _p_table.plot(kind='barh', ax=ax, title='{} < 0.95'.format(measure),
+                         zorder=2)
+            ax.grid(zorder=0)
+            ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
+            pyplot.tight_layout()
+            pyplot.savefig(filename + '.svg')
+            pyplot.close(fig)
+
+        print('Percentage of finite results per calibrator')
+        print(np.isfinite(table.values).mean(axis=0))
 
         # Wilcoxon rank-sum test two-tailed
         df_ranksums = compute_ranksums(table)
@@ -777,8 +796,27 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
                                       ], columns=['classifier'],
                                values=[measure])
+        if measure.startswith('p-'):
+            _p_table_nonan = table.dropna(axis=0)
+            _p_table = (_p_table_nonan < 0.95).mean(axis=0)
+            _p_table.sort_values(ascending=True, inplace=True)
+            _p_table.reset_index(level=0, drop=True, inplace=True)
+            filename = os.path.join(summary_path,
+                                    'p_table_classifiers_{}'.format(measure))
+            _p_table.to_latex(filename + '.tex')
+            fig = pyplot.figure(figsize=(4, 3))
+            ax = fig.add_subplot(111)
+            _p_table.plot(kind='barh', ax=ax, title='{} < 0.95'.format(measure),
+                         zorder=2)
+            ax.grid(zorder=0)
+            ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
+            pyplot.tight_layout()
+            pyplot.savefig(filename + '.svg')
+            pyplot.close(fig)
 
-        np.isfinite(table.values).mean(axis=0)
+
+        print('Percentage of finite results per classifier')
+        print(np.isfinite(table.values).mean(axis=0))
 
         # Wilcoxon rank-sum test two-tailed
         df_ranksums = compute_ranksums(table)

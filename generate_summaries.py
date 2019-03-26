@@ -30,7 +30,7 @@ def main(results_path, summary_path):
 
     print('Generating summaries of performance and hyperparameters')
     generate_summaries(df, summary_path, table_size='small',
-            hyperparameters=True, confusion_matrices=True)
+            hyperparameters=False, confusion_matrices=False)
 
     print('Generating Score histograms')
     df = load_all_csv(results_path, ".*score_histogram.csv")
