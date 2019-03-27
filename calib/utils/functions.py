@@ -463,6 +463,8 @@ def serializable_or_string(x):
 # Markus functions
 from sklearn.preprocessing import label_binarize
 
+def guo_ECE(probs, y_true, bins=15):
+    return ECE(probs, y_true, normalize=False, bins=bins, ece_full=True)
 
 def ECE(probs, y_true, normalize = False, bins = 15, ece_full = True):
 
