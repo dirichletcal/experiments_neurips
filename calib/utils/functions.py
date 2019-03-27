@@ -764,17 +764,19 @@ def score_sampling(probs, samples = 10000, ece_function = None):
     )
 
 
-def pECE(probs, y_true, samples = 1000, ece_function = full_ECE):
+def pECE(probs, y_true, samples = 10000, ece_function = full_ECE):
 
     probs = np.array(probs)
     if not np.array_equal(probs.shape, y_true.shape):
         y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
 
-    return percentileofscore(
-        score_sampling(
-            probs,
-            samples=samples,
-            ece_function=ece_function
-        ),
-        ece_function(probs, y_true)
-    ) / 100
+    return 1 - (
+        percentileofscore(
+            score_sampling(
+                probs,
+                samples=samples,
+                ece_function=ece_function
+            ),
+            ece_function(probs, y_true)
+        ) / 100
+    )
