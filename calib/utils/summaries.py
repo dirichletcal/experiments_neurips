@@ -457,6 +457,8 @@ def generate_summaries(df, summary_path, table_size='small',
         - 'bin-ece': Binary ECE score
         - 'cla-ece': Classwise ECE score
         - 'full-ece': Full ECE score
+        - 'p-bin-ece': p-value Binary ECE score
+        - 'p-cla-ece': p-value Classwise ECE score
         - 'p-full-ece': p-value Full ECE score
         - 'mce': MCE score
         - 'exec_time': Mean execution time
@@ -487,7 +489,7 @@ def generate_summaries(df, summary_path, table_size='small',
     classifiers = df['classifier'].unique()
 
     measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece',
-                     'p-full-ece', 'mce']
+                     'p-bin-ece', 'p-cla-ece', 'p-full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     # Assert that all experiments have finished
@@ -518,7 +520,8 @@ def generate_summaries(df, summary_path, table_size='small',
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
                      ('bin-ece', False), ('cla-ece', False),
-                     ('full-ece', False), ('p-full-ece', False),
+                     ('full-ece', False), ('p-bin-ece', True),
+                     ('p-cla-ece', True), ('p-full-ece', True),
                      ('mce', False), ('train_acc', True),
                      ('train_loss', False), ('train_brier', False),
                      ('exec_time', False), ('train_bin-ece', False),
@@ -589,15 +592,15 @@ def generate_summaries(df, summary_path, table_size='small',
 
         if measure.startswith('p-'):
             _p_table_nonan = table.dropna(axis=0)
-            _p_table = (_p_table_nonan < 0.95).mean(axis=0)
-            _p_table.sort_values(ascending=True, inplace=True)
+            _p_table = (_p_table_nonan > 0.05).mean(axis=0)
+            _p_table.sort_values(ascending=max_is_better, inplace=True)
             _p_table.reset_index(level=0, drop=True, inplace=True)
             filename = os.path.join(summary_path,
                                     'p_table_calibrators_{}'.format(measure))
             _p_table.to_latex(filename + '.tex')
             fig = pyplot.figure(figsize=(4, 3))
             ax = fig.add_subplot(111)
-            _p_table.plot(kind='barh', ax=ax, title='{} < 0.95'.format(measure),
+            _p_table.plot(kind='barh', ax=ax, title='{} > 0.05'.format(measure),
                          zorder=2)
             ax.grid(zorder=0)
             ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
@@ -777,12 +780,13 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
     df = df[df.method == 'uncalibrated']
 
     measures_list = ['acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece',
-                     'p-full-ece', 'mce']
+                     'p-bin-ece', 'p-cla-ece', 'p-full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
                      ('bin-ece', False), ('cla-ece', False),
-                     ('full-ece', False), ('p-full-ece', False),
+                     ('full-ece', False), ('p-bin-ece', True),
+                     ('p-cla-ece', True), ('p-full-ece', True),
                      ('mce', False), ('train_acc', True),
                      ('train_loss', False), ('train_brier', False),
                      ('exec_time', False), ('train_bin-ece', False),
@@ -798,15 +802,15 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
                                values=[measure])
         if measure.startswith('p-'):
             _p_table_nonan = table.dropna(axis=0)
-            _p_table = (_p_table_nonan < 0.95).mean(axis=0)
-            _p_table.sort_values(ascending=True, inplace=True)
+            _p_table = (_p_table_nonan > 0.05).mean(axis=0)
+            _p_table.sort_values(ascending=max_is_better, inplace=True)
             _p_table.reset_index(level=0, drop=True, inplace=True)
             filename = os.path.join(summary_path,
                                     'p_table_classifiers_{}'.format(measure))
             _p_table.to_latex(filename + '.tex')
             fig = pyplot.figure(figsize=(4, 3))
             ax = fig.add_subplot(111)
-            _p_table.plot(kind='barh', ax=ax, title='{} < 0.95'.format(measure),
+            _p_table.plot(kind='barh', ax=ax, title='{} > 0.05'.format(measure),
                          zorder=2)
             ax.grid(zorder=0)
             ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))

@@ -158,6 +158,12 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     cla_eces = {method: classwise_ECE(mean_probas[method], y_test_bin) for method in methods}
     print('Computing full ECE')
     full_eces = {method: full_ECE(mean_probas[method], y_test_bin) for method in methods}
+    print('Computing p-test binary ECE')
+    p_bin_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000,
+                              ece_function=ECE) for method in methods}
+    print('Computing p-test classwise ECE')
+    p_cla_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000,
+                               ece_function=classwise_ECE) for method in methods}
     print('Computing p-test full ECE')
     p_full_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000) for method in methods}
     print('Computing MCE')
@@ -165,7 +171,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     mean_time = {method: np.mean(exec_time[method]) for method in methods}
     return (train_acc, train_loss, train_brier, train_bin_ece, train_cla_ece,
             train_full_ece, train_mce, accs, losses, briers, bin_eces,
-            cla_eces, full_eces, p_full_eces, mces, cms,
+            cla_eces, full_eces, p_bin_eces, p_cla_eces, p_full_eces, mces, cms,
             mean_probas, classifiers, mean_time)
 
 

@@ -101,7 +101,7 @@ columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
            'train_bin-ece', 'train_cla-ece', 'train_full-ece',
            'train_mce',
            'acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece',
-           'p-full-ece', 'mce',
+           'p-bin-ece', 'p-cla-ece', 'p-full-ece', 'mce',
            'confusion_matrix', 'c_probas', 'y_test', 'exec_time',
            'calibrators']
 
@@ -230,8 +230,8 @@ def compute_all(args):
                                  verbose=verbose, seed=mc)
         (train_acc, train_loss, train_brier, train_bin_ece, train_cla_ece,
          train_full_ece, train_mce, accs, losses, briers,
-         bin_eces, cla_eces, full_eces, p_full_eces, mces, cms, mean_probas,
-         cl, exec_time) = results
+         bin_eces, cla_eces, full_eces, p_bin_eces, p_cla_eces, p_full_eces,
+         mces, cms, mean_probas, cl, exec_time) = results
 
         for method in methods:
             df = df.append_rows([[dataset.name, dataset.n_classes,
@@ -243,7 +243,8 @@ def compute_all(args):
                                   train_mce[method],
                                   accs[method], losses[method], briers[method],
                                   bin_eces[method], cla_eces[method],
-                                  full_eces[method], p_full_eces[method],
+                                  full_eces[method], p_bin_eces[method],
+                                  p_cla_eces[method], p_full_eces[method],
                                   mces[method], cms[method],
                                   mean_probas[method], y_test,
                                   exec_time[method],
@@ -344,7 +345,9 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                'bin-ece': 'mean',
                                'cla-ece': 'mean',
                                'full-ece': 'mean',
-                               'p-full-ece': 'mean',
+                               'p-bin-ece': MakeList,
+                               'p-cla-ece': MakeList,
+                               'p-full-ece': MakeList,
                                'mce': 'mean'})
             for index, row in df_scores.iterrows():
                 filename = os.path.join(results_path, '_'.join([classifier_name,
@@ -431,7 +434,8 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
 
             table = df[df.dataset == name].pivot_table(
                         values=['acc', 'loss', 'brier', 'bin-ece', 'cla-ece',
-                                'full-ece', 'p-full-ece', 'mce'],
+                                'full-ece', 'p-bin-ece', 'p-cla-ece',
+                                'p-full-ece', 'mce'],
                         index=['method'], aggfunc=[np.mean, np.std])
             logging.info(table)
 
