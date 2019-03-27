@@ -672,7 +672,10 @@ def binary_ECE(probs, y_true, power = 1, bins = 15):
     idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
     bin_func = lambda p, y, idx: (np.abs(np.mean(p[idx]) - np.mean(y[idx])) ** power) * np.sum(idx) / len(probs)
 
-    return np.sum([bin_func(probs, y_true, idx == i) for i in np.unique(idx)])
+    ece = 0
+    for i in np.unique(idx):
+        ece += bin_func(probs, y_true, idx == i)
+    return ece
 
 def classwise_ECE(probs, y_true, power = 1, bins = 15):
 
