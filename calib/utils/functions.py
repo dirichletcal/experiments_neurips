@@ -464,16 +464,34 @@ def serializable_or_string(x):
 from sklearn.preprocessing import label_binarize
 
 def guo_ECE(probs, y_true, bins=15):
-    return ECE(probs, y_true, normalize=False, bins=bins, ece_full=True)
-
-def ECE(probs, y_true, normalize = False, bins = 15, ece_full = True):
-
     """
     Calculate ECE score based on model output probabilities and true labels
 
     Params:
         probs: a list containing probabilities for all the classes with a shape of (samples, classes)
-        y_true: a list containing the actual class labels
+        y_true: - a list containing the actual class labels
+                - ndarray shape (n_samples) with a list containing actual class
+                labels
+                - ndarray shape (n_samples, n_classes) with largest value in
+                each row for the correct column class.
+        bins: (int) - into how many bins are probabilities divided (default = 15)
+
+    Returns:
+        ece - expected calibration error
+    """
+    return ECE(probs, y_true, normalize=False, bins=bins, ece_full=False)
+
+def ECE(probs, y_true, normalize = False, bins = 15, ece_full = True):
+    """
+    Calculate ECE score based on model output probabilities and true labels
+
+    Params:
+        probs: a list containing probabilities for all the classes with a shape of (samples, classes)
+        y_true: - a list containing the actual class labels
+                - ndarray shape (n_samples) with a list containing actual class
+                labels
+                - ndarray shape (n_samples, n_classes) with largest value in
+                each row for the correct column class.
         normalize: (bool) in case of 1-vs-K calibration, the probabilities need to be normalized. (default = False)
         bins: (int) - into how many bins are probabilities divided (default = 15)
         ece_full: (bool) - whether to use ECE-full or ECE-max.
@@ -484,6 +502,8 @@ def ECE(probs, y_true, normalize = False, bins = 15, ece_full = True):
 
     probs = np.array(probs)
     y_true = np.array(y_true)
+    if len(y_true.shape) == 2 and y_true.shape[1] > 1:
+        y_true = y_true.argmax(axis=1).reshape(-1, 1)
 
     # Prepare predictions, confidences and true labels for ECE calculation
     if ece_full:
@@ -520,7 +540,6 @@ def get_preds_all(y_probs, y_true, axis = 1, normalize = False, flatten = True):
     Returns:
         (y_preds, y_probs, y_true) - predictions, probabilities and true labels
     """
-
     if len(y_true.shape) == 1:
         y_true = y_true.reshape(-1, 1)
     elif len(y_true.shape) == 2 and y_true.shape[1] > 1:

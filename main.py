@@ -98,10 +98,10 @@ score_types = {
 
 columns = ['dataset', 'n_classes', 'n_features', 'n_samples', 'method', 'mc',
            'test_fold', 'train_acc', 'train_loss', 'train_brier',
-           'train_bin-ece', 'train_cla-ece', 'train_full-ece',
+           'train_guo-ece', 'train_cla-ece', 'train_full-ece',
            'train_mce',
-           'acc', 'loss', 'brier', 'bin-ece', 'cla-ece', 'full-ece',
-           'p-bin-ece', 'p-cla-ece', 'p-full-ece', 'mce',
+           'acc', 'loss', 'brier', 'guo-ece', 'cla-ece', 'full-ece',
+           'p-guo-ece', 'p-cla-ece', 'p-full-ece', 'mce',
            'confusion_matrix', 'c_probas', 'y_test', 'exec_time',
            'calibrators']
 
@@ -228,9 +228,9 @@ def compute_all(args):
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
                                  y_test, cv=inner_folds, score_type=score_type,
                                  verbose=verbose, seed=mc)
-        (train_acc, train_loss, train_brier, train_bin_ece, train_cla_ece,
+        (train_acc, train_loss, train_brier, train_guo_ece, train_cla_ece,
          train_full_ece, train_mce, accs, losses, briers,
-         bin_eces, cla_eces, full_eces, p_bin_eces, p_cla_eces, p_full_eces,
+         guo_eces, cla_eces, full_eces, p_guo_eces, p_cla_eces, p_full_eces,
          mces, cms, mean_probas, cl, exec_time) = results
 
         for method in methods:
@@ -238,12 +238,11 @@ def compute_all(args):
                                   dataset.n_features, dataset.n_samples,
                                   method, mc, fold_id, train_acc[method],
                                   train_loss[method], train_brier[method],
-                                  train_bin_ece[method], train_cla_ece[method],
-                                  train_full_ece[method],
-                                  train_mce[method],
+                                  train_guo_ece[method], train_cla_ece[method],
+                                  train_full_ece[method], train_mce[method],
                                   accs[method], losses[method], briers[method],
-                                  bin_eces[method], cla_eces[method],
-                                  full_eces[method], p_bin_eces[method],
+                                  guo_eces[method], cla_eces[method],
+                                  full_eces[method], p_guo_eces[method],
                                   p_cla_eces[method], p_full_eces[method],
                                   mces[method], cms[method],
                                   mean_probas[method], y_test,
@@ -342,10 +341,10 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                'loss': 'mean',
                                'brier': 'mean',
                                'acc': 'mean',
-                               'bin-ece': 'mean',
+                               'guo-ece': 'mean',
                                'cla-ece': 'mean',
                                'full-ece': 'mean',
-                               'p-bin-ece': MakeList,
+                               'p-guo-ece': MakeList,
                                'p-cla-ece': MakeList,
                                'p-full-ece': MakeList,
                                'mce': 'mean'})
@@ -426,15 +425,15 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
 
             table = df[df.dataset == name].pivot_table(
                         values=['train_acc', 'train_loss', 'train_brier',
-                                'train_bin-ece', 'train_cla-ece',
+                                'train_guo-ece', 'train_cla-ece',
                                 'train_full-ece',
                                 'train_mce'],
                         index=['method'], aggfunc=[np.mean, np.std])
             logging.info(table)
 
             table = df[df.dataset == name].pivot_table(
-                        values=['acc', 'loss', 'brier', 'bin-ece', 'cla-ece',
-                                'full-ece', 'p-bin-ece', 'p-cla-ece',
+                        values=['acc', 'loss', 'brier', 'guo-ece', 'cla-ece',
+                                'full-ece', 'p-guo-ece', 'p-cla-ece',
                                 'p-full-ece', 'mce'],
                         index=['method'], aggfunc=[np.mean, np.std])
             logging.info(table)

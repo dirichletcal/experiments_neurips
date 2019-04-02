@@ -13,7 +13,7 @@ from calib.models.calibration import CalibratedModel
 from .functions import cross_entropy
 from .functions import brier_score
 from .functions import beta_test
-from .functions import ECE, classwise_ECE, full_ECE, pECE
+from .functions import ECE, guo_ECE, classwise_ECE, full_ECE, pECE
 from .functions import MCE
 from betacal import BetaCalibration
 from calib.utils.functions import beta_test
@@ -95,7 +95,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     train_acc = {method: 0 for method in methods}
     train_loss = {method: 0 for method in methods}
     train_brier = {method: 0 for method in methods}
-    train_bin_ece = {method: 0 for method in methods}
+    train_guo_ece = {method: 0 for method in methods}
     train_cla_ece = {method: 0 for method in methods}
     train_full_ece = {method: 0 for method in methods}
     train_mce = {method: 0 for method in methods}
@@ -129,7 +129,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
             train_acc[method] += np.mean(predicted_proba.argmax(axis=1) == y_train[cali])/cv
             train_loss[method] += cross_entropy(predicted_proba, y_train_bin[cali])/cv
             train_brier[method] += brier_score(predicted_proba, y_train_bin[cali])/cv
-            train_bin_ece[method] += ECE(predicted_proba, y_train_bin[cali])/cv
+            train_guo_ece[method] += guo_ECE(predicted_proba, y_train[cali])/cv
             train_cla_ece[method] += classwise_ECE(predicted_proba, y_train_bin[cali])/cv
             train_full_ece[method] += full_ECE(predicted_proba, y_train_bin[cali])/cv
             train_mce[method] += MCE(predicted_proba, y_train_bin[cali])/cv
@@ -152,15 +152,15 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     print('Computing confusion matrix')
     cms = {method: confusion_matrix(y_test, mean_probas[method].argmax(axis=1)) for method
               in methods}
-    print('Computing binary ECE')
-    bin_eces = {method: ECE(mean_probas[method], y_test_bin) for method in methods}
+    print('Computing binary guo_ECE')
+    guo_eces = {method: guo_ECE(mean_probas[method], y_test) for method in methods}
     print('Computing classwise ECE')
     cla_eces = {method: classwise_ECE(mean_probas[method], y_test_bin) for method in methods}
     print('Computing full ECE')
     full_eces = {method: full_ECE(mean_probas[method], y_test_bin) for method in methods}
-    print('Computing p-test binary ECE')
-    p_bin_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000,
-                              ece_function=ECE) for method in methods}
+    print('Computing p-test binary Guo ECE')
+    p_guo_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000,
+                              ece_function=guo_ECE) for method in methods}
     print('Computing p-test classwise ECE')
     p_cla_eces = {method: pECE(mean_probas[method], y_test_bin, samples=1000,
                                ece_function=classwise_ECE) for method in methods}
@@ -169,9 +169,9 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     print('Computing MCE')
     mces = {method: MCE(mean_probas[method], y_test) for method in methods}
     mean_time = {method: np.mean(exec_time[method]) for method in methods}
-    return (train_acc, train_loss, train_brier, train_bin_ece, train_cla_ece,
-            train_full_ece, train_mce, accs, losses, briers, bin_eces,
-            cla_eces, full_eces, p_bin_eces, p_cla_eces, p_full_eces, mces, cms,
+    return (train_acc, train_loss, train_brier, train_guo_ece, train_cla_ece,
+            train_full_ece, train_mce, accs, losses, briers, guo_eces,
+            cla_eces, full_eces, p_guo_eces, p_cla_eces, p_full_eces, mces, cms,
             mean_probas, classifiers, mean_time)
 
 
