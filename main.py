@@ -74,7 +74,7 @@ classifiers = {
       'svc-rbf': SVC(gamma=2, C=1, probability=True, random_state=42),
       'gp': GaussianProcessClassifier(1.0 * RBF(1.0), random_state=42),
       'tree': DecisionTreeClassifier(max_depth=5, random_state=42),
-      'qda': QuadraticDiscriminantAnalysis(),
+      'qda': QuadraticDiscriminantAnalysis(reg_param=0.1),
       'lda': LinearDiscriminantAnalysis()
 }
 
