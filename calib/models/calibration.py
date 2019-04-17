@@ -189,8 +189,8 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         return self.predictions[s_binned]
 
 
-l2_list = [1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
-C_list = list(np.true_divide(1, l2_list))
+l2_list = [1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 0]
+C_list = list(np.true_divide(1, l2_list, where=l2_list!=0))
 n_bins = [5, 10, 15, 20, 25, 30]
 
 MAP_CALIBRATORS = {

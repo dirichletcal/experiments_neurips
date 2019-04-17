@@ -256,23 +256,28 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
         all_flat = np.hstack(sum(all_flat, ()))
         all_unique = np.unique(all_flat)
         sorted_idx = np.argsort(all_unique)
-        xticklabels = [np.format_float_scientific(x, precision=2) for x in
-                       all_unique[sorted_idx]]
+        if (all_unique == np.floor(all_unique)).all():
+            xticklabels = [str(int(x)) for x in all_unique[sorted_idx]]
+        else:
+            xticklabels = [np.format_float_scientific(x, precision=2) for x in
+                           all_unique[sorted_idx]]
         print('Unique hyperparameters')
         print(all_unique)
 
-        # Generate one barplot 
+        # Generate one barplot with all hyperparameters
         fig = pyplot.figure()
         ax = fig.add_subplot(111)
         uniq, counts = np.unique(all_flat, return_counts=True)
-        uniq = [np.format_float_scientific(float(x), precision=2) for x in all_unique[sorted_idx]]
         sorted_idx = np.argsort(uniq)
+        uniq = uniq[sorted_idx]
         counts = counts[sorted_idx]
-        sorted_idx = np.argsort(uniq)
-        ax.bar(uniq, counts)
+        ax.bar(sorted_idx, counts)
+        ax.set_xticks(sorted_idx)
+        ax.set_xticklabels(xticklabels, rotation=45, ha='right')
         fig.tight_layout()
         fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_all_{}.pdf'.format(key)))
 
+        # Generate one barplot per dataset and classifier combination
         #fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
         fig = pyplot.figure(figsize=figsize)
         if set_title:
@@ -285,15 +290,6 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                 values = df_aux.loc[dat, ('calibrators', cla)]
 
                 ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
-
-                if j == 0:
-                    ax.set_ylabel(dat[:10])
-                if i == 0:
-                    ax.set_title(cla)
-                if i == len(df_aux.index)-1:
-                    ax.set_xticklabels(xticklabels, rotation=45, ha='right')
-                else:
-                    ax.set_xticklabels([])
 
                 if values is None:
                     print('There are no hyperparameters for {}, {}, {}'.format(
@@ -311,9 +307,18 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                 uniq = np.concatenate((uniq, missing_uniq))
                 counts = np.concatenate((counts, missing_counts))
                 sorted_idx = np.argsort(uniq)
-                uniq = [np.format_float_scientific(x, precision=2) for x in uniq[sorted_idx]]
                 counts = counts[sorted_idx]
-                ax.bar(uniq, counts)
+                ax.bar(sorted_idx, counts)
+                ax.set_xticks(sorted_idx)
+                if j == 0:
+                    ax.set_ylabel(dat[:10])
+                if i == 0:
+                    ax.set_title(cla)
+                if i == len(df_aux.index)-1:
+                    ax.set_xticklabels(xticklabels, rotation=45, ha='right')
+                else:
+                    ax.set_xticklabels([])
+
         fig.subplots_adjust(hspace = 0.0)
         fig.tight_layout()
         fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_{}.pdf'.format(key)))
