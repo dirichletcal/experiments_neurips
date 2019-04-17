@@ -264,11 +264,11 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
         # Generate one barplot 
         fig = pyplot.figure()
         ax = fig.add_subplot(111)
-        uniq = np.concatenate((uniq, missing_uniq))
-        counts = np.concatenate((counts, missing_counts))
+        uniq, counts = np.unique(all_flat, return_counts=True)
+        uniq = [np.format_float_scientific(float(x), precision=2) for x in all_unique[sorted_idx]]
         sorted_idx = np.argsort(uniq)
-        uniq = [np.format_float_scientific(float(x), precision=2) for x in uniq[sorted_idx]]
         counts = counts[sorted_idx]
+        sorted_idx = np.argsort(uniq)
         ax.bar(uniq, counts)
         fig.tight_layout()
         fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_all_{}.pdf'.format(key)))
