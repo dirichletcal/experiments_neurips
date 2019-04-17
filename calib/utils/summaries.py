@@ -265,7 +265,7 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
         print(all_unique)
 
         # Generate one barplot with all hyperparameters
-        fig = pyplot.figure()
+        fig = pyplot.figure(figsize=(4, 3))
         ax = fig.add_subplot(111)
         uniq, counts = np.unique(all_flat, return_counts=True)
         sorted_idx = np.argsort(uniq)
@@ -609,6 +609,7 @@ def generate_summaries(df, summary_path, table_size='small',
                                       'classifier'], columns=['method'],
                                values=[measure])
 
+        cmap = pyplot.get_cmap('tab20')
         if measure.startswith('p-'):
             _p_table_nonan = table.dropna(axis=0)
             _p_table = (_p_table_nonan > 0.05).mean(axis=0)
@@ -620,7 +621,7 @@ def generate_summaries(df, summary_path, table_size='small',
             fig = pyplot.figure(figsize=(4, 3))
             ax = fig.add_subplot(111)
             _p_table.plot(kind='barh', ax=ax, title='{} > 0.05'.format(measure),
-                         zorder=2)
+                         zorder=2, color=cmap(_p_table.index.argsort().argsort()))
             ax.grid(zorder=0)
             ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
             pyplot.tight_layout()
@@ -819,6 +820,7 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
                                       ], columns=['classifier'],
                                values=[measure])
+        cmap = pyplot.get_cmap('tab20')
         if measure.startswith('p-'):
             _p_table_nonan = table.dropna(axis=0)
             _p_table = (_p_table_nonan > 0.05).mean(axis=0)
@@ -830,7 +832,7 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
             fig = pyplot.figure(figsize=(4, 3))
             ax = fig.add_subplot(111)
             _p_table.plot(kind='barh', ax=ax, title='{} > 0.05'.format(measure),
-                         zorder=2)
+                          zorder=2, color=cmap(_p_table.index.argsort().argsort()))
             ax.grid(zorder=0)
             ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
             pyplot.tight_layout()
