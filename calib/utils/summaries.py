@@ -251,14 +251,28 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                                                                                 x)).astype(float))
         df_aux = df_aux.pivot_table(index=['dataset'], columns=['classifier'],
                                     values=['calibrators'], aggfunc=MakeList)
-        all_unique = df_aux.values.flatten()
-        all_unique = all_unique[all_unique != None]
-        all_unique = np.unique(np.hstack(sum(all_unique, ())))
+        all_flat = df_aux.values.flatten()
+        all_flat = all_flat[all_flat != None]
+        all_flat = np.hstack(sum(all_flat, ()))
+        all_unique = np.unique(all_flat)
         sorted_idx = np.argsort(all_unique)
         xticklabels = [np.format_float_scientific(x, precision=2) for x in
                        all_unique[sorted_idx]]
         print('Unique hyperparameters')
         print(all_unique)
+
+        # Generate one barplot 
+        fig = pyplot.figure()
+        ax = fig.add_subplot(111)
+        uniq = np.concatenate((uniq, missing_uniq))
+        counts = np.concatenate((counts, missing_counts))
+        sorted_idx = np.argsort(uniq)
+        uniq = [np.format_float_scientific(float(x), precision=2) for x in uniq[sorted_idx]]
+        counts = counts[sorted_idx]
+        ax.bar(uniq, counts)
+        fig.tight_layout()
+        fig.savefig(os.path.join(summary_path, 'bars_hyperparameters_all_{}.pdf'.format(key)))
+
         #fig = pyplot.figure(figsize=(df_aux.shape[1]*3, df_aux.shape[0]*3))
         fig = pyplot.figure(figsize=figsize)
         if set_title:
