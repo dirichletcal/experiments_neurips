@@ -165,8 +165,8 @@ def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
                     str_row_means += ("\\pm{0:.{1}f}".format( v_std[j],
                                                              precision))
                 if add_rank:
-                    str_row_means += ("_{{{0}}".format(1))
-                str_row_means += "}}}$"
+                    str_row_means += ("_{{{0}}}".format(1))
+                str_row_means += "}}$"
 
             else:
                 idx_s = "{}".format(idx)
