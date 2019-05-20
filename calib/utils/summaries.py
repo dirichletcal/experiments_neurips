@@ -777,7 +777,7 @@ def generate_summaries(df, summary_path, table_size='small',
                              label='table:{}'.format(measure),
                              add_std=False,
                              column_names=df_mean_rankings.columns,
-                             avg_ranks=ranking_table_all)
+                             avg_ranks=ranking_table_all, add_rank=False)
         file_basename = os.path.join(summary_path,
                                      '{}_rankings'.format(measure))
         with open(file_basename + '.tex', "w") as text_file:
