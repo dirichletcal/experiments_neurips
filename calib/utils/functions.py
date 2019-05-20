@@ -121,7 +121,7 @@ def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
 def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
              table_size="normalsize", caption="", label='table',
              add_std=True, position='tph', column_names=None,
-             avg_ranks=None):
+             avg_ranks=None, add_rank=True):
     if column_names is None:
         column_names = table.columns.levels[2]
     n_columns = len(column_names)
@@ -164,7 +164,9 @@ def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
                 if add_std:
                     str_row_means += ("\\pm{0:.{1}f}".format( v_std[j],
                                                              precision))
-                str_row_means += ("_{{{0}}}}}$".format(1))
+                if add_rank:
+                    str_row_means += ("_{{{0}}".format(1))
+                str_row_means += "}}}$"
 
             else:
                 idx_s = "{}".format(idx)
@@ -175,7 +177,9 @@ def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
                     str_row_means += ("\\pm{0:.{1}f}".format( v_std[j],
                                                              precision))
 
-                str_row_means += ("_{{{0}}}$".format(idx_s))
+                if add_rank:
+                    str_row_means += ("_{{{0}}}".format(idx_s))
+                str_row_means += "$"
         str_table += str_row_means + "\\\\\n"
     str_table += "\\midrule\n"
     str_avg = "avg rank"
