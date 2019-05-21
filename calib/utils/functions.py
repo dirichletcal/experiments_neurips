@@ -166,7 +166,6 @@ def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
                                                              precision))
                 if add_rank:
                     str_row_means += ("_{{{0}}}".format(1))
-                # FIXME there is an extra closing curly bracket somewhere
                 str_row_means += "}}$"
 
             else:

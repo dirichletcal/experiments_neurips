@@ -265,7 +265,7 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
         print(all_unique)
 
         # Generate one barplot with all hyperparameters
-        fig = pyplot.figure(figsize=(4, 3))
+        fig = pyplot.figure(figsize=(3,2))
         ax = fig.add_subplot(111)
         uniq, counts = np.unique(all_flat, return_counts=True)
         sorted_idx = np.argsort(uniq)
