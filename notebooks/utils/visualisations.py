@@ -4,6 +4,8 @@ import itertools
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from sklearn.preprocessing import OneHotEncoder
+
 
 def plot_reliability_diagram(score, labels, linspace, scores_set, legend_set,
                              laplace_reg=1, scatter_prop=0.0, fig=None, n_bins=10,
@@ -100,7 +102,11 @@ def plot_reliability_diagram(score, labels, linspace, scores_set, legend_set,
     return fig
 
 def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
-                                        fig=None, ax=None):
+                                        fig=None, ax=None, legend=True):
+    '''
+        y_true needs to be (n_samples, n_classes)
+            - where n_classes may be 1, for a two class problem
+    '''
     if fig is None and ax is None:
         fig = plt.figure()
     if ax is None:
@@ -129,7 +135,10 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
            color = "blue", label='True class prop.')
     ax.bar(centers, true_proportion - pred_mean,  bottom = pred_mean, width=bin_size/2,
            edgecolor = "red", color = "#ffc8c6", alpha = 1, label='Gap pred. mean')
-    ax.legend()
+
+    if legend:
+        ax.legend()
+
     ax.plot([0,1], [0,1], linestyle = "--")
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
@@ -138,6 +147,9 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
 def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwargs):
     if fig is None and ax is None:
         fig = plt.figure()
+
+    if len(y_true.shape) == 1:
+        y_true = OneHotEncoder(categories='auto').transform(y_true)
 
     n_classes = y_true.shape[1]
     if ax is None:
@@ -196,7 +208,7 @@ def plot_confusion_matrix(cm, classes,
     fig.tight_layout()
 
 def plot_weight_matrix(weights, bias, classes, title='Weight matrix',
-                       cmap=plt.cm.Greens, fig=None, ax=None):
+                       cmap=plt.cm.Greens, fig=None, ax=None, **kwargs):
     """
     This function prints and plots the weight matrix.
     """
@@ -211,7 +223,7 @@ def plot_weight_matrix(weights, bias, classes, title='Weight matrix',
 
     matrix = np.hstack((weights, bias.reshape(-1, 1)))
 
-    im = ax.imshow(matrix, interpolation='nearest', cmap=cmap)
+    im = ax.imshow(matrix, interpolation='nearest', cmap=cmap, **kwargs)
 
     # create an axes on the right side of ax. The width of cax will be 5%
     # of ax and the padding between cax and ax will be fixed at 0.05 inch.
@@ -224,13 +236,14 @@ def plot_weight_matrix(weights, bias, classes, title='Weight matrix',
     ax.set_yticks(tick_marks)
     ax.set_yticklabels(classes)
     ax.set_xticks(np.append(tick_marks, len(classes)))
-    ax.set_xticklabels(np.append(classes, 'b'))
+    ax.set_xticklabels(np.append(classes, 'c'))
 
     fmt = '.2f'
     thresh = matrix.max() / 2.
     for i, j in itertools.product(range(matrix.shape[0]), range(matrix.shape[1])):
         ax.text(j, i, format(matrix[i, j], fmt),
                  horizontalalignment="center",
+                 verticalalignment="center",
                  color="white" if matrix[i, j] > thresh else "black")
 
     ax.set_ylabel('Class')
