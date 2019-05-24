@@ -414,6 +414,20 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                     fig = plot_multiclass_reliability_diagram(y_true=y_test,
                                                               p_pred=p_pred)
                     save_fig_close(fig, filename + '.svg')
+
+                    y_labels = np.hstack(row['y_test'])
+                    y_pred = p_pred.argmax(axis=1)
+                    y_conf = (y_labels == y_pred).astype(int)
+                    p_conf_pred = p_pred.max(axis=1)
+                    filename = os.path.join(results_path, '_'.join([classifier_name,
+                                                                name,
+                                                                index[1],
+                                                                'conf_rel_diagr']))
+                    fig = plot_multiclass_reliability_diagram(
+                        y_true=y_conf, p_pred=p_conf_pred,
+                        labels=['Obs.  accuracy', 'Gap pred. mean'])
+                    save_fig_close(fig, filename + '.svg')
+
                 except:
                     print("Unexpected error:" + sys.exc_info()[0])
 
