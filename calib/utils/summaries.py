@@ -669,6 +669,8 @@ def generate_summaries(df, summary_path, table_size='small',
 
         ranking_table = np.zeros((len(classifiers),
                                   df.method.unique().shape[0]))
+        measure_table = np.zeros((len(classifiers),
+                                  df.method.unique().shape[0]))
         num_datasets = np.zeros(len(classifiers), dtype='int')
         for i, classifier_name in enumerate(classifiers):
             print('- Classifier name = {}'.format(classifier_name))
@@ -718,6 +720,7 @@ def generate_summaries(df, summary_path, table_size='small',
             table = table[~table.isna().any(axis=1)]
             if max_is_better:
                 table *= -1
+            measure_table[i] = table['mean'].mean()
             ranking_table[i] = table['mean'].apply(rankdata, axis=1).mean()
             num_datasets[i] = len(table)
 
@@ -736,6 +739,10 @@ def generate_summaries(df, summary_path, table_size='small',
         ## 1.1. Export the summary of all rankings
         df_mean_rankings = pd.DataFrame(ranking_table, index=classifiers,
                                         columns=table.columns.levels[2])
+        df_mean_measures = pd.DataFrame(measure_table, index=classifiers,
+                                        columns=table.columns.levels[2])
+        if max_is_better:
+            df_mean_measures *= -1
 
         ## --------------------------------------------------------------##
         ## Version 2 for the aggregated rankings
@@ -784,6 +791,29 @@ def generate_summaries(df, summary_path, table_size='small',
                                      '{}_rankings'.format(measure))
         with open(file_basename + '.tex', "w") as text_file:
             text_file.write(str_table)
+
+        # First version of table with the average measures
+        measure_table_all = df_mean_measures.mean(axis=0)
+        print('Average measures = {}'.format(df_mean_measures))
+        str_table = rankings_to_latex(classifiers, df_mean_measures,
+                                      precision=2,
+                             table_size=table_size,
+                             max_is_better=max_is_better,
+                             caption=('Ranking of calibration methods ' +
+                                      'applied to each classifier ' +
+                                      'with the measure={}'
+                                      ).format(measure),
+                             label='table:{}'.format(measure),
+                             add_std=False,
+                             column_names=measure_table_all.index,
+                             avg_ranks=measure_table_all, add_rank=True)
+        file_basename = os.path.join(summary_path,
+                                     '{}_average'.format(measure))
+        with open(file_basename + '.tex', "w") as text_file:
+            text_file.write(str_table)
+
+        # Create effect size measures
+
 
 
 
