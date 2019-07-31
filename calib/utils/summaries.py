@@ -2,6 +2,7 @@ import os
 import re
 import pandas as pd
 import numpy as np
+import math
 
 from functools import partial
 
@@ -253,7 +254,8 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                                     values=['calibrators'], aggfunc=MakeList)
         all_flat = df_aux.values.flatten()
         all_flat = all_flat[all_flat != None]
-        all_flat = np.hstack(sum(all_flat, ()))
+        all_flat = np.hstack(sum([aux for aux in all_flat if not
+                                  isinstance(aux, float)], ()))
         all_unique = np.unique(all_flat)
         sorted_idx = np.argsort(all_unique)
         if (all_unique == np.floor(all_unique)).all():
@@ -291,7 +293,7 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
 
                 ax = fig.add_subplot(len(df_aux), len(df_aux.columns), ij)
 
-                if values is None:
+                if isinstance(values, float) and math.isnan(values):
                     print('There are no hyperparameters for {}, {}, {}'.format(
                           key, dat, cla))
                     values = [[]]
@@ -421,7 +423,7 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
                 if i == 0:
                     ax.set_title(cla)
                 ij += 1
-                if values is None:
+                if isinstance(values, float) and math.isnan(values):
                     continue
                 # Stacking (#iter x #crossval x #crossval) on first dimension
                 parameters = np.concatenate(values).mean(axis=0)
@@ -762,7 +764,7 @@ def generate_summaries(df, summary_path, table_size='small',
                                      len(table)))
         export_critical_difference(avranks=ranking_table_all,
                                    num_datasets=len(table),
-                                   names=ranking_table_all.index.levels[1],
+                                   names=table.columns.levels[1],
                                    filename=os.path.join(summary_path,
                                                          'crit_diff_' +
                                                          measure + '_v2.pdf'),

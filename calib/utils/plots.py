@@ -442,7 +442,9 @@ def export_dataset_analysis(df, measure, filename, file_ext='.svg'):
 
 
 def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
-                                        fig=None, ax=None, legend=True):
+                                        fig=None, ax=None, legend=True,
+                                        labels=['True class prop.',
+                                                'Gap pred.  mean']):
     if fig is None and ax is None:
         fig = plt.figure(figsize=(4, 2))
     if ax is None:
@@ -468,9 +470,9 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
         pred_mean[i] = np.mean(p_pred[bin_indices])
 
     ax.bar(centers, true_proportion, width=bin_size, edgecolor = "black",
-           color = "blue", label='True class prop.')
+           color = "blue", label=labels[0])
     ax.bar(centers, true_proportion - pred_mean,  bottom = pred_mean, width=bin_size/2,
-           edgecolor = "red", color = "#ffc8c6", alpha = 1, label='Gap pred. mean')
+           edgecolor = "red", color = "#ffc8c6", alpha = 1, label=labels[1])
     if legend:
         ax.legend()
     ax.plot([0,1], [0,1], linestyle = "--")
