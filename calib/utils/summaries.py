@@ -487,6 +487,13 @@ def generate_summaries(df, summary_path, table_size='small',
         - 'calibrators': List of calibrators with their parameters
 
     '''
+    # Change name of metrics
+    df.rename({'guo-ece': 'conf-ece', 'p-guo-ece': 'p-conf-ece',
+               'train_guo-ece': 'train_conf-ece',
+               'cla-ece': 'cw-ece', 'p-cla-ece': 'p-cw-ece',
+               'train_cla-ece': 'train_cw-ece'},
+               axis='columns', inplace=True)
+
     # Shorten some names
     shorten = dict(dirichlet='dir', binning='bin', logistic='mlr',
                    uncalibrated='uncal')
@@ -509,8 +516,8 @@ def generate_summaries(df, summary_path, table_size='small',
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
-    measures_list = ['acc', 'loss', 'brier', 'guo-ece', 'cla-ece', 'full-ece',
-                     'p-guo-ece', 'p-cla-ece', 'p-full-ece', 'mce']
+    measures_list = ['acc', 'loss', 'brier', 'conf-ece', 'cw-ece', 'full-ece',
+                     'p-conf-ece', 'p-cw-ece', 'p-full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     # Assert that all experiments have finished
@@ -540,13 +547,13 @@ def generate_summaries(df, summary_path, table_size='small',
         summarise_confusion_matrices(df, summary_path)
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
-                     ('guo-ece', False), ('cla-ece', False),
-                     ('full-ece', False), ('p-guo-ece', True),
-                     ('p-cla-ece', True), ('p-full-ece', True),
+                     ('conf-ece', False), ('cw-ece', False),
+                     ('full-ece', False), ('p-conf-ece', True),
+                     ('p-cw-ece', True), ('p-full-ece', True),
                      ('mce', False), ('train_acc', True),
                      ('train_loss', False), ('train_brier', False),
-                     ('exec_time', False), ('train_guo-ece', False),
-                     ('train_cla-ece', False), ('train_full-ece', False),
+                     ('exec_time', False), ('train_conf-ece', False),
+                     ('train_cw-ece', False), ('train_full-ece', False),
                      ('train_mce', False), ('exec_time', False))
     measures_list = [(key, value) for key, value in measures_list if key in
         df.columns]
@@ -622,7 +629,7 @@ def generate_summaries(df, summary_path, table_size='small',
             _p_table.to_latex(filename + '.tex')
             fig = pyplot.figure(figsize=(4, 3))
             ax = fig.add_subplot(111)
-            _p_table.plot(kind='barh', ax=ax, title='{} > 0.05'.format(measure),
+            _p_table.plot(kind='barh', ax=ax, title=None, # '{} > 0.05'.format(measure),
                          zorder=2, color=cmap(_p_table.index.argsort().argsort()))
             ax.grid(zorder=0)
             ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
@@ -826,23 +833,30 @@ def generate_summaries(df, summary_path, table_size='small',
 
 
 def generate_classifier_summaries(df, summary_path, table_size='small'):
+    # Change name of metrics
+    df.rename({'guo-ece': 'conf-ece', 'p-guo-ece': 'p-conf-ece',
+               'train_guo-ece': 'train_conf-ece',
+               'cla-ece': 'cw-ece', 'p-cla-ece': 'p-cw-ece',
+               'train_cla-ece': 'train_cw-ece'},
+               axis='columns', inplace=True)
+
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
 
     df = df[df.method == 'uncalibrated']
 
-    measures_list = ['acc', 'loss', 'brier', 'guo-ece', 'cla-ece', 'full-ece',
-                     'p-guo-ece', 'p-cla-ece', 'p-full-ece', 'mce']
+    measures_list = ['acc', 'loss', 'brier', 'conf-ece', 'cw-ece', 'full-ece',
+                     'p-conf-ece', 'p-cw-ece', 'p-full-ece', 'mce']
     measures_list = [measure for measure in measures_list if measure in df.columns]
 
     measures_list = (('acc', True), ('loss', False), ('brier', False),
-                     ('guo-ece', False), ('cla-ece', False),
-                     ('full-ece', False), ('p-guo-ece', True),
-                     ('p-cla-ece', True), ('p-full-ece', True),
+                     ('conf-ece', False), ('cw-ece', False),
+                     ('full-ece', False), ('p-conf-ece', True),
+                     ('p-cw-ece', True), ('p-full-ece', True),
                      ('mce', False), ('train_acc', True),
                      ('train_loss', False), ('train_brier', False),
-                     ('exec_time', False), ('train_guo-ece', False),
-                     ('train_cla-ece', False), ('train_full-ece', False),
+                     ('exec_time', False), ('train_conf-ece', False),
+                     ('train_cw-ece', False), ('train_full-ece', False),
                      ('train_mce', False), ('exec_time', False))
     measures_list = [(key, value) for key, value in measures_list if key in
         df.columns]
@@ -863,7 +877,7 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
             _p_table.to_latex(filename + '.tex')
             fig = pyplot.figure(figsize=(4, 3))
             ax = fig.add_subplot(111)
-            _p_table.plot(kind='barh', ax=ax, title='{} > 0.05'.format(measure),
+            _p_table.plot(kind='barh', ax=ax, title=None, #'{} > 0.05'.format(measure),
                           zorder=2, color=cmap(_p_table.index.argsort().argsort()))
             ax.grid(zorder=0)
             ax.set_xlabel('Proportion (out of {})'.format(_p_table_nonan.shape[0]))
