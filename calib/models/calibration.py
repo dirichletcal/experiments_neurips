@@ -26,7 +26,11 @@ from dirichlet import DirichletCalibrator
 from dirichlet.calib.gendirichlet import GenerativeDirichletCalibrator
 from dirichlet.calib.multinomial import MultinomialRegression
 from dirichlet.calib.fixeddirichlet import FixedDiagonalDirichletCalibrator
-from dirichlet.calib.typeiidirichlet import TypeIIDirichletCalibrator
+#from dirichlet.calib.typeiidirichlet import TypeIIDirichletCalibrator
+from dirichlet.calib.vectorscaling import VectorScaling
+from dirichlet.calib.tempscaling import TemperatureScaling
+from dirichlet.calib.matrixscaling import MatrixScaling
+from dirichlet.calib.fulldirichlet import FullDirichletCalibrator
 
 # from mixture_of_dirichlet import MixDir
 
@@ -189,7 +193,8 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
         return self.predictions[s_binned]
 
 
-l2_list = [1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 0]
+#l2_list = [1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
+l2_list = [1e1, 1e0, 1e-1, 1e-2, 1e-3]
 C_list = list(np.true_divide(1, l2_list, where=l2_list!=0))
 n_bins = [5, 10, 15, 20, 25, 30]
 
@@ -228,9 +233,6 @@ MAP_CALIBRATORS = {
     'dirichlet_full_gen': GenerativeDirichletCalibrator(),
     'dirichlet_full_prefixdiag': DirichletCalibrator(matrix_type='full',
                                                      initializer='preFixDiag'),
-    'dirichlet_full_l2': DirichletCalibrator(matrix_type='full',
-                                             comp_l2=False,
-                                             l2=l2_list),
     'dirichlet_full_comp_l2': DirichletCalibrator(matrix_type='full',
                                                   comp_l2=True,
                                              l2=l2_list),
@@ -248,7 +250,18 @@ MAP_CALIBRATORS = {
     'dirichlet_diag': DirichletCalibrator(matrix_type='diagonal'),
     #'dirichlet_fix_diag': DirichletCalibrator(matrix_type='fixed_diagonal'),
     'dirichlet_fix_diag': FixedDiagonalDirichletCalibrator(),
-    'dirichlet_full_t2': TypeIIDirichletCalibrator(),
+    #'dirichlet_full_t2': TypeIIDirichletCalibrator(),
+    'temperature_scaling': TemperatureScaling(reg_lambda_list=l2_list,
+                                              logit_constant=0.0),
+    'vector_scaling': VectorScaling(reg_lambda_list=l2_list),
+    'matrix_scaling': MatrixScaling(reg_lambda_list=l2_list),
+    #                                reg_mu_list=l2_list),
+    'dirichlet_full_l2': FullDirichletCalibrator(reg_lambda_list=l2_list),
+    #'dirichlet_full_l2': DirichletCalibrator(matrix_type='full',
+    #                                         comp_l2=False,
+    #                                         l2=l2_list),
+    'dirichlet_odir_l2': FullDirichletCalibrator(reg_lambda_list=l2_list),
+    #                                             reg_mu_list=l2_list)
 #    'dirichlet_mixture': MixDir()
 }
 
