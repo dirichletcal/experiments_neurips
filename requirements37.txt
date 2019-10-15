@@ -1,0 +1,14 @@
+numpy
+scipy
+scikit-learn
+scoop
+pandas
+matplotlib
+tensorflow
+keras
+autograd
+jax
+jaxlib
+PyQt5
+PyQtWebEngine
+orange3
