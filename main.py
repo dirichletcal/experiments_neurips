@@ -222,7 +222,10 @@ def compute_all(args):
     class_counts = np.bincount(dataset.target)
     t = dataset.target
     fold_id = 0
-    for train_idx, test_idx in skf.split(X=dataset.data, y=dataset.target):
+    for i, (train_idx, test_idx) in enumerate(skf.split(X=dataset.data,
+                                                        y=dataset.target)):
+        logging.info('Dataset {}, Monte Carlo iteration {}, fold {} of {}'.format(
+              dataset, mc+1, i+1, n_folds))
         x_train, y_train = dataset.data[train_idx], dataset.target[train_idx]
         x_test, y_test = dataset.data[test_idx], dataset.target[test_idx]
         results = cv_calibration(classifier, methods, x_train, y_train, x_test,
