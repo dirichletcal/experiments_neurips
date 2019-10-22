@@ -127,16 +127,12 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
 
             predicted_proba = ccv.predict_proba(x_c)
             train_acc[method] += np.mean(predicted_proba.argmax(axis=1) == y_train[cali])/cv
-            try:
-                train_loss[method] += cross_entropy(predicted_proba, y_train_bin[cali])/cv
-            except ValueError as e:
-                print(e)
-                from IPython import embed; embed()
+            train_loss[method] += cross_entropy(predicted_proba, y_train_bin[cali])/cv
             train_brier[method] += brier_score(predicted_proba, y_train_bin[cali])/cv
             train_guo_ece[method] += guo_ECE(predicted_proba, y_train[cali])/cv
             train_cla_ece[method] += classwise_ECE(predicted_proba, y_train_bin[cali])/cv
             train_full_ece[method] += full_ECE(predicted_proba, y_train_bin[cali])/cv
-            train_mce[method] += MCE(predicted_proba, y_train_bin[cali])/cv
+            train_mce[method] += MCE(predicted_proba, y_train[cali])/cv
 
     y_test_bin = binarizer.transform(y_test)
     if y_test_bin.shape[1] == 1:

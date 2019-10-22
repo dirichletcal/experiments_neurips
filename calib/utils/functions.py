@@ -594,7 +594,8 @@ def ECE_helper(conf, pred, true, bin_size = 0.1, ece_full = False):
     return ece
 
 
-def compute_acc_bin(conf_thresh_lower, conf_thresh_upper, conf, pred, true, ece_full = True):
+def compute_acc_bin(conf_thresh_lower, conf_thresh_upper, conf, pred, true,
+                    ece_full=True):
     """
     # Computes accuracy and average confidence for bin
 
@@ -609,10 +610,10 @@ def compute_acc_bin(conf_thresh_lower, conf_thresh_upper, conf, pred, true, ece_
     Returns:
         (accuracy, avg_conf, len_bin): accuracy of bin, confidence of bin and number of elements in bin.
     """
-    filtered_tuples = [x for x in zip(pred, true, conf) if (x[2] > conf_thresh_lower or conf_thresh_lower == 0) and x[2] <= conf_thresh_upper]
+    filtered_tuples = [x for x in zip(pred, true, conf) if  (x[2] > conf_thresh_lower or conf_thresh_lower == 0)  and x[2] <= conf_thresh_upper]
 
     if len(filtered_tuples) < 1:
-        return 0,0,0
+        return 0.0, 0.0, 0
     else:
         if ece_full:
             len_bin = len(filtered_tuples)  # How many elements falls into given bin
@@ -648,13 +649,15 @@ def MCE_helper(conf, pred, true, bin_size = 0.1, mce_full = True):
     cal_errors = []
 
     for conf_thresh in upper_bounds:
-        acc, avg_conf, _ = compute_acc_bin(conf_thresh-bin_size, conf_thresh, conf, pred, true, mce_full)
+        acc, avg_conf, count = compute_acc_bin(conf_thresh-bin_size,
+                                               conf_thresh, conf, pred, true,
+                                               mce_full)
         cal_errors.append(np.abs(acc-avg_conf))
 
-    return max(cal_errors)
+    return np.max(np.asarray(cal_errors))
 
 
-def MCE(probs, y_true, normalize = False, bins = 15, mce_full = True):
+def MCE(probs, y_true, normalize=False, bins=15, mce_full=False):
 
     """
     Calculate MCE score based on model output probabilities and true labels
@@ -672,10 +675,13 @@ def MCE(probs, y_true, normalize = False, bins = 15, mce_full = True):
 
     probs = np.array(probs)
     y_true = np.array(y_true)
+    if len(probs.shape) == len(y_true.shape):
+        y_true = np.argmax(y_true, axis=1)
 
     # Prepare predictions, confidences and true labels for MCE calculation
     if mce_full:
-        preds, confs, y_true = get_preds_all(probs, y_true, normalize=normalize, flatten=True)
+        preds, confs, y_true = get_preds_all(probs, y_true,
+                                             normalize=normalize, flatten=True)
 
     else:
         preds = np.argmax(probs, axis=1)  # Take maximum confidence as prediction
@@ -685,9 +691,9 @@ def MCE(probs, y_true, normalize = False, bins = 15, mce_full = True):
             # Check if everything below or equal to 1?
         else:
             confs = np.max(probs, axis=1)  # Take only maximum confidence
-            
+
     # Calculate MCE
-    mce = MCE_helper(confs, preds, y_true, bin_size = 1/bins, mce_full = mce_full)
+    mce = MCE_helper(confs, preds, y_true, bin_size=1/bins, mce_full=mce_full)
 
     return mce
 
@@ -707,7 +713,7 @@ def classwise_ECE(probs, y_true, power = 1, bins = 15):
     probs = np.array(probs)
     if not np.array_equal(probs.shape, y_true.shape):
         y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
-    
+
     n_classes = probs.shape[1]
 
     return np.sum(
@@ -724,7 +730,7 @@ def simplex_binning(probs, y_true, bins = 15):
     probs = np.array(probs)
     if not np.array_equal(probs.shape, y_true.shape):
         y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
-    
+
     idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
 
     prob_bins = {}
@@ -737,7 +743,7 @@ def simplex_binning(probs, y_true, bins = 15):
         except KeyError:
            prob_bins[','.join([str(r) for r in row])] = [probs[i]]
            label_bins[','.join([str(r) for r in row])] = [y_true[i]]
-    
+
     bins = []
     for key in prob_bins:
         bins.append(
@@ -753,11 +759,11 @@ def simplex_binning(probs, y_true, bins = 15):
 
 def full_ECE(probs, y_true, bins = 15, power = 1):
     n = len(probs)
-    
+
     probs = np.array(probs)
     if not np.array_equal(probs.shape, y_true.shape):
         y_true = label_binarize(np.array(y_true), classes=range(probs.shape[1]))
-      
+
     idx = np.digitize(probs, np.linspace(0, 1, bins)) - 1
 
     filled_bins = np.unique(idx, axis=0)
@@ -767,7 +773,7 @@ def full_ECE(probs, y_true, bins = 15, power = 1):
         i = np.where((idx == bin).all(axis=1))[0]
         s += (len(i)/n) * (
             np.abs(np.mean(probs[i], axis=0) - np.mean(y_true[i], axis=0))**power
-        ).sum()        
+        ).sum()
 
     return s
 
