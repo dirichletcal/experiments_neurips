@@ -37,6 +37,27 @@ class TestFunctions(unittest.TestCase):
         mce = MCE(S, y)
         self.assertAlmostEqual(mce, 0.0)
 
+        y = np.array([0, 1, 2])
+        S = np.array([[0.3, 1/3, 0.3],
+                      [0.3, 1/3, 0.3],
+                      [0.3, 1/3, 0.3]])
+        mce = MCE(S, y)
+        self.assertAlmostEqual(mce, 0.0)
+
+        y = np.array([0, 1, 2])
+        S = np.array([[0.3, 0.3, 1/3],
+                      [0.3, 0.3, 1/3],
+                      [0.3, 0.3, 1/3]])
+        mce = MCE(S, y)
+        self.assertAlmostEqual(mce, 0.0)
+
+        Y = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        S = np.array([[0.3, 0.3, 1/3],
+                      [0.3, 0.3, 1/3],
+                      [0.3, 0.3, 1/3]])
+        mce = MCE(S, Y)
+        self.assertAlmostEqual(mce, 0.0)
+
 
 def main():
     unittest.main()

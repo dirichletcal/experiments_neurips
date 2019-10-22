@@ -675,10 +675,13 @@ def MCE(probs, y_true, normalize=False, bins=15, mce_full=False):
 
     probs = np.array(probs)
     y_true = np.array(y_true)
+    if len(probs.shape) == len(y_true.shape):
+        y_true = np.argmax(y_true, axis=1)
 
     # Prepare predictions, confidences and true labels for MCE calculation
     if mce_full:
-        preds, confs, y_true = get_preds_all(probs, y_true, normalize=normalize, flatten=True)
+        preds, confs, y_true = get_preds_all(probs, y_true,
+                                             normalize=normalize, flatten=True)
 
     else:
         preds = np.argmax(probs, axis=1)  # Take maximum confidence as prediction
