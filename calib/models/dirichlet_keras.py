@@ -12,7 +12,7 @@ import keras
 from keras.utils import to_categorical
 from keras.losses import categorical_crossentropy
 
-from tensorflow import set_random_seed
+from tensorflow.compat.v1 import set_random_seed
 
 from sklearn.base import BaseEstimator
 
