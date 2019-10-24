@@ -6,13 +6,16 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=28
 #SBATCH --time=0-5:59:00
-##SBATCH --mem-per-cpu=2GB
+##SBATCH --mem=128GB
+### A total of 26 datasets and 11 classifiers = 286 runs
 ### A total of 26 datasets and 6 classifiers = 156 runs
-#SBATCH --array=0-286
+### A total of 10 datasets and 5 classifiers = 50 runs
+#SBATCH --array=0-285
 #SBATCH --exclusive
 
 # Load Anaconda 3 and Python 3.6
 #module load languages/anaconda3/5.2.0-tflow-1.7
+module load languages/anaconda3/2019.07-3.7.3-biopython
 #source activate dirichletvenv
 
 #! change the working directory
@@ -20,7 +23,7 @@
 cd $SLURM_SUBMIT_DIR
 
 # Activate the virtual environment
-source ./venv3/bin/activate
+source ./venv/bin/activate
 
 echo Running on host `hostname`
 echo Time is `date`
@@ -32,47 +35,46 @@ echo $SLURM_JOB_NODELIST
 echo "Number of cpus ${SLURM_CPUS_PER_TASK}"
 
 declare -a classifier_names=(
+    'tree'
     'knn'
+    'forest'
+    'logistic'
+    'qda'
     'svc-linear'
     'svc-rbf'
-    'tree'
-    'qda'
     'lda'
-    'forest'
     'mlp'
-    'logistic'
     'adas'
     'nbayes'
 )
-#    'svm'
 
 declare -a dataset_names=(
-    'iris'
     'glass'
+    'iris'
+    'yeast'
     'car'
-    'optdigits'
     'libras-movement'
-    'pendigits'
     'dermatology'
     'cleveland'
     'landsat-satellite'
-    'yeast'
     'zoo'
     'vehicle'
-    'shuttle'
     'waveform-5000'
     'vowel'
     'ecoli'
     'page-blocks'
     'autos'
     'abalone'
-    'letter'
     'segment'
     'mfeat-morphological'
     'balance-scale'
     'mfeat-karhunen'
     'mfeat-zernike'
     'flare'
+    'optdigits'
+    'pendigits'
+    'shuttle'
+    'letter'
     )
 
 n_classifiers=${#classifier_names[@]}
@@ -104,7 +106,9 @@ output_path='results'`date +"_%Y_%m_%d_"`${datasets}
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full,isotonic'
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full_l2,logistic_log,ovr_logistic_log'
 # Experiment 1 ECMLPKDD paper
-methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_fix_diag,dirichlet_full_l2'
+#methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_fix_diag,dirichlet_full_l2'
+#methods='uncalibrated,isotonic,temperature_scaling,vector_scaling,matrix_scaling,dirichlet_full_l2'
+methods='uncalibrated,temperature_scaling,vector_scaling,dirichlet_full_l2'
 
 echo "SLURM methods = ${methods}"
 
