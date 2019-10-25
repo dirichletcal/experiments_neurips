@@ -134,7 +134,7 @@ That can be run together with the **run_unittests.sh** script
 First load the module
 
 ```
-module load languages/anaconda3/2019.07-3.7.3-biopython
+module load languages/python-anaconda3-5.2.0
 ```
 
 And then create a virtual environment
@@ -169,3 +169,42 @@ qsub HS_BC3_add_queue_dirichlet.sh
 ```
 
 ## Blue Crystal 4
+
+
+First load the module
+
+```
+module load languages/anaconda3/2019.07-3.7.3-biopython
+```
+
+And then create a virtual environment
+
+```
+python -m venv venv
+```
+
+Load the environment 
+
+```
+source venv/bin/activate
+```
+
+Install all dependencies
+
+```
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+test that the script works with 
+
+```
+python main.py -m dirichlet_full_l2 -d iris -i 2 -f 3
+```
+
+If it runs then submit to the queue (HS stands for Hao Song)
+
+```
+qsub HS_BC4_add_queue_dirichlet.sh
+```
+
