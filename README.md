@@ -131,10 +131,24 @@ That can be run together with the **run_unittests.sh** script
 
 ## Blue Crystal 3
 
-First load the module
+First need to load the following modules
 
 ```
 module load languages/python-anaconda3-5.2.0
+module load tools/git-2.22.0
+```
+
+Then download the repository
+
+```
+git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_experiments
+cd dirichlet_experiments
+```
+
+Pull the dependencies
+
+```
+./git_pull
 ```
 
 And then create a virtual environment
@@ -143,7 +157,7 @@ And then create a virtual environment
 python -m venv venv
 ```
 
-Load the environment 
+Load the environment
 
 ```
 source venv/bin/activate
@@ -156,10 +170,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-test that the script works with 
+test that the script works with
 
 ```
-python main.py -m dirichlet_full_l2 -d iris -i 2 -f 3
+python main.py -m uncalibrated,vector_scaling,temperature_scaling -d iris -i 2 -f 2 -c nbayes
 ```
 
 If it runs then submit to the queue (HS stands for Hao Song)
@@ -171,10 +185,24 @@ qsub HS_BC3_add_queue_dirichlet.sh
 ## Blue Crystal 4
 
 
-First load the module
+First need to load the following modules
 
 ```
 module load languages/anaconda3/2019.07-3.7.3-biopython
+module load tools/git/2.18.0
+```
+
+Then download the repository
+
+```
+git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_experiments
+cd dirichlet_experiments
+```
+
+Pull the dependencies
+
+```
+./git_pull
 ```
 
 And then create a virtual environment
@@ -183,7 +211,7 @@ And then create a virtual environment
 python -m venv venv
 ```
 
-Load the environment 
+Load the environment
 
 ```
 source venv/bin/activate
@@ -196,10 +224,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-test that the script works with 
+test that the script works with
 
 ```
-python main.py -m dirichlet_full_l2 -d iris -i 2 -f 3
+python main.py -m uncalibrated,vector_scaling,temperature_scaling -d iris -i 2 -f 2 -c nbayes
 ```
 
 If it runs then submit to the queue (HS stands for Hao Song)
@@ -207,4 +235,3 @@ If it runs then submit to the queue (HS stands for Hao Song)
 ```
 qsub HS_BC4_add_queue_dirichlet.sh
 ```
-
