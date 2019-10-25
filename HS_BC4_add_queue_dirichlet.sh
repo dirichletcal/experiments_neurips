@@ -8,9 +8,7 @@
 #SBATCH --time=0-5:59:00
 ##SBATCH --mem=128GB
 ### A total of 26 datasets and 11 classifiers = 286 runs
-### A total of 26 datasets and 6 classifiers = 156 runs
-### A total of 10 datasets and 5 classifiers = 50 runs
-#SBATCH --array=0-285
+#SBATCH --array=0-54
 #SBATCH --exclusive
 
 # Load Anaconda 3 and Python 3.6
@@ -95,7 +93,7 @@ hosts=$(srun bash -c hostname)
 echo "Hosts are ${hosts}"
 
 datasets='datasets_non_binary'
-output_path='results'`date +"_%Y_%m_%d_"`${datasets}
+output_path='results_neurips'`date +"_%Y_%m_%d_"`${datasets}
 #methods='uncalibrated,beta,beta_am,isotonic,dirichlet_full,dirichlet_diag,dirichlet_fix_diag,ovr_dir_full'
 #methods='uncalibrated,beta,dirichlet_full,dirichlet_full_l2,ovr_dir_full,isotonic'
 #methods='beta,uncalibrated,isotonic,dirichlet_full,dirichlet_full_l2_01,dirichlet_full_l2_001,dirichlet_full_l2_0001,dirichlet_full_l2_00001'
@@ -108,7 +106,7 @@ output_path='results'`date +"_%Y_%m_%d_"`${datasets}
 # Experiment 1 ECMLPKDD paper
 #methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_fix_diag,dirichlet_full_l2'
 #methods='uncalibrated,isotonic,temperature_scaling,vector_scaling,matrix_scaling,dirichlet_full_l2'
-methods='uncalibrated,temperature_scaling,vector_scaling,dirichlet_full_l2'
+methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_full_l2,temperature_scaling,vector_scaling'
 
 echo "SLURM methods = ${methods}"
 
