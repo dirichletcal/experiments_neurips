@@ -130,7 +130,7 @@ def parse_arguments():
                         default=42,
                         help='Seed for the random number generator')
     parser.add_argument('-i', '--iterations', dest='mc_iterations', type=int,
-                        default=10,
+                        default=5,
                         help='Number of Markov Chain iterations')
     parser.add_argument('-f', '--folds', dest='n_folds', type=int,
                         default=5,
