@@ -1,26 +1,15 @@
 #!/bin/bash
 
-#SBATCH --job-name=dirichlet_job
-#SBATCH --partition=veryshort
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=28
-#SBATCH --time=0-5:59:00
-##SBATCH --mem=128GB
-### A total of 26 datasets and 11 classifiers = 286 runs
-### A total of 26 datasets and 6 classifiers = 156 runs
-### A total of 10 datasets and 5 classifiers = 50 runs
-#SBATCH --array=0-285
-#SBATCH --exclusive
+#PBS -N dirichlet_job
+#PBS -q veryshort
+#PBS -l nodes=1:ppn=16,walltime=5:59:00
 
-# Load Anaconda 3 and Python 3.6
-#module load languages/anaconda3/5.2.0-tflow-1.7
-module load languages/anaconda3/2019.07-3.7.3-biopython
-#source activate dirichletvenv
+### A total of 26 datasets and 6 classifiers = 156 runs
+#PBS -t 55-109
 
 #! change the working directory
 # (default is home directory)
-cd $SLURM_SUBMIT_DIR
+cd $PBS_O_WORKDIR
 
 # Activate the virtual environment
 source ./venv/bin/activate
@@ -28,11 +17,9 @@ source ./venv/bin/activate
 echo Running on host `hostname`
 echo Time is `date`
 echo Directory is `pwd`
-echo Slurm job ID is
-
+echo PBS job ID is $PBS_JOBID
 echo This jobs runs on the following machines:
-echo $SLURM_JOB_NODELIST
-echo "Number of cpus ${SLURM_CPUS_PER_TASK}"
+echo `cat $PBS_NODEFILE | uniq`
 
 declare -a classifier_names=(
     'tree'
@@ -80,8 +67,8 @@ declare -a dataset_names=(
 n_classifiers=${#classifier_names[@]}
 n_datasets=${#dataset_names[@]}
 
-classifier_id=$((SLURM_ARRAY_TASK_ID%n_classifiers))
-dataset_id=$((SLURM_ARRAY_TASK_ID/n_classifiers))
+classifier_id=$((PBS_ARRAYID%n_classifiers))
+dataset_id=$((PBS_ARRAYID/n_classifiers))
 
 classifier=${classifier_names[$classifier_id]}
 dataset=${dataset_names[$dataset_id]}
@@ -95,7 +82,7 @@ hosts=$(srun bash -c hostname)
 echo "Hosts are ${hosts}"
 
 datasets='datasets_non_binary'
-output_path='results'`date +"_%Y_%m_%d_"`${datasets}
+output_path='results_neurips'`date +"_%Y_%m_%d_"`${datasets}
 #methods='uncalibrated,beta,beta_am,isotonic,dirichlet_full,dirichlet_diag,dirichlet_fix_diag,ovr_dir_full'
 #methods='uncalibrated,beta,dirichlet_full,dirichlet_full_l2,ovr_dir_full,isotonic'
 #methods='beta,uncalibrated,isotonic,dirichlet_full,dirichlet_full_l2_01,dirichlet_full_l2_001,dirichlet_full_l2_0001,dirichlet_full_l2_00001'
@@ -106,9 +93,7 @@ output_path='results'`date +"_%Y_%m_%d_"`${datasets}
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full,isotonic'
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full_l2,logistic_log,ovr_logistic_log'
 # Experiment 1 ECMLPKDD paper
-#methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_fix_diag,dirichlet_full_l2'
-#methods='uncalibrated,isotonic,temperature_scaling,vector_scaling,matrix_scaling,dirichlet_full_l2'
-methods='uncalibrated,temperature_scaling,vector_scaling,dirichlet_full_l2'
+methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_full_l2,temperature_scaling,vector_scaling'
 
 echo "SLURM methods = ${methods}"
 
@@ -116,7 +101,7 @@ echo "SLURM methods = ${methods}"
 #time srun python -m scoop --host ${hosts} -v main.py \
 #    --classifier ${classifier} --output-path ${output_path} \
 #    --datasets ${dataset} --seed 42
-time srun python main.py \
+time python main.py \
     --classifier ${classifier} --output-path ${output_path} --iterations 5 \
     --datasets ${dataset} --seed 42 --methods ${methods} --workers -1 \
     --verbose 10

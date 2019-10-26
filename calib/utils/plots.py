@@ -12,9 +12,6 @@ from calib.utils.functions import df_normalise
 
 import pandas as pd
 
-# Critical difference plot
-import Orange
-
 
 def reliability_diagram(prob, Y, marker='--', label='', alpha=1, linewidth=1,
                         ax_reliability=None, clip=True):
@@ -356,6 +353,9 @@ def export_critical_difference(avranks, num_datasets, names, filename,
          - bonferroni-dunn one-tailed test (only up to 10 methods)
 
     '''
+    # Critical difference plot
+    import Orange
+
     if len(avranks) > 10:
         print('Forcing Nemenyi Critical difference')
         test = 'nemenyi'
