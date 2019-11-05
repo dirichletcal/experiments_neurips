@@ -194,6 +194,7 @@ class BinningCalibration(BaseEstimator, RegressorMixin):
 
 
 l2_list = [1e3, 1e2, 1e1, 1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7]
+l2_odir = [1e3, 1e1, 1e-1, 1e-3, 1e-5, 1e-7]
 #l2_list = [1e1, 1e0, 1e-1, 1e-2, 1e-3]
 C_list = list(np.true_divide(1, l2_list, where=l2_list!=0))
 n_bins = [5, 10, 15, 20, 25, 30]
@@ -258,8 +259,8 @@ MAP_CALIBRATORS = {
     #'dirichlet_full_l2': DirichletCalibrator(matrix_type='full',
     #                                         comp_l2=False,
     #                                         l2=l2_list),
-    'dirichlet_odir_l2': FullDirichletCalibrator(reg_lambda_list=l2_list),
-    #                                             reg_mu_list=l2_list)
+    'dirichlet_odir_l2': FullDirichletCalibrator(reg_lambda_list=l2_odir),
+                                                 reg_mu_list=l2_odir)
 #    'dirichlet_mixture': MixDir()
 }
 
