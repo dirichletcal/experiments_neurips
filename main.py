@@ -122,7 +122,7 @@ def parse_arguments():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--classifiers', dest='classifier_names',
                         type=comma_separated_strings,
-                        default=['logistic', 'forest'],
+                        default=['logistic', 'tree'],
                         help='''Classifiers to use for evaluation in a comma
                         separated list of strings. From the following
                         options: ''' + ', '.join(classifiers.keys()))
@@ -130,10 +130,10 @@ def parse_arguments():
                         default=42,
                         help='Seed for the random number generator')
     parser.add_argument('-i', '--iterations', dest='mc_iterations', type=int,
-                        default=5,
+                        default=2,
                         help='Number of Markov Chain iterations')
     parser.add_argument('-f', '--folds', dest='n_folds', type=int,
-                        default=5,
+                        default=3,
                         help='Folds to create for cross-validation')
     parser.add_argument('--inner-folds', dest='inner_folds', type=int,
                         default=3,
@@ -153,7 +153,8 @@ def parse_arguments():
                         defined groups in the datasets package''')
     parser.add_argument('-m', '--methods', dest='methods',
                         type=comma_separated_strings,
-                        default=['uncalibrated', 'isotonic'],
+                        default=['uncalibrated', 'isotonic',
+                                 'dirichlet_full_l2'],
                         help=('Comma separated calibration methods from ' +
                               'the following options: ' +
                               ', '.join(MAP_CALIBRATORS.keys())))
