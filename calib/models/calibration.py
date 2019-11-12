@@ -260,7 +260,8 @@ MAP_CALIBRATORS = {
     #                                         comp_l2=False,
     #                                         l2=l2_list),
     'dirichlet_odir_l2': FullDirichletCalibrator(reg_lambda_list=l2_odir,
-                                                 reg_mu_list=l2_odir)
+                                                 reg_mu_list=l2_odir,
+                                                 reg_norm=True)
 #    'dirichlet_mixture': MixDir()
 }
 
