@@ -4,9 +4,8 @@
 #PBS -q veryshort
 #PBS -l nodes=1:ppn=16,walltime=5:59:00
 
-### A total of 26 datasets and 11 classifiers = 286 runs
-### A total of 21 datasets and 11 classifiers = 231 runs
-#PBS -t 0-230
+### A total of 26 datasets and 6 classifiers = 156 runs
+#PBS -t 165-285
 
 #! change the working directory
 # (default is home directory)
@@ -37,32 +36,32 @@ declare -a classifier_names=(
 )
 
 declare -a dataset_names=(
-    'abalone'
-    'balance-scale'
-    'car'
-    'cleveland'
-    'dermatology'
     'glass'
     'iris'
-    'landsat-satellite'
-    'libras-movement'
-    'mfeat-karhunen'
-    'mfeat-morphological'
-    'mfeat-zernike'
-    'optdigits'
-    'page-blocks'
-    'pendigits'
-    'segment'
-    'shuttle'
-    'vehicle'
-    'vowel'
-    'waveform-5000'
     'yeast'
-#    'ecoli' # not enough samples per class
-#    'autos' # not enough samples per class
-#    'flare' # not enough samples per class
-#    'letter' # long execution
-#    'zoo' # not enough samples per class
+    'car'
+    'libras-movement'
+    'dermatology'
+    'cleveland'
+    'landsat-satellite'
+    'zoo'
+    'vehicle'
+    'waveform-5000'
+    'vowel'
+    'ecoli'
+    'page-blocks'
+    'autos'
+    'abalone'
+    'segment'
+    'mfeat-morphological'
+    'balance-scale'
+    'mfeat-karhunen'
+    'mfeat-zernike'
+    'flare'
+    'optdigits'
+    'pendigits'
+    'shuttle'
+    'letter'
     )
 
 n_classifiers=${#classifier_names[@]}
@@ -94,7 +93,7 @@ output_path='results_neurips'`date +"_%Y_%m_%d_"`${datasets}
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full,isotonic'
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full_l2,logistic_log,ovr_logistic_log'
 # Experiment 1 ECMLPKDD paper
-methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_full_l2,temperature_scaling,vector_scaling,dirichlet_odir_l2'
+methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_full_l2,temperature_scaling,vector_scaling'
 
 echo "SLURM methods = ${methods}"
 
@@ -105,4 +104,4 @@ echo "SLURM methods = ${methods}"
 time python main.py \
     --classifier ${classifier} --output-path ${output_path} --iterations 5 \
     --datasets ${dataset} --seed 42 --methods ${methods} --workers -1 \
-    --verbose 10 --folds 5 --inner-folds 3
+    --verbose 10

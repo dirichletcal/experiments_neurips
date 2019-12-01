@@ -1,16 +1,25 @@
 #!/bin/bash
 
-#PBS -N dirichlet_job
-#PBS -q veryshort
-#PBS -l nodes=1:ppn=16,walltime=5:59:00
-
+#SBATCH --job-name=dirichlet_job
+#SBATCH --partition=cpu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=28
+#SBATCH --time=0-12:00:00
+##SBATCH --mem=128GB
 ### A total of 26 datasets and 11 classifiers = 286 runs
-### A total of 21 datasets and 11 classifiers = 231 runs
-#PBS -t 0-230
+### A total of 4 datasets and 11 classifiers = 44 runs
+#SBATCH --array=0-43
+#SBATCH --exclusive
+
+# Load Anaconda 3 and Python 3.6
+#module load languages/anaconda3/5.2.0-tflow-1.7
+module load languages/anaconda3/2019.07-3.7.3-biopython
+#source activate dirichletvenv
 
 #! change the working directory
 # (default is home directory)
-cd $PBS_O_WORKDIR
+cd $SLURM_SUBMIT_DIR
 
 # Activate the virtual environment
 source ./venv/bin/activate
@@ -18,9 +27,11 @@ source ./venv/bin/activate
 echo Running on host `hostname`
 echo Time is `date`
 echo Directory is `pwd`
-echo PBS job ID is $PBS_JOBID
+echo Slurm job ID is
+
 echo This jobs runs on the following machines:
-echo `cat $PBS_NODEFILE | uniq`
+echo $SLURM_JOB_NODELIST
+echo "Number of cpus ${SLURM_CPUS_PER_TASK}"
 
 declare -a classifier_names=(
     'tree'
@@ -37,39 +48,39 @@ declare -a classifier_names=(
 )
 
 declare -a dataset_names=(
-    'abalone'
-    'balance-scale'
-    'car'
-    'cleveland'
-    'dermatology'
-    'glass'
-    'iris'
-    'landsat-satellite'
-    'libras-movement'
-    'mfeat-karhunen'
-    'mfeat-morphological'
+#    'glass'
+#    'iris'
+#    'yeast'
+#    'car'
+#    'dermatology'
+#    'cleveland'
+#    'landsat-satellite'
+#    'zoo'
+#    'vehicle'
+#    'waveform-5000'
+#    'vowel'
+#    'ecoli'
+#    'page-blocks'
+#    'autos'
+#    'abalone'
+#    'segment'
+#    'mfeat-morphological'
+#    'balance-scale'
+#    'mfeat-karhunen'
+#    'flare'
+#    'shuttle'
     'mfeat-zernike'
     'optdigits'
-    'page-blocks'
     'pendigits'
-    'segment'
-    'shuttle'
-    'vehicle'
-    'vowel'
-    'waveform-5000'
-    'yeast'
-#    'ecoli' # not enough samples per class
-#    'autos' # not enough samples per class
-#    'flare' # not enough samples per class
-#    'letter' # long execution
-#    'zoo' # not enough samples per class
+    'libras-movement'
+#    'letter'
     )
 
 n_classifiers=${#classifier_names[@]}
 n_datasets=${#dataset_names[@]}
 
-classifier_id=$((PBS_ARRAYID%n_classifiers))
-dataset_id=$((PBS_ARRAYID/n_classifiers))
+classifier_id=$((SLURM_ARRAY_TASK_ID%n_classifiers))
+dataset_id=$((SLURM_ARRAY_TASK_ID/n_classifiers))
 
 classifier=${classifier_names[$classifier_id]}
 dataset=${dataset_names[$dataset_id]}
@@ -94,7 +105,10 @@ output_path='results_neurips'`date +"_%Y_%m_%d_"`${datasets}
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full,isotonic'
 #methods='uncalibrated,dirichlet_full_l2,ovr_dir_full_l2,logistic_log,ovr_logistic_log'
 # Experiment 1 ECMLPKDD paper
-methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_full_l2,temperature_scaling,vector_scaling,dirichlet_odir_l2'
+#methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_fix_diag,dirichlet_full_l2'
+#methods='uncalibrated,isotonic,temperature_scaling,vector_scaling,matrix_scaling,dirichlet_full_l2'
+#methods='uncalibrated,isotonic,binning_width,binning_freq,ovr_dir_full,dirichlet_full_l2,temperature_scaling,vector_scaling'
+methods='dirichlet_odir_l2'
 
 echo "SLURM methods = ${methods}"
 
@@ -102,7 +116,7 @@ echo "SLURM methods = ${methods}"
 #time srun python -m scoop --host ${hosts} -v main.py \
 #    --classifier ${classifier} --output-path ${output_path} \
 #    --datasets ${dataset} --seed 42
-time python main.py \
+time srun python main.py \
     --classifier ${classifier} --output-path ${output_path} --iterations 5 \
     --datasets ${dataset} --seed 42 --methods ${methods} --workers -1 \
-    --verbose 10 --folds 5 --inner-folds 3
+    --verbose 10 --folds 3 --inner-folds 3
