@@ -87,6 +87,14 @@ def compute_friedmanchisquare(table):
         - k is the datasets: table['mean'].values).tolist()
         - k is the calibration methods: table['mean'].T.values).tolist()
     '''
+    if table.shape[1] < 3:
+        print('Friedman test not appropiate for less than 3 methods')
+        class Ftest():
+            def __init__(self, statistic, pvalue):
+                self.statistic = statistic
+                self.pvalue = pvalue
+        return Ftest(np.nan, np.nan)
+
     return friedmanchisquare(*(table.T.values).tolist())
 
 
@@ -454,7 +462,8 @@ def summarise_hyperparameters(df, summary_path, set_title=False,
 
 
 def generate_summaries(df, summary_path, table_size='small',
-        hyperparameters=True, confusion_matrices=True):
+        hyperparameters=True, confusion_matrices=True, 
+                      reduced_names=True):
     '''
     df:     pandas.DataFrame
         The dataframe needs at least the following columns
@@ -501,17 +510,55 @@ def generate_summaries(df, summary_path, table_size='small',
         df['method'] = df['method'].replace(to_replace=key, value=value,
                                         regex=True)
     # Names for final version
-    final_names = dict(dir_fix_diag='Temp_Scaling', uncal='Uncalibrated',
-                       ovr_dir_full='OvR_Beta', bin_freq='OvR_Freq_Bin',
-                       bin_width='OvR_Width_Bin', dir_full_l2='Dirichlet_L2',
-                       isotonic='OvR_Isotonic', dir_full='Dirichlet',
-                       mlr_log='Log_Reg_L2', ovr_dir_full_l2='OvR_Beta_L2',
-                       ovr_mlr_log='OvR_Log_Reg_L2')
+    if reduced_names:
+        final_names = dict(
+            dir_fix_diag='TempS',
+            temperature_scaling='TempS',
+            vector_scaling='VecS',
+            uncal='Uncal',
+            ovr_dir_full='Beta',
+            bin_freq='FreqB',
+            bin_width='WidthB',
+            dir_full_l2='DirL2',
+            isotonic='Isot',
+            dir_full='Dir',
+            mlr_log='MultLogRegL2',
+            ovr_dir_full_l2='BetaL2',
+            ovr_mlr_log='LogRegL2',
+            dir_odir_l2='DirODIR',
+            temperature_scaling_noref='TempSNoref',
+            vector_scaling_noref='VecSNoref',
+            dir_odir_l2_noref='DirODIRNoref',
+            dir_full_noref='DirNoref',
+            dir_full_l2_noref='DirL2Noref',
+        )
+
+        new_order = ['Uncal', 'DirL2', 'DirL2Noref', 'DirODIR', 'DirODIRNoref',
+                     'Beta', 'TempS', 'TempSNoref', 'VecS', 'VecSNoref',
+                     'Isot', 'FreqB', 'WidthB']
+    else:
+        final_names = dict(
+            dir_fix_diag='Temp_Scaling',
+            temperature_scaling='Temp_Scaling',
+            vector_scaling='Vect_Scaling',
+            uncal='Uncalibrated',
+            ovr_dir_full='OvR_Beta',
+            bin_freq='OvR_Freq_Bin',
+            bin_width='OvR_Width_Bin',
+            dir_full_l2='Dirichlet_L2',
+            isotonic='OvR_Isotonic',
+            dir_full='Dirichlet',
+            mlr_log='Log_Reg_L2',
+            ovr_dir_full_l2='OvR_Beta_L2',
+            ovr_mlr_log='OvR_Log_Reg_L2',
+            dir_odir_l2='Dirichlet_ODIR')
 
     for key, value in final_names.items():
         df['method'] = df['method'].replace(to_replace=key, value=value,
-                                        regex=False)
+                                            regex=False)
 
+    new_order = [method for method in new_order if method in
+                 df['method'].unique()]
 
     dataset_names = df['dataset'].unique()
     classifiers = df['classifier'].unique()
@@ -550,11 +597,12 @@ def generate_summaries(df, summary_path, table_size='small',
                      ('conf-ece', False), ('cw-ece', False),
                      ('full-ece', False), ('p-conf-ece', True),
                      ('p-cw-ece', True), ('p-full-ece', True),
-                     ('mce', False), ('train_acc', True),
-                     ('train_loss', False), ('train_brier', False),
-                     ('exec_time', False), ('train_conf-ece', False),
-                     ('train_cw-ece', False), ('train_full-ece', False),
-                     ('train_mce', False), ('exec_time', False))
+                     ('mce', False), ('exec_time', False),
+                     #('train_acc', True), ('train_loss', False),
+                     #('train_brier', False), ('train_conf-ece', False),
+                     #('train_cw-ece', False), ('train_full-ece', False),
+                     #('train_mce', False)
+                    )
     measures_list = [(key, value) for key, value in measures_list if key in
         df.columns]
     for measure, max_is_better in measures_list:
@@ -567,6 +615,9 @@ def generate_summaries(df, summary_path, table_size='small',
         table = df.pivot_table(index=['classifier'], columns=['method'],
                                values=[measure], aggfunc=[np.mean, np.std])
 
+        table = table.reindex(new_order, axis=1, level='method')
+        table.sort_index(inplace=True)
+
         str_table = rankings_to_latex(classifiers, table, precision=2,
                              table_size=table_size, max_is_better=max_is_better,
                              caption=('Ranking of calibration methods ' +
@@ -578,6 +629,8 @@ def generate_summaries(df, summary_path, table_size='small',
         table = df.pivot_table(index=['mc', 'test_fold', 'dataset',
                                       'classifier'], columns=['method'],
                                values=[measure], aggfunc=[len])
+        table = table.reindex(new_order, axis=1, level='method')
+        table.sort_index(inplace=True)
 
         try:
             assert(np.alltrue(table.values == 1))
@@ -590,6 +643,10 @@ def generate_summaries(df, summary_path, table_size='small',
                                           'n_samples'],
                                    columns=['method'],
                                    values=[measure])
+
+            table = table.reindex(new_order, axis=1, level='method')
+            table.sort_index(inplace=True)
+
             table.columns = table.columns.droplevel()
             table.to_csv(os.path.join(summary_path, measure + '.csv'))
 
@@ -605,6 +662,8 @@ def generate_summaries(df, summary_path, table_size='small',
                                               'n_samples'],
                                        columns=['method'],
                                        values=['train_' + measure])
+                table = table.reindex(new_order, axis=1, level='method')
+                table.sort_index(inplace=True)
                 table.columns = table.columns.droplevel()
                 table.to_csv(os.path.join(summary_path, 'train_' + measure + '.csv'))
                 print('\n{} correlation for the measure {}'.format(method, 'train_' + measure))
@@ -686,10 +745,11 @@ def generate_summaries(df, summary_path, table_size='small',
                                                columns=['method'],
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
+            table = table.reindex(new_order, axis=1, level='method')
+            table.sort_index(inplace=True)
 
             # Perform a Friedman statistic test
             # Remove datasets in which one of the experiments failed
-            table = table[~table.isna().any(axis=1)]
             ftest = compute_friedmanchisquare(table['mean'])
             print(ftest)
 
@@ -724,6 +784,8 @@ def generate_summaries(df, summary_path, table_size='small',
                                                values=[measure],
                                                aggfunc=[np.mean, np.std])
             # Remove datasets in which one of the experiments failed
+            table = table.reindex(new_order, axis=1, level='method')
+            table.sort_index(inplace=True)
             table = table[~table.isna().any(axis=1)]
             if max_is_better:
                 table *= -1
@@ -757,6 +819,8 @@ def generate_summaries(df, summary_path, table_size='small',
         table = df.pivot_table(index=['dataset', 'classifier'],
                                columns=['method'],
                                values=[measure], aggfunc=np.mean)
+        table = table.reindex(new_order, axis=1, level='method')
+        table.sort_index(inplace=True)
         # Remove datasets and classifier combinations in which one of the experiments failed
         table = table[~table.isna().any(axis=1)]
         if max_is_better:
@@ -783,13 +847,16 @@ def generate_summaries(df, summary_path, table_size='small',
         # TODO check that performing the ranking of the rankings is appropriate
         print('Average rankings shape = {}'.format(ranking_table_all.shape))
         print('Average rankings = {}'.format(ranking_table_all))
-        str_table = rankings_to_latex(classifiers, df_mean_rankings, precision=1,
-                             table_size=table_size,
+        #df_mean_rankings.rename(reduced_names, axis='columns', inplace=True)
+        #df_mean_rankings = df_mean_rankings[new_order]
+        df_mean_rankings.sort_index(inplace=True)
+        str_table = rankings_to_latex(df_mean_rankings.index, df_mean_rankings,
+                                      precision=1, table_size=table_size,
                              max_is_better=False,
                              caption=('Ranking of calibration methods ' +
-                                      'applied to each classifier ' +
-                                      'with the measure={}'
-                                      ).format(measure),
+                                      'for {} (Friedman\'s test significant ' +
+                                      'with p-value {:.2e}'
+                                      ).format(measure, ftest.pvalue),
                              label='table:{}'.format(measure),
                              add_std=False,
                              column_names=df_mean_rankings.columns,
@@ -820,6 +887,84 @@ def generate_summaries(df, summary_path, table_size='small',
             text_file.write(str_table)
 
         # Create effect size measures
+        ave_relative = np.zeros((len(classifiers),
+                                df.method.unique().shape[0]))
+        for i, classifier_name in enumerate(classifiers):
+            print('- Classifier name = {}'.format(classifier_name))
+            class_mask = df['classifier'] == classifier_name
+            table = df[class_mask].pivot_table(index=['dataset'],
+                                               columns=['method'],
+                                               values=[measure])
+            table = table.reindex(new_order, axis=1, level='method')
+            table.sort_index(inplace=True)
+            uncal_measure = table[(measure, 'Uncal')]
+            table_values = (table.values -
+                            uncal_measure.values.reshape(-1,1)
+                           )/uncal_measure.values.reshape(-1,1)
+            table.iloc[:,:] = table_values
+
+            str_table = rankings_to_latex(table.index, table, precision=3,
+                                 table_size=table_size,
+                                 max_is_better=max_is_better,
+                                 caption=('Ranking of calibration methods ' +
+                                          'applied on the classifier ' +
+                                          '{} with the relative measure={}'
+                                          ).format(classifier_name, measure),
+                                 label='table:rel:{}:{}'.format(classifier_name,
+                                                            measure),
+                                 column_names=table.columns.levels[1],
+                                 add_std=False)
+            file_basename = os.path.join(summary_path, classifier_name +
+                                         '_dataset_vs_method_relative_' + measure)
+            with open(file_basename + '.tex', "w") as text_file:
+                text_file.write(str_table)
+            ave_relative[i] = table.mean(axis=0)
+        df_ave_relative = pd.DataFrame(ave_relative, index=classifiers,
+                                       columns=table.columns.levels[1])
+        # First version of table with the average measures
+        ave_relative_all = df_ave_relative.mean(axis=0)
+        print('Average measures = {}'.format(ave_relative_all))
+        str_table = rankings_to_latex(classifiers, df_ave_relative,
+                                      precision=3,
+                             table_size=table_size,
+                             max_is_better=max_is_better,
+                             caption=('Ranking of calibration methods ' +
+                                      'applied to each classifier ' +
+                                      'with the relative measure={}'
+                                      ).format(measure),
+                             label='table:rel:{}'.format(measure),
+                             add_std=False,
+                             column_names=df_ave_relative.columns,
+                             avg_ranks=ave_relative_all, add_rank=True)
+        file_basename = os.path.join(summary_path,
+                                     '{}_rel_average'.format(measure))
+        with open(file_basename + '.tex', "w") as text_file:
+            text_file.write(str_table)
+
+        # Answering rebuttal
+        base_name = 'Uncal'
+        for measure, max_is_better in measures_list:
+            table = df.pivot_table(index=['dataset', 'classifier', 'mc'],
+                                   columns=['method'], values=[measure],
+                                   )
+            table = table.reindex(new_order, axis=1, level='method')
+            table.sort_index(inplace=True)
+            if measure == 'acc':
+                table = 1 - table
+            base_measure = table[(measure, base_name)]
+            table_values = 100*(table.values - 
+                                base_measure.values.reshape(-1,1)
+                           )/base_measure.values.reshape(-1,1)
+            table.iloc[:,:] = table_values
+
+            #relative_improvement = table[(measure, 'Dirichlet_L2')].agg(['min', 'max', 'mean', 'median'])
+            #print(measure)
+
+            relative_improvement = table.agg(['min', 'max', 'mean', 'median'])
+            print(relative_improvement)
+            relative_improvement.to_latex(os.path.join(summary_path,
+                                     '{}_relative_statistics.tex'.format(measure)))
+
 
 
 
@@ -828,6 +973,7 @@ def generate_summaries(df, summary_path, table_size='small',
         table = df.pivot_table(values=[key for key, value in measures_list],
                                index=['dataset', 'method'],
                                aggfunc=[np.mean, np.std])
+        table.sort_index(inplace=True)
         table.to_csv(os.path.join(summary_path, classifier_name + '_main_results.csv'))
         table.to_latex(os.path.join(summary_path, classifier_name + '_main_results.tex'))
 
