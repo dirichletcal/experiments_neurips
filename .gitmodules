@@ -1,7 +1,7 @@
 [submodule "dirichlet"]
-	path = dirichlet
-	url = https://bitbucket.org/dirichlet_cal/dirichlet.git
+    path = dirichlet
+    url = https://github.com/dirichletcal/dirichlet_python
 [submodule "python"]
-	path = python_betacal
-	url = https://github.com/betacal/python
-	branch = feature_dirichlet
+    path = python_betacal
+    url = https://github.com/betacal/python
+    branch = feature_dirichlet
