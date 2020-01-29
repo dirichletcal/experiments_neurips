@@ -1,3 +1,7 @@
+# Experiments for NeurIPS
+
+In this repository you can find all the code to run the non-neural experiments. For the experiments with Deep Neural Networks check the [experiments_dnn](https://github.com/dirichletcal/experiments_dnn) repository.
+
 # Development
 
 Please follow this instructions to be sure that we all have the same library
@@ -33,28 +37,15 @@ source venv/bin/activate
 
 # Run experiments
 
-Experiments can be run calling __python main.py__ and the arguments, or in
-parallel using scoop.
-
-Here is an example with Scoop.
+Experiments can be run calling __python main.py__ and the optional arguments. The optional argument __-w | --n-workers__ indicates how many parallel processes to run. By default it has a value of __-1__ which runs one parallel process per available cpu.
 
 ```
-python -m scoop main.py --classifier nbayes --seed 42 --iterations 2 \
+python main.py --classifier forest,nbayes --seed 42 --iterations 2 \
                        --folds 3 --datasets iris,spambase \
                        --output-path results_test
 ```
 
-If you run several classifiers and store the results in the same folder. For
-example, here a random forest.
-
-```
-python -m scoop main.py --classifier forest --seed 42 --iterations 2 \
-                       --folds 3 --datasets iris,spambase \
-                       --output-path results_test
-```
-
-Then, it is possible to unify and compute meta-summaries by indicating the
-folder containing all the results
+Once multiple classifiers, datasets and calibrators have been run, it is possible to unify and compute meta-summaries by indicating the folder containing all the results
 
 ```
 python generate_summaries.py results_test/
