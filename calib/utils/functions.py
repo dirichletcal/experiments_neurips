@@ -716,7 +716,7 @@ def classwise_ECE(probs, y_true, power = 1, bins = 15):
 
     n_classes = probs.shape[1]
 
-    return np.sum(
+    return np.mean(
         [
             binary_ECE(
                 probs[:, c], y_true[:, c].astype(float), power = power, bins = bins
