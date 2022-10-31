@@ -4,6 +4,16 @@ In this repository you can find all the code to run the non-neural experiments. 
 
 # Development
 
+The code has been tested with Ubuntu 20.04.5 LTS, Python 3.8.10, and it may require some of the
+following libraries in order to properly install the necessary Python packages:
+blas, lapack, cython3.
+
+Those packages can be installed in Ubuntu with
+
+```
+sudo aptitude install blas lapack cython3
+```
+
 Please follow this instructions to be sure that we all have the same library
 versions (it may take 30 minutes or more to install all packages).
 

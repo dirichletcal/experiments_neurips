@@ -5,8 +5,8 @@ import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.preprocessing import LabelBinarizer
 
-from sklearn.externals.joblib import Parallel
-from sklearn.externals.joblib import delayed
+from joblib import Parallel
+from joblib import delayed
 
 from sklearn.multiclass import _ConstantPredictor
 

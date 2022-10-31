@@ -40,7 +40,7 @@ from multiprocessing import cpu_count, Pool
 
 # Our classes and modules
 from calib.utils.calibration import cv_calibration
-from calib.utils.dataframe import MyDataFrame
+from pandas import DataFrame
 from calib.utils.functions import get_sets
 from calib.utils.functions import p_value
 from calib.utils.functions import serializable_or_string
@@ -219,7 +219,7 @@ def compute_all(args):
     score_type = score_types[classifier_name]
     logging.info(locals())
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=mc)
-    df = MyDataFrame(columns=columns)
+    df = DataFrame(columns=columns)
     class_counts = np.bincount(dataset.target)
     t = dataset.target
     fold_id = 0
@@ -238,7 +238,7 @@ def compute_all(args):
          mces, cms, mean_probas, cl, exec_time) = results
 
         for method in methods:
-            df = df.append_rows([[dataset.name, dataset.n_classes,
+            rows = [[dataset.name, dataset.n_classes,
                                   dataset.n_features, dataset.n_samples,
                                   method, mc, fold_id, train_acc[method],
                                   train_loss[method], train_brier[method],
@@ -253,7 +253,9 @@ def compute_all(args):
                                   exec_time[method],
                                   [{key: serializable_or_string(value) for key, value in
                                       c.calibrator.__dict__.items()} for c in cl[method]]
-                                  ]])
+                                  ]]
+            dfaux = pandas.DataFrame(rows, columns=df.columns)
+            df = df.append(dfaux, ignore_index=True)
 
         fold_id += 1
     return df
@@ -281,7 +283,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
         results_path = os.path.join(results_path_root, classifier_name)
 
         for name, dataset in data.datasets.items():
-            df = MyDataFrame(columns=columns)
+            df = DataFrame(columns=columns)
             logging.info(dataset)
             # Assert that every class has enough samples to perform the two
             # cross-validataion steps (classifier + calibrator)
@@ -324,7 +326,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                 len(args), n_workers))
             dfs = map_f(compute_all, args)
 
-            df = df.concat(dfs)
+            df = pandas.concat(dfs)
 
             if not os.path.exists(results_path):
                 os.makedirs(results_path)
@@ -462,7 +464,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                             df[df.dataset == name][df.method ==
                                                    method]['c_probas'].values),
                             range=(0.0, 1.0))
-                df_hist = MyDataFrame(data=[[classifier_name, name, method] +
+                df_hist = DataFrame(data=[[classifier_name, name, method] +
                                            hist[0].tolist()],
                                       columns=columns_hist)
                 df_hist.to_csv(os.path.join(results_path, '_'.join(
