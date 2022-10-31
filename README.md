@@ -9,9 +9,9 @@ versions (it may take 30 minutes or more to install all packages).
 
 ```
 # Clone the repository
-git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_cal_experiments
+git clone https://github.com/dirichletcal/experiments_neurips.git
 # Go into the folder
-cd dirichlet_cal_experiments
+cd experiments_neurips
 # Clone the submodules
 git submodule update --init --recursive
 # Create a new virtual environment with Python3
@@ -132,8 +132,8 @@ module load tools/git-2.22.0
 Then download the repository
 
 ```
-git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_experiments
-cd dirichlet_experiments
+git clone https://github.com/dirichletcal/experiments_neurips.git
+cd experiments_neurips
 ```
 
 Pull the dependencies
@@ -186,8 +186,8 @@ module load tools/git/2.18.0
 Then download the repository
 
 ```
-git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_experiments
-cd dirichlet_experiments
+git clone https://github.com/dirichletcal/experiments_neurips.git
+cd experiments_neurips
 ```
 
 Pull the dependencies
