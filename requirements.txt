@@ -14,3 +14,4 @@ jaxlib==0.1.60
 PyQt5==5.13.1
 PyQtWebEngine==5.13.1
 Orange3==3.23.1
+pycalib==0.1.0.dev0
