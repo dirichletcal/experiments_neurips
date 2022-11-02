@@ -1,6 +1,17 @@
 # Experiments for NeurIPS
 
-In this repository you can find all the code to run the non-neural experiments. For the experiments with Deep Neural Networks check the [experiments_dnn](https://github.com/dirichletcal/experiments_dnn) repository.
+In this repository you can find all the code to run the non-neural experiments.
+For the experiments with Deep Neural Networks check the
+[experiments_dnn](https://github.com/dirichletcal/experiments_dnn) repository.
+
+The code works as expected for multiclass classification datasets. It is
+possible to use binary datasets but it has not been extensively tested and may
+have some problems. In fact, some of the reliability calibration plots may show
+inverted scores at the moment.
+
+Some of the visualisation issues for binary datasets may be fixed by using our
+own Python library
+[PyCalib](https://github.com/classifier-calibration/PyCalib).
 
 # Development
 
@@ -59,6 +70,21 @@ Once multiple classifiers, datasets and calibrators have been run, it is possibl
 
 ```
 python generate_summaries.py results_test/
+```
+
+# Debugging
+
+This code uses multiprocessing capabilities to accelerate the
+execution. This can make difficult debugging certain exceptions as those are
+captured inside the pool of processes. If you find an error and want to debug
+the code you may want to run as a single process by indicating the _main.py_
+argument __--workers 1__. Which avoids using the multiprocessing module.
+
+```
+python main.py --classifier forest,nbayes --seed 42 --iterations 2 \
+                       --folds 3 --datasets iris,spambase \
+                       --output-path results_test \
+                       --workers 1
 ```
 
 # Help
@@ -236,3 +262,5 @@ If it runs then submit to the queue (HS stands for Hao Song)
 ```
 qsub HS_BC4_add_queue_dirichlet.sh
 ```
+
+

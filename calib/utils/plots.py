@@ -491,6 +491,9 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
     return fig
 
 def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwargs):
+    if (len(y_true.shape) < 2) or (y_true.shape[1] == 1):
+        y_true = np.hstack([1 - y_true, y_true])
+
     n_classes = y_true.shape[1]
 
     if fig is None and ax is None:
