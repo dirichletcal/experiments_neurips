@@ -3,7 +3,6 @@ import time
 import logging
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
-from sklearn.preprocessing import LabelBinarizer
 from sklearn.base import clone
 from sklearn.metrics import confusion_matrix
 from numpy.testing import assert_array_equal
@@ -15,6 +14,7 @@ from .functions import brier_score
 from .functions import beta_test
 from .functions import ECE, guo_ECE, classwise_ECE, full_ECE, pECE
 from .functions import MCE
+from .preprocessing import MyLabelBinarizer
 from betacal import BetaCalibration
 from calib.utils.functions import beta_test
 from calib.utils.functions import fit_beta_moments
@@ -85,7 +85,7 @@ def cv_calibration(base_classifier, methods, x_train, y_train, x_test,
     assert_array_equal(np.unique(y_train), np.unique(y_test))
 
     # Prepare a binarizer
-    binarizer = LabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
+    binarizer = MyLabelBinarizer(neg_label=0, pos_label=1, sparse_output=False)
     y_train_bin = binarizer.fit_transform(y_train)
 
     mean_probas = {method: np.zeros((y_test.shape[0], len(binarizer.classes_)))

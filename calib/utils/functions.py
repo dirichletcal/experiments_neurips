@@ -55,11 +55,11 @@ def get_sets(x, y, test_fold_id, test_folds):
 # TODO: MPN need to join *to_latex functions
 def table_to_latex(datasets, methods, table, max_is_better=True, caption='',
                    position='tph'):
-    means = table.as_matrix()[:, :len(methods)]
+    means = table.values[:, :len(methods)]
     avg_ranks = np.zeros(len(methods))
     if max_is_better:
         means *= 100.0
-    stds = table.as_matrix()[:, len(methods):]
+    stds = table.values[:, len(methods):]
     if max_is_better:
         stds *= 100.0
     print('\\begin{table}[' + position + ']')
@@ -128,9 +128,9 @@ def rankings_to_latex(datasets, table, max_is_better=True, scale=1, precision=3,
     row_names = table.index
     n_rows = len(row_names)
 
-    means = table.as_matrix()[:, :n_columns].copy()*scale
+    means = table.values[:, :n_columns].copy()*scale
     computed_avg_ranks = np.zeros(n_columns)
-    stds = table.as_matrix()[:, n_columns:]*scale
+    stds = table.values[:, n_columns:]*scale
     str_table = ("\\begin{table}[" + position + "]\n" +
                  "\\" + table_size + "\n" +
                  "\\centering\n")

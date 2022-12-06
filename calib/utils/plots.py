@@ -445,6 +445,11 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
                                         fig=None, ax=None, legend=True,
                                         labels=['True class prop.',
                                                 'Gap pred.  mean']):
+    '''
+
+    y_true: np.ndarray (n_samples, n_classes)
+        If n_classes is one, the labels are binarized to have n_classes = 2.
+    '''
     if fig is None and ax is None:
         fig = plt.figure(figsize=(4, 2))
     if ax is None:
@@ -453,8 +458,11 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
     if title is not None:
         ax.set_title(title)
 
-    y_true = y_true.flatten()
-    p_pred = p_pred.flatten()
+    if (len(y_true.shape) < 2) or (y_true.shape[1] == 1):
+        y_true = np.hstack([1 - y_true, y_true])
+
+    y_true_flat = y_true.flatten()
+    p_pred_flat = p_pred.flatten()
 
     bin_size = 1/n_bins
     centers = np.linspace(bin_size/2, 1.0 - bin_size/2, n_bins)
@@ -463,11 +471,13 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
     for i, center in enumerate(centers):
         if i == 0:
             # First bin include lower bound
-            bin_indices = np.where(np.logical_and(p_pred >= center - bin_size/2, p_pred <= center + bin_size/2))
+            bin_indices = np.where(np.logical_and(p_pred_flat >= center -
+                                                  bin_size/2, p_pred_flat <= center + bin_size/2))
         else:
-            bin_indices = np.where(np.logical_and(p_pred > center - bin_size/2, p_pred <= center + bin_size/2))
-        true_proportion[i] = np.mean(y_true[bin_indices])
-        pred_mean[i] = np.mean(p_pred[bin_indices])
+            bin_indices = np.where(np.logical_and(p_pred_flat > center -
+                                                  bin_size/2, p_pred_flat <= center + bin_size/2))
+        true_proportion[i] = np.mean(y_true_flat[bin_indices])
+        pred_mean[i] = np.mean(p_pred_flat[bin_indices])
 
     ax.bar(centers, true_proportion, width=bin_size, edgecolor = "black",
            color = "blue", label=labels[0])
@@ -481,6 +491,9 @@ def plot_multiclass_reliability_diagram(y_true, p_pred, n_bins=15, title=None,
     return fig
 
 def plot_reliability_diagram_per_class(y_true, p_pred, fig=None, ax=None, **kwargs):
+    if (len(y_true.shape) < 2) or (y_true.shape[1] == 1):
+        y_true = np.hstack([1 - y_true, y_true])
+
     n_classes = y_true.shape[1]
 
     if fig is None and ax is None:

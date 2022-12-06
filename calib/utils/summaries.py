@@ -104,9 +104,15 @@ def paired_test(table, stats_func=ranksums):
     statistics = np.zeros_like(pvalues)
     for i, method_i in enumerate(table.columns.levels[1]):
         for j, method_j in enumerate(table.columns.levels[1]):
+            if i == j:
+                continue
             sample_i = table[measure, method_i]
             sample_j = table[measure, method_j]
-            statistic, pvalue = stats_func(sample_i, sample_j)
+            try:
+                statistic, pvalue = stats_func(sample_i, sample_j)
+            except ValueError as e:
+                print(e)
+                statistic, pvalue = np.nan, np.nan
             pvalues[i, j] = pvalue
             statistics[i, j] = statistic
     index = pd.MultiIndex.from_product([table.columns.levels[1],
@@ -1102,12 +1108,15 @@ def generate_classifier_summaries(df, summary_path, table_size='small'):
         print(('Critical Difference computed with avranks of shape {} ' +
                'for {} datasets').format(np.shape(ranking_table),
                                      table.shape[0]))
-        export_critical_difference(avranks=ranking_table,
-                                   num_datasets=table.shape[0],
-                                   names=table.columns.levels[2],
-                                   filename=filename,
-                                   title='(p-value = {:.2e}, #D = {})'.format(
-                                       ftest.pvalue, table.shape[0]))
+        try:
+            export_critical_difference(avranks=ranking_table,
+                                       num_datasets=table.shape[0],
+                                       names=table.columns.levels[2],
+                                       filename=filename,
+                                       title='(p-value = {:.2e}, #D = {})'.format(
+                                           ftest.pvalue, table.shape[0]))
+        except ZeroDivisionError as e:
+            print(e)
 
 
 def generate_summary_hist(df, summary_path):

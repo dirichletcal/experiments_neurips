@@ -1,17 +1,38 @@
 # Experiments for NeurIPS
 
-In this repository you can find all the code to run the non-neural experiments. For the experiments with Deep Neural Networks check the [experiments_dnn](https://github.com/dirichletcal/experiments_dnn) repository.
+In this repository you can find all the code to run the non-neural experiments.
+For the experiments with Deep Neural Networks check the
+[experiments_dnn](https://github.com/dirichletcal/experiments_dnn) repository.
+
+The code works as expected for multiclass classification datasets. It is
+possible to use binary datasets but it has not been extensively tested and may
+have some problems. In fact, some of the reliability calibration plots may show
+inverted scores at the moment.
+
+Some of the visualisation issues for binary datasets may be fixed by using our
+own Python library
+[PyCalib](https://github.com/classifier-calibration/PyCalib).
 
 # Development
+
+The code has been tested with Ubuntu 20.04.5 LTS, Python 3.8.10, and it may require some of the
+following libraries in order to properly install the necessary Python packages:
+blas, lapack, cython3.
+
+Those packages can be installed in Ubuntu with
+
+```
+sudo aptitude install blas lapack cython3
+```
 
 Please follow this instructions to be sure that we all have the same library
 versions (it may take 30 minutes or more to install all packages).
 
 ```
 # Clone the repository
-git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_cal_experiments
+git clone https://github.com/dirichletcal/experiments_neurips.git
 # Go into the folder
-cd dirichlet_cal_experiments
+cd experiments_neurips
 # Clone the submodules
 git submodule update --init --recursive
 # Create a new virtual environment with Python3
@@ -49,6 +70,21 @@ Once multiple classifiers, datasets and calibrators have been run, it is possibl
 
 ```
 python generate_summaries.py results_test/
+```
+
+# Debugging
+
+This code uses multiprocessing capabilities to accelerate the
+execution. This can make difficult debugging certain exceptions as those are
+captured inside the pool of processes. If you find an error and want to debug
+the code you may want to run as a single process by indicating the _main.py_
+argument __--workers 1__. Which avoids using the multiprocessing module.
+
+```
+python main.py --classifier forest,nbayes --seed 42 --iterations 2 \
+                       --folds 3 --datasets iris,spambase \
+                       --output-path results_test \
+                       --workers 1
 ```
 
 # Help
@@ -132,8 +168,8 @@ module load tools/git-2.22.0
 Then download the repository
 
 ```
-git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_experiments
-cd dirichlet_experiments
+git clone https://github.com/dirichletcal/experiments_neurips.git
+cd experiments_neurips
 ```
 
 Pull the dependencies
@@ -186,8 +222,8 @@ module load tools/git/2.18.0
 Then download the repository
 
 ```
-git clone https://bitbucket.org/dirichlet_cal/experiments.git dirichlet_experiments
-cd dirichlet_experiments
+git clone https://github.com/dirichletcal/experiments_neurips.git
+cd experiments_neurips
 ```
 
 Pull the dependencies
@@ -226,3 +262,5 @@ If it runs then submit to the queue (HS stands for Hao Song)
 ```
 qsub HS_BC4_add_queue_dirichlet.sh
 ```
+
+

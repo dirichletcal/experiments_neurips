@@ -40,7 +40,7 @@ from multiprocessing import cpu_count, Pool
 
 # Our classes and modules
 from calib.utils.calibration import cv_calibration
-from calib.utils.dataframe import MyDataFrame
+from pandas import DataFrame
 from calib.utils.functions import get_sets
 from calib.utils.functions import p_value
 from calib.utils.functions import serializable_or_string
@@ -50,9 +50,11 @@ from calib.utils.summaries import create_summary_path
 from calib.utils.summaries import generate_summaries
 from calib.utils.summaries import generate_summary_hist
 from calib.utils.plots import export_boxplot
-from calib.utils.plots import plot_reliability_diagram_per_class
+# from calib.utils.plots import plot_reliability_diagram_per_class
 from calib.utils.plots import plot_multiclass_reliability_diagram
 from calib.utils.plots import save_fig_close
+
+from pycalib.visualisations import plot_reliability_diagram
 
 # Our datasets module
 from data_wrappers.datasets import Data
@@ -64,7 +66,7 @@ classifiers = {
       'mock': MockClassifier(),
       'nbayes': GaussianNB(),
       'logistic': LogisticRegression(random_state=42),
-      #'adao': our.AdaBoostClassifier(n_estimators=200),
+      'adao': our.AdaBoostClassifier(n_estimators=200),
       'adas': their.AdaBoostClassifier(n_estimators=200, random_state=42),
       'forest': RandomForestClassifier(n_estimators=200, random_state=42),
       'mlp': MLPClassifier(random_state=42),
@@ -82,7 +84,7 @@ score_types = {
       'mock': 'predict_proba',
       'nbayes': 'predict_proba',
       'logistic': 'predict_proba',
-      #'adao': 'predict_proba',
+      'adao': 'predict_proba',
       'adas': 'predict_proba',
       'forest': 'predict_proba',
       'mlp': 'predict_proba',
@@ -219,7 +221,7 @@ def compute_all(args):
     score_type = score_types[classifier_name]
     logging.info(locals())
     skf = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=mc)
-    df = MyDataFrame(columns=columns)
+    df = DataFrame(columns=columns)
     class_counts = np.bincount(dataset.target)
     t = dataset.target
     fold_id = 0
@@ -238,7 +240,7 @@ def compute_all(args):
          mces, cms, mean_probas, cl, exec_time) = results
 
         for method in methods:
-            df = df.append_rows([[dataset.name, dataset.n_classes,
+            rows = [[dataset.name, dataset.n_classes,
                                   dataset.n_features, dataset.n_samples,
                                   method, mc, fold_id, train_acc[method],
                                   train_loss[method], train_brier[method],
@@ -253,7 +255,9 @@ def compute_all(args):
                                   exec_time[method],
                                   [{key: serializable_or_string(value) for key, value in
                                       c.calibrator.__dict__.items()} for c in cl[method]]
-                                  ]])
+                                  ]]
+            dfaux = pandas.DataFrame(rows, columns=df.columns)
+            df = df.append(dfaux, ignore_index=True)
 
         fold_id += 1
     return df
@@ -281,7 +285,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
         results_path = os.path.join(results_path_root, classifier_name)
 
         for name, dataset in data.datasets.items():
-            df = MyDataFrame(columns=columns)
+            df = DataFrame(columns=columns)
             logging.info(dataset)
             # Assert that every class has enough samples to perform the two
             # cross-validataion steps (classifier + calibrator)
@@ -324,7 +328,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                 len(args), n_workers))
             dfs = map_f(compute_all, args)
 
-            df = df.concat(dfs)
+            df = pandas.concat(dfs)
 
             if not os.path.exists(results_path):
                 os.makedirs(results_path)
@@ -407,29 +411,44 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                                                                 name,
                                                                 index[1],
                                                                 'rel_diagr_perclass']))
-                    fig = plot_reliability_diagram_per_class(y_true=y_test,
-                                                             p_pred=p_pred)
+                    # fig = plot_reliability_diagram_per_class(y_true=y_test,
+                    #                                          p_pred=p_pred)
+                    fig = plot_reliability_diagram(labels=y_test,
+                                                   scores=p_pred,
+                                                   bins=15,
+                                                   show_gaps=True,
+                                                   show_bars=True,
+                                                   show_histogram=True)
+                    fig.tight_layout()
                     save_fig_close(fig, filename + '.svg')
 
-                    filename = os.path.join(results_path, '_'.join([classifier_name,
-                                                                name,
-                                                                index[1],
-                                                                'rel_diagr']))
-                    fig = plot_multiclass_reliability_diagram(y_true=y_test,
-                                                              p_pred=p_pred)
-                    save_fig_close(fig, filename + '.svg')
+                    # filename = os.path.join(results_path, '_'.join([classifier_name,
+                    #                                             name,
+                    #                                             index[1],
+                    #                                             'rel_diagr']))
+                    # fig = plot_multiclass_reliability_diagram(y_true=y_test,
+                    #                                           p_pred=p_pred)
+                    # save_fig_close(fig, filename + '.svg')
 
-                    y_labels = np.hstack(row['y_test'])
-                    y_pred = p_pred.argmax(axis=1)
-                    y_conf = (y_labels == y_pred).astype(int)
-                    p_conf_pred = p_pred.max(axis=1)
+                    # y_labels = np.hstack(row['y_test'])
+                    # y_pred = p_pred.argmax(axis=1)
+                    # y_conf = (y_labels == y_pred).astype(int)
+                    # p_conf_pred = p_pred.max(axis=1)
                     filename = os.path.join(results_path, '_'.join([classifier_name,
                                                                 name,
                                                                 index[1],
                                                                 'conf_rel_diagr']))
-                    fig = plot_multiclass_reliability_diagram(
-                        y_true=y_conf, p_pred=p_conf_pred,
-                        labels=['Obs.  accuracy', 'Gap pred. mean'])
+                    # fig = plot_multiclass_reliability_diagram(
+                    #     y_true=y_conf, p_pred=p_conf_pred,
+                    #     labels=['Obs.  accuracy', 'Gap pred. mean'])
+                    fig = plot_reliability_diagram(labels=y_test,
+                                                   scores=p_pred,
+                                                   bins=15,
+                                                   show_gaps=True,
+                                                   show_bars=True,
+                                                   show_histogram=True,
+                                                   confidence=True)
+                    fig.tight_layout()
                     save_fig_close(fig, filename + '.svg')
 
                 except:
@@ -462,7 +481,7 @@ def main(seed_num, mc_iterations, n_folds, classifier_names, results_path,
                             df[df.dataset == name][df.method ==
                                                    method]['c_probas'].values),
                             range=(0.0, 1.0))
-                df_hist = MyDataFrame(data=[[classifier_name, name, method] +
+                df_hist = DataFrame(data=[[classifier_name, name, method] +
                                            hist[0].tolist()],
                                       columns=columns_hist)
                 df_hist.to_csv(os.path.join(results_path, '_'.join(
